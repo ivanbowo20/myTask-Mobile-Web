@@ -3,19 +3,40 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
 
+const MAX_JUDUL_LENGTH = 255;
+const MAX_DESKRIPSI_LENGTH = 2000;
+const MAX_REMINDER_LENGTH = 100;
+
+function parseSafeIsoDate(val) {
+  if (val === null || val === undefined || val === "") {
+    return { valid: true, value: null };
+  }
+  const d = new Date(val);
+  if (isNaN(d.getTime())) {
+    return { valid: false, value: null };
+  }
+  return { valid: true, value: d.toISOString() };
+}
+
 function mapRowToTask(row) {
+  const parseDbDate = (d) => {
+    if (!d) return null;
+    const dateObj = new Date(d);
+    return isNaN(dateObj.getTime()) ? null : dateObj.toISOString();
+  };
+
   return {
     id: Number(row.id),
     userId: row.user_id,
     kategoriId: row.kategori_id ? Number(row.kategori_id) : null,
     judul: row.judul,
     deskripsi: row.deskripsi || "",
-    deadline: row.deadline ? new Date(row.deadline).toISOString() : null,
+    deadline: parseDbDate(row.deadline),
     prioritas: Boolean(row.prioritas),
     selesai: Boolean(row.selesai),
     reminder: row.reminder || null,
-    dibuatPada: row.dibuat_pada ? new Date(row.dibuat_pada).toISOString() : new Date().toISOString(),
-    selesaiPada: row.selesai_pada ? new Date(row.selesai_pada).toISOString() : null,
+    dibuatPada: parseDbDate(row.dibuat_pada) || new Date().toISOString(),
+    selesaiPada: parseDbDate(row.selesai_pada),
   };
 }
 
@@ -38,7 +59,10 @@ export async function GET(request) {
     return NextResponse.json({ tasks });
   } catch (error) {
     console.error("GET /api/tasks error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Terjadi kesalahan pada server. Silakan coba lagi nanti." },
+      { status: 500 }
+    );
   }
 }
 
@@ -63,8 +87,53 @@ export async function POST(request) {
       selesai = false,
     } = body;
 
-    if (!judul || !judul.trim()) {
+    // Validasi judul wajib & batas karakter
+    if (!judul || typeof judul !== "string" || !judul.trim()) {
       return NextResponse.json({ error: "Judul tugas wajib diisi" }, { status: 400 });
+    }
+    const cleanJudul = judul.trim();
+    if (cleanJudul.length > MAX_JUDUL_LENGTH) {
+      return NextResponse.json(
+        { error: `Judul tugas maksimal ${MAX_JUDUL_LENGTH} karakter` },
+        { status: 400 }
+      );
+    }
+
+    // Validasi batas panjang deskripsi
+    const cleanDeskripsi = typeof deskripsi === "string" ? deskripsi.trim() : "";
+    if (cleanDeskripsi.length > MAX_DESKRIPSI_LENGTH) {
+      return NextResponse.json(
+        { error: `Deskripsi tugas maksimal ${MAX_DESKRIPSI_LENGTH} karakter` },
+        { status: 400 }
+      );
+    }
+
+    // Validasi format tanggal deadline
+    const parsedDeadline = parseSafeIsoDate(deadline);
+    if (!parsedDeadline.valid) {
+      return NextResponse.json(
+        { error: "Format tanggal tenggat waktu tidak valid" },
+        { status: 400 }
+      );
+    }
+
+    // Validasi reminder
+    let cleanReminder = null;
+    if (reminder) {
+      cleanReminder = String(reminder).trim().slice(0, MAX_REMINDER_LENGTH);
+    }
+
+    // Validasi kategoriId
+    let cleanKategoriId = null;
+    if (kategoriId !== null && kategoriId !== undefined && kategoriId !== "") {
+      const parsedCatId = Number(kategoriId);
+      if (!Number.isFinite(parsedCatId)) {
+        return NextResponse.json(
+          { error: "Kategori ID tidak valid" },
+          { status: 400 }
+        );
+      }
+      cleanKategoriId = parsedCatId;
     }
 
     const result = await query(
@@ -73,11 +142,11 @@ export async function POST(request) {
        RETURNING *;`,
       [
         session.user.id,
-        kategoriId ? Number(kategoriId) : null,
-        judul.trim(),
-        deskripsi ? deskripsi.trim() : "",
-        deadline ? new Date(deadline).toISOString() : null,
-        reminder || null,
+        cleanKategoriId,
+        cleanJudul,
+        cleanDeskripsi,
+        parsedDeadline.value,
+        cleanReminder,
         Boolean(prioritas),
         Boolean(selesai),
       ]
@@ -87,7 +156,10 @@ export async function POST(request) {
     return NextResponse.json({ task }, { status: 201 });
   } catch (error) {
     console.error("POST /api/tasks error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Terjadi kesalahan pada server. Silakan coba lagi nanti." },
+      { status: 500 }
+    );
   }
 }
 
@@ -114,8 +186,70 @@ export async function PUT(request) {
       selesaiPada = null,
     } = body;
 
-    if (!id) {
-      return NextResponse.json({ error: "Task ID diperlukan" }, { status: 400 });
+    // Validasi Task ID
+    const parsedId = Number(id);
+    if (!id || !Number.isFinite(parsedId)) {
+      return NextResponse.json({ error: "Task ID valid diperlukan" }, { status: 400 });
+    }
+
+    // Validasi judul wajib & batas karakter
+    if (!judul || typeof judul !== "string" || !judul.trim()) {
+      return NextResponse.json({ error: "Judul tugas wajib diisi" }, { status: 400 });
+    }
+    const cleanJudul = judul.trim();
+    if (cleanJudul.length > MAX_JUDUL_LENGTH) {
+      return NextResponse.json(
+        { error: `Judul tugas maksimal ${MAX_JUDUL_LENGTH} karakter` },
+        { status: 400 }
+      );
+    }
+
+    // Validasi batas panjang deskripsi
+    const cleanDeskripsi = typeof deskripsi === "string" ? deskripsi.trim() : "";
+    if (cleanDeskripsi.length > MAX_DESKRIPSI_LENGTH) {
+      return NextResponse.json(
+        { error: `Deskripsi tugas maksimal ${MAX_DESKRIPSI_LENGTH} karakter` },
+        { status: 400 }
+      );
+    }
+
+    // Validasi tanggal deadline
+    const parsedDeadline = parseSafeIsoDate(deadline);
+    if (!parsedDeadline.valid) {
+      return NextResponse.json(
+        { error: "Format tanggal tenggat waktu tidak valid" },
+        { status: 400 }
+      );
+    }
+
+    // Validasi reminder
+    let cleanReminder = null;
+    if (reminder) {
+      cleanReminder = String(reminder).trim().slice(0, MAX_REMINDER_LENGTH);
+    }
+
+    // Validasi kategoriId
+    let cleanKategoriId = null;
+    if (kategoriId !== null && kategoriId !== undefined && kategoriId !== "") {
+      const parsedCatId = Number(kategoriId);
+      if (!Number.isFinite(parsedCatId)) {
+        return NextResponse.json(
+          { error: "Kategori ID tidak valid" },
+          { status: 400 }
+        );
+      }
+      cleanKategoriId = parsedCatId;
+    }
+
+    // Validasi tanggal selesai
+    let parsedSelesaiPada = null;
+    if (selesai) {
+      if (selesaiPada) {
+        const parsed = parseSafeIsoDate(selesaiPada);
+        parsedSelesaiPada = parsed.valid && parsed.value ? parsed.value : new Date().toISOString();
+      } else {
+        parsedSelesaiPada = new Date().toISOString();
+      }
     }
 
     const result = await query(
@@ -131,15 +265,15 @@ export async function PUT(request) {
        WHERE id = $9 AND user_id = $10
        RETURNING *;`,
       [
-        judul ? judul.trim() : "",
-        deskripsi ? deskripsi.trim() : "",
-        deadline ? new Date(deadline).toISOString() : null,
-        reminder || null,
-        kategoriId ? Number(kategoriId) : null,
+        cleanJudul,
+        cleanDeskripsi,
+        parsedDeadline.value,
+        cleanReminder,
+        cleanKategoriId,
         Boolean(prioritas),
         Boolean(selesai),
-        selesai && selesaiPada ? new Date(selesaiPada).toISOString() : selesai ? new Date().toISOString() : null,
-        Number(id),
+        parsedSelesaiPada,
+        parsedId,
         session.user.id,
       ]
     );
@@ -152,7 +286,10 @@ export async function PUT(request) {
     return NextResponse.json({ task });
   } catch (error) {
     console.error("PUT /api/tasks error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Terjadi kesalahan pada server. Silakan coba lagi nanti." },
+      { status: 500 }
+    );
   }
 }
 
@@ -168,20 +305,23 @@ export async function DELETE(request) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
+    const parsedId = Number(id);
 
-    if (!id) {
-      return NextResponse.json({ error: "Task ID diperlukan" }, { status: 400 });
+    if (!id || !Number.isFinite(parsedId)) {
+      return NextResponse.json({ error: "Task ID valid diperlukan" }, { status: 400 });
     }
 
     await query(
       `DELETE FROM public.tasks WHERE id = $1 AND user_id = $2;`,
-      [Number(id), session.user.id]
+      [parsedId, session.user.id]
     );
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("DELETE /api/tasks error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Terjadi kesalahan pada server. Silakan coba lagi nanti." },
+      { status: 500 }
+    );
   }
 }
-
