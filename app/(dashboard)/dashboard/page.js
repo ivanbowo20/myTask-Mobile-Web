@@ -20,6 +20,8 @@ import { getContextualGreeting } from "@/lib/greeting";
 import AnimatedContent from "@/components/ui/AnimatedContent";
 import { useTasks } from "@/lib/task-context";
 import { DUMMY_USER } from "@/lib/mock-data";
+import { useSession } from "@/lib/auth-client";
+import { toast } from "@/lib/use-toast";
 import {
   formatTanggal,
   formatTanggalSederhana,
@@ -96,6 +98,9 @@ export default function DashboardPage() {
     openAddTask,
   } = useTasks();
 
+  const { data: session } = useSession();
+  const currentUser = session?.user;
+
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [seed, setSeed] = useState(0);
 
@@ -104,14 +109,28 @@ export default function DashboardPage() {
     setSeed(Math.floor(Math.random() * 10));
   }, []);
 
+  // Notifikasi sambutan login satu kali per sesi browser
+  useEffect(() => {
+    if (currentUser?.name) {
+      const welcomeKey = `welcomed_${currentUser.id || currentUser.email || currentUser.name}`;
+      if (typeof window !== "undefined" && !sessionStorage.getItem(welcomeKey)) {
+        sessionStorage.setItem(welcomeKey, "true");
+        toast.success(`Selamat datang kembali, ${currentUser.name}!`);
+      }
+    }
+  }, [currentUser]);
+
   const greeting = useMemo(() => {
     return getContextualGreeting({
-      user: DUMMY_USER,
+      user: {
+        name: currentUser?.name || DUMMY_USER.nama,
+        nama: currentUser?.name || DUMMY_USER.nama,
+      },
       stats,
       referenceDate: new Date(),
       seed,
     });
-  }, [stats, seed]);
+  }, [currentUser?.name, stats, seed]);
 
   // 5 upcoming closest deadlines (pending with due date)
   const upcomingDeadlines = useMemo(() => {

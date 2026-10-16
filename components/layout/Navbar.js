@@ -15,6 +15,8 @@ import NotifDropdown from "@/components/notifikasi/NotifDropdown";
 import Button from "@/components/ui/Button";
 import SpecularButton from "@/components/ui/SpecularButton";
 import { DUMMY_USER } from "@/lib/mock-data";
+import { useSession, signOut } from "@/lib/auth-client";
+import { toast } from "@/lib/use-toast";
 
 export default function Navbar({
   onOpenAddTask,
@@ -29,6 +31,14 @@ export default function Navbar({
   const [searchTerm, setSearchTerm] = useState("");
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
+
+  // Ambil data sesi pengguna dari Better Auth
+  const { data: session } = useSession();
+  const currentUser = session?.user;
+  const displayName = currentUser?.name || DUMMY_USER.nama;
+  const displayEmail = currentUser?.email || DUMMY_USER.email;
+  const avatarUrl = currentUser?.image;
+  const userInitial = (displayName || "U").charAt(0).toUpperCase();
 
   // Close user menu on outside click
   useEffect(() => {
@@ -76,7 +86,14 @@ export default function Navbar({
     setIsMobileSearchOpen(false);
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    setIsUserMenuOpen(false);
+    try {
+      await signOut();
+      toast.info("Anda telah keluar dari akun.");
+    } catch (e) {
+      console.error("Logout error", e);
+    }
     router.push("/login");
   }
 
@@ -177,11 +194,20 @@ export default function Navbar({
               aria-expanded={isUserMenuOpen}
               className="min-h-[44px] inline-flex items-center gap-2 pl-2 pr-2.5 py-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.06)] border border-transparent hover:border-[rgba(255,255,255,0.08)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA]"
             >
-              <div className="w-8 h-8 rounded-full bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.14)] text-[#FAFAFA] text-xs font-bold flex items-center justify-center">
-                {DUMMY_USER.nama.charAt(0)}
-              </div>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="w-8 h-8 rounded-full object-cover border border-white/20 shadow-sm"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.14)] text-[#FAFAFA] text-xs font-bold flex items-center justify-center">
+                  {userInitial}
+                </div>
+              )}
               <span className="text-xs font-medium text-[#FAFAFA] hidden lg:inline-block">
-                {DUMMY_USER.nama}
+                {displayName}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-[#71717A] hidden sm:block" />
             </button>
@@ -191,10 +217,10 @@ export default function Navbar({
               <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--theme-nav-bg,#1A130E)] backdrop-blur-[20px] backdrop-saturate-[130%] border border-[var(--glass-border-hover,rgba(255,255,255,0.12))] shadow-2xl z-50 p-1.5 space-y-1 animate-in fade-in duration-150">
                 <div className="px-3 py-2 border-b border-[rgba(255,255,255,0.08)]">
                   <p className="text-xs font-semibold text-[#FAFAFA] truncate">
-                    {DUMMY_USER.nama}
+                    {displayName}
                   </p>
                   <p className="text-[11px] text-[#71717A] truncate">
-                    {DUMMY_USER.email}
+                    {displayEmail}
                   </p>
                 </div>
 
@@ -210,7 +236,7 @@ export default function Navbar({
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="flex items-center gap-2.5 w-full min-h-[44px] px-3 py-2 rounded-lg text-xs font-medium text-[#E88B8B] hover:bg-[rgba(232,139,139,0.12)] transition-all duration-200 text-left"
+                  className="flex items-center gap-2.5 w-full min-h-[44px] px-3 py-2 rounded-lg text-xs font-medium text-[#E88B8B] hover:bg-[rgba(232,139,139,0.12)] transition-all duration-200 text-left cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Keluar

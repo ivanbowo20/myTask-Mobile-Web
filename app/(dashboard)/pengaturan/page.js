@@ -18,6 +18,7 @@ import AnimatedContent from "@/components/ui/AnimatedContent";
 import { DUMMY_USER } from "@/lib/mock-data";
 import { useToast } from "@/lib/use-toast";
 import { useTheme } from "@/lib/theme-context";
+import { useSession, signOut } from "@/lib/auth-client";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -25,8 +26,27 @@ export default function SettingsPage() {
   const { currentTheme, openThemeModal } = useTheme();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
-  function handleLogout() {
-    toast.info("Anda telah keluar dari akun.");
+  // Ambil data sesi pengguna dari Better Auth
+  const { data: session } = useSession();
+  const currentUser = session?.user;
+  const displayName = currentUser?.name || DUMMY_USER.nama;
+  const displayEmail = currentUser?.email || DUMMY_USER.email;
+  const avatarUrl = currentUser?.image;
+  const joinedDate = currentUser?.createdAt
+    ? new Date(currentUser.createdAt).toLocaleDateString("id-ID", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : DUMMY_USER.bergabung;
+
+  async function handleLogout() {
+    try {
+      await signOut();
+      toast.info("Anda telah keluar dari akun.");
+    } catch (e) {
+      console.error("Logout error", e);
+    }
     router.push("/login");
   }
 
@@ -58,21 +78,30 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-white/[0.06] border-2 border-white/[0.16] flex items-center justify-center text-2xl font-bold text-[#FAFAFA] shrink-0 shadow-inner">
-              {DUMMY_USER.nama.charAt(0)}
-            </div>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="w-16 h-16 rounded-full object-cover border-2 border-white/[0.2] shrink-0 shadow-lg"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-white/[0.06] border-2 border-white/[0.16] flex items-center justify-center text-2xl font-bold text-[#FAFAFA] shrink-0 shadow-inner">
+                {(displayName || "U").charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="space-y-1">
               <h3 className="text-base font-semibold text-[#FAFAFA]">
-                {DUMMY_USER.nama}
+                {displayName}
               </h3>
               <div className="flex flex-wrap items-center gap-4 text-xs text-[#A1A1AA]">
                 <span className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-[#71717A]" />
-                  {DUMMY_USER.email}
+                  {displayEmail}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-[#71717A]" />
-                  Bergabung sejak {DUMMY_USER.bergabung}
+                  Bergabung sejak {joinedDate}
                 </span>
               </div>
             </div>
