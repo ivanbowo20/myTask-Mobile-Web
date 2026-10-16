@@ -3,14 +3,6 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
 
-const STARTER_CATEGORIES = [
-  { nama: "Kuliah", warna: "#38BDF8", icon: "GraduationCap" },
-  { nama: "Kerja", warna: "#A78BFA", icon: "Briefcase" },
-  { nama: "Pribadi", warna: "#4ADE80", icon: "User" },
-  { nama: "Belanja", warna: "#FBBF24", icon: "ShoppingCart" },
-  { nama: "Kesehatan", warna: "#F87171", icon: "HeartPulse" },
-];
-
 function mapRowToCategory(row) {
   return {
     id: Number(row.id),
@@ -31,25 +23,10 @@ export async function GET(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let result = await query(
+    const result = await query(
       `SELECT * FROM public.categories WHERE user_id = $1 ORDER BY id ASC;`,
       [session.user.id]
     );
-
-    // Jika user baru belum punya kategori, buatkan 5 kategori dasar bawaan
-    if (result.rows.length === 0) {
-      for (const cat of STARTER_CATEGORIES) {
-        await query(
-          `INSERT INTO public.categories (user_id, nama, warna, icon)
-           VALUES ($1, $2, $3, $4);`,
-          [session.user.id, cat.nama, cat.warna, cat.icon]
-        );
-      }
-      result = await query(
-        `SELECT * FROM public.categories WHERE user_id = $1 ORDER BY id ASC;`,
-        [session.user.id]
-      );
-    }
 
     const categories = result.rows.map(mapRowToCategory);
     return NextResponse.json({ categories });

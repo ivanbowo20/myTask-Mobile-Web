@@ -19,7 +19,6 @@ import EmptyState from "@/components/ui/EmptyState";
 import { getContextualGreeting } from "@/lib/greeting";
 import AnimatedContent from "@/components/ui/AnimatedContent";
 import { useTasks } from "@/lib/task-context";
-import { DUMMY_USER } from "@/lib/mock-data";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "@/lib/use-toast";
 import {
@@ -123,8 +122,8 @@ export default function DashboardPage() {
   const greeting = useMemo(() => {
     return getContextualGreeting({
       user: {
-        name: currentUser?.name || DUMMY_USER.nama,
-        nama: currentUser?.name || DUMMY_USER.nama,
+        name: currentUser?.name || "",
+        nama: currentUser?.name || "",
       },
       stats,
       referenceDate: new Date(),

@@ -15,7 +15,6 @@ import {
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AnimatedContent from "@/components/ui/AnimatedContent";
-import { DUMMY_USER } from "@/lib/mock-data";
 import { useToast } from "@/lib/use-toast";
 import { useTheme } from "@/lib/theme-context";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -29,8 +28,8 @@ export default function SettingsPage() {
   // Ambil data sesi pengguna dari Better Auth
   const { data: session } = useSession();
   const currentUser = session?.user;
-  const displayName = currentUser?.name || DUMMY_USER.nama;
-  const displayEmail = currentUser?.email || DUMMY_USER.email;
+  const displayName = currentUser?.name || "-";
+  const displayEmail = currentUser?.email || "-";
   const avatarUrl = currentUser?.image;
   const joinedDate = currentUser?.createdAt
     ? new Date(currentUser.createdAt).toLocaleDateString("id-ID", {
@@ -38,7 +37,7 @@ export default function SettingsPage() {
         month: "long",
         day: "numeric",
       })
-    : DUMMY_USER.bergabung;
+    : "-";
 
   async function handleLogout() {
     try {

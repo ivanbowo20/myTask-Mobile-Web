@@ -14,7 +14,6 @@ import {
 import NotifDropdown from "@/components/notifikasi/NotifDropdown";
 import Button from "@/components/ui/Button";
 import SpecularButton from "@/components/ui/SpecularButton";
-import { DUMMY_USER } from "@/lib/mock-data";
 import { useSession, signOut } from "@/lib/auth-client";
 import { toast } from "@/lib/use-toast";
 
@@ -35,8 +34,8 @@ export default function Navbar({
   // Ambil data sesi pengguna dari Better Auth
   const { data: session } = useSession();
   const currentUser = session?.user;
-  const displayName = currentUser?.name || DUMMY_USER.nama;
-  const displayEmail = currentUser?.email || DUMMY_USER.email;
+  const displayName = currentUser?.name || "";
+  const displayEmail = currentUser?.email || "";
   const avatarUrl = currentUser?.image;
   const userInitial = (displayName || "U").charAt(0).toUpperCase();
 
