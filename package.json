@@ -9,7 +9,8 @@
     "build:safe": "node -e \"try{fs.rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node scripts/verify-task-4c.js"
+    "test": "node scripts/verify-task-4c.js",
+    "ping:supabase": "node scripts/ping-supabase.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

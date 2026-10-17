@@ -1,0 +1,45 @@
+name: Supabase Keep-Alive Ping
+
+on:
+  schedule:
+    # Berjalan setiap 3 hari sekali pada pukul 05:00 UTC (12:00 WIB)
+    # Jadwal ini aman mencegah auto-pause 7 hari Supabase free tier
+    - cron: '0 5 */3 * *'
+  workflow_dispatch:
+    # Memungkinkan trigger manual kapan saja dari tab Actions di GitHub
+
+jobs:
+  ping:
+    name: Ping Supabase REST API
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Database via PostgREST
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_URL atau SUPABASE_ANON_KEY belum diatur di GitHub Secrets!"
+            exit 1
+          fi
+
+          echo "Mengirim ping ke Supabase database..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}s" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL}/rest/v1/profiles?select=id&limit=1")
+
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
+          TIME_TOTAL=$(echo "$RESPONSE" | grep "TIME_TOTAL" | cut -d':' -f2)
+          BODY=$(echo "$RESPONSE" | grep -v "HTTP_STATUS" | grep -v "TIME_TOTAL")
+
+          echo "Status: $HTTP_STATUS"
+          echo "Durasi: $TIME_TOTAL"
+          echo "Respons: $BODY"
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✅ [SUCCESS] Supabase berhasil di-ping! Aktivitas PostgreSQL tercatat, server tetap aktif."
+          else
+            echo "::error::❌ [FAILED] Gagal ping Supabase dengan status HTTP $HTTP_STATUS"
+            exit 1
+          fi
