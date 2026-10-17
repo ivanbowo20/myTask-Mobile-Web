@@ -33,7 +33,14 @@ export async function GET(request) {
     );
 
     const categories = result.rows.map(mapRowToCategory);
-    return NextResponse.json({ categories });
+    return NextResponse.json(
+      { categories },
+      {
+        headers: {
+          "Cache-Control": "private, no-transform, max-age=30, stale-while-revalidate=120",
+        },
+      }
+    );
   } catch (error) {
     console.error("GET /api/categories error:", error);
     return NextResponse.json(
