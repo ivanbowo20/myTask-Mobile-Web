@@ -142,6 +142,7 @@ create index if not exists idx_account_user on public."account"("userId");
 create index if not exists idx_categories_user on public.categories(user_id);
 create index if not exists idx_tasks_user on public.tasks(user_id);
 create index if not exists idx_tasks_deadline on public.tasks(deadline);
+create index if not exists idx_tasks_selesai_purge on public.tasks(selesai, selesai_pada) where selesai = true;
 create index if not exists idx_subtasks_task on public.subtasks(task_id);
 create index if not exists idx_notifications_user on public.notifications(user_id);
 
@@ -160,6 +161,7 @@ create or replace function public.purge_old_completed_tasks()
 returns integer
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   deleted_count integer;

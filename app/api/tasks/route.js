@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { isTaskExpired } from "@/lib/utils";
 
 const MAX_JUDUL_LENGTH = 255;
 const MAX_DESKRIPSI_LENGTH = 2000;
@@ -65,7 +66,9 @@ export async function GET(request) {
       [session.user.id]
     );
 
-    const tasks = result.rows.map(mapRowToTask);
+    const tasks = result.rows
+      .map(mapRowToTask)
+      .filter((t) => !isTaskExpired(t));
     return NextResponse.json({ tasks });
   } catch (error) {
     console.error("GET /api/tasks error:", error);

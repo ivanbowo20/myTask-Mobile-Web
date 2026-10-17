@@ -23,14 +23,14 @@ jobs:
             exit 1
           fi
 
-          echo "Mengirim ping & maintenance auto-purge ke Supabase RPC..."
+          CLEAN_URL="${SUPABASE_URL%/}"
           RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}s" \
             -X POST \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
             -H "Content-Type: application/json" \
             -d "{}" \
-            "${SUPABASE_URL}/rest/v1/rpc/purge_old_completed_tasks")
+            "${CLEAN_URL}/rest/v1/rpc/purge_old_completed_tasks")
 
           HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
           TIME_TOTAL=$(echo "$RESPONSE" | grep "TIME_TOTAL" | cut -d':' -f2)
