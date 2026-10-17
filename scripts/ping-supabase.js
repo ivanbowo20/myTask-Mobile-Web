@@ -40,21 +40,22 @@ async function pingSupabase() {
     process.exit(1);
   }
 
-  const endpoint = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/profiles?select=id&limit=1`;
-  console.log(`📡 Mengirim ping ke Supabase REST API:`);
+  const endpoint = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/purge_old_completed_tasks`;
+  console.log(`📡 Mengirim ping & maintenance auto-purge ke Supabase RPC:`);
   console.log(`   URL: ${supabaseUrl}`);
-  console.log(`   Endpoint: /rest/v1/profiles?select=id&limit=1\n`);
+  console.log(`   Endpoint: /rest/v1/rpc/purge_old_completed_tasks\n`);
 
   const startTime = Date.now();
 
   try {
     const response = await fetch(endpoint, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'apikey': anonKey,
         'Authorization': `Bearer ${anonKey}`,
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify({})
     });
 
     const duration = Date.now() - startTime;
@@ -62,11 +63,11 @@ async function pingSupabase() {
 
     console.log(`📊 Status Code : ${response.status} ${response.statusText}`);
     console.log(`⏱️ Durasi      : ${duration} ms`);
-    console.log(`📦 Data Return : ${data.trim() || '[]'}`);
+    console.log(`📦 Data Return : ${data.trim() || '[]'} (tugas lama terhapus)`);
 
     if (response.ok) {
-      console.log('\n✅ [BERHASIL] Supabase merespons dengan sukses!');
-      console.log('   Query ke PostgreSQL berhasil dijalankan, server Supabase tetap aktif.');
+      console.log('\n✅ [BERHASIL] Supabase RPC purge_old_completed_tasks merespons dengan sukses!');
+      console.log('   Koneksi PostgreSQL aktif, auto-pause terhindar, dan cleanup otomatis berjalan.');
     } else {
       console.error(`\n❌ [GAGAL] Supabase merespons dengan error: ${response.status}`);
       process.exit(1);

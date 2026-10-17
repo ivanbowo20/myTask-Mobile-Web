@@ -18,6 +18,7 @@ import AnimatedContent from "@/components/ui/AnimatedContent";
 import { useToast } from "@/lib/use-toast";
 import { useTheme } from "@/lib/theme-context";
 import { useSession, signOut } from "@/lib/auth-client";
+import { useTasks } from "@/lib/task-context";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -25,9 +26,10 @@ export default function SettingsPage() {
   const { currentTheme, openThemeModal } = useTheme();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
-  // Ambil data sesi pengguna dari Better Auth
+  // Ambil data sesi pengguna dari Better Auth (dengan fallback langsung ke contextUser dari SSR)
+  const { user: contextUser } = useTasks();
   const { data: session } = useSession();
-  const currentUser = session?.user;
+  const currentUser = session?.user || contextUser;
   const displayName = currentUser?.name || "-";
   const displayEmail = currentUser?.email || "-";
   const avatarUrl = currentUser?.image;
@@ -46,7 +48,11 @@ export default function SettingsPage() {
     } catch (e) {
       console.error("Logout error", e);
     }
-    router.push("/login");
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    } else {
+      router.push("/login");
+    }
   }
 
   return (

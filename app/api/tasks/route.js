@@ -50,6 +50,16 @@ export async function GET(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Zero-Cost Free Tier Optimization: purge completed tasks > 14 days old for this user
+    await query(
+      `DELETE FROM public.tasks
+       WHERE user_id = $1
+         AND selesai = true
+         AND selesai_pada IS NOT NULL
+         AND selesai_pada < NOW() - INTERVAL '14 days';`,
+      [session.user.id]
+    );
+
     const result = await query(
       `SELECT * FROM public.tasks WHERE user_id = $1 ORDER BY dibuat_pada DESC;`,
       [session.user.id]

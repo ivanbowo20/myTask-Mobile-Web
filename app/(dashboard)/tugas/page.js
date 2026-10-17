@@ -17,6 +17,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import AnimatedList from "@/components/ui/AnimatedList";
 import AnimatedContent from "@/components/ui/AnimatedContent";
+import CustomSelect from "@/components/ui/CustomSelect";
 import { useTasks } from "@/lib/task-context";
 import { getKategoriById, cn } from "@/lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -191,7 +192,7 @@ function AllTasksContent() {
       )}
 
       {/* Filter and Search Bar */}
-      <AnimatedContent delay={0.16}>
+      <AnimatedContent delay={0.16} className="relative z-20">
         <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] flex flex-col md:flex-row items-center gap-3">
           {/* Search Input */}
           <div className="relative flex-1 w-full">
@@ -206,20 +207,19 @@ function AllTasksContent() {
           </div>
 
           {/* Category Filter */}
-          <div className="w-full md:w-auto">
-            <select
+          <div className="w-full md:w-56 shrink-0">
+            <CustomSelect
+              isFilter
+              id="filter-category"
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full md:w-56 min-h-[44px] px-3.5 py-2 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-white/20 text-base sm:text-sm text-[#FAFAFA] transition-all duration-200 [color-scheme:dark] cursor-pointer backdrop-blur-sm"
-            >
-              <option value="all" className="bg-[#121214] text-[#FAFAFA]">Semua Kategori</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id} className="bg-[#121214] text-[#FAFAFA]">
-                  {c.nama}
-                </option>
-              ))}
-              <option value="none" className="bg-[#121214] text-[#FAFAFA]">Tanpa Kategori</option>
-            </select>
+              onChange={(val) => {
+                setSelectedCategory(val);
+                setDirection(0);
+                setCurrentPage(1);
+              }}
+              categories={categories}
+              className="w-full"
+            />
           </div>
 
           {/* Clear Filters Button */}

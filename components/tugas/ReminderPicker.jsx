@@ -61,7 +61,7 @@ export default function ReminderPicker({
   }
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${isOpen ? 'z-30' : 'z-10'} ${className}`}>
       {/* Trigger Button */}
       <button
         id={id}
@@ -99,7 +99,7 @@ export default function ReminderPicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-full left-0 right-0 w-full mt-2 z-50 rounded-2xl bg-[#0A0A0A] border border-white/[0.12] p-2.5 shadow-2xl backdrop-blur-xl"
+            className="absolute top-full left-0 right-0 w-full mt-2 z-50 rounded-2xl bg-[#0A0A0A] border border-white/[0.12] p-2.5 shadow-2xl backdrop-blur-xl overscroll-contain"
           >
             {/* Header info */}
             <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-white/[0.08] px-1">

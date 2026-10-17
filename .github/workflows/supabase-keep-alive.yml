@@ -10,10 +10,10 @@ on:
 
 jobs:
   ping:
-    name: Ping Supabase REST API
+    name: Ping & Maintain Supabase Database
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Database via PostgREST
+      - name: Ping and Purge via PostgREST RPC
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -23,11 +23,14 @@ jobs:
             exit 1
           fi
 
-          echo "Mengirim ping ke Supabase database..."
+          echo "Mengirim ping & maintenance auto-purge ke Supabase RPC..."
           RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}s" \
+            -X POST \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            "${SUPABASE_URL}/rest/v1/profiles?select=id&limit=1")
+            -H "Content-Type: application/json" \
+            -d "{}" \
+            "${SUPABASE_URL}/rest/v1/rpc/purge_old_completed_tasks")
 
           HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
           TIME_TOTAL=$(echo "$RESPONSE" | grep "TIME_TOTAL" | cut -d':' -f2)
@@ -38,7 +41,7 @@ jobs:
           echo "Respons: $BODY"
 
           if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
-            echo "✅ [SUCCESS] Supabase berhasil di-ping! Aktivitas PostgreSQL tercatat, server tetap aktif."
+            echo "✅ [SUCCESS] Supabase berhasil di-ping dan auto-purge berhasil! PostgreSQL aktif, free tier terhindar dari limit & auto-pause."
           else
             echo "::error::❌ [FAILED] Gagal ping Supabase dengan status HTTP $HTTP_STATUS"
             exit 1

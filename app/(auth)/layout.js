@@ -3,7 +3,7 @@ import { CheckSquare } from "lucide-react";
 
 export default function AuthLayout({ children }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-transparent relative z-10">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 sm:p-6 bg-transparent relative z-10">
       {/* Brand Header */}
       <div className="mb-6 text-center space-y-2">
         <Link
@@ -22,8 +22,8 @@ export default function AuthLayout({ children }) {
         </p>
       </div>
 
-      {/* Auth Card Content */}
-      <div className="w-full max-w-md">
+      {/* Auth Card Content (Responsive: max-w-md on mobile, max-w-4xl ~880px on desktop) */}
+      <div className="w-full max-w-md sm:max-w-4xl transition-all duration-300">
         {children}
       </div>
 

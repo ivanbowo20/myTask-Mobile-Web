@@ -6,6 +6,7 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import DeadlineAlert from "./DeadlineAlert";
 import ReminderPicker from "./ReminderPicker";
+import DateTimePicker from "@/components/ui/DateTimePicker";
 import CustomSelect from "@/components/ui/CustomSelect";
 import Magnet from "@/components/ui/Magnet";
 import { WAKTU_ACUAN } from "@/lib/utils";
@@ -115,12 +116,10 @@ export default function AddTaskModal({
             >
               Tenggat Waktu
             </label>
-            <input
+            <DateTimePicker
               id="task-deadline"
-              type="datetime-local"
               value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-white/20 text-base sm:text-sm text-[#FAFAFA] transition-all duration-200 [color-scheme:dark] backdrop-blur-sm"
+              onChange={setDeadline}
             />
           </div>
 

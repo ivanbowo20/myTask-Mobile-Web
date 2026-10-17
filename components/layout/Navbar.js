@@ -18,6 +18,7 @@ import { useSession, signOut } from "@/lib/auth-client";
 import { toast } from "@/lib/use-toast";
 
 export default function Navbar({
+  user: initialUser,
   onOpenAddTask,
   overdueTasks = [],
   todayTasks = [],
@@ -31,9 +32,9 @@ export default function Navbar({
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
 
-  // Ambil data sesi pengguna dari Better Auth
+  // Ambil data sesi pengguna dari Better Auth (dengan fallback langsung ke initial server session)
   const { data: session } = useSession();
-  const currentUser = session?.user;
+  const currentUser = session?.user || initialUser;
   const displayName = currentUser?.name || "";
   const displayEmail = currentUser?.email || "";
   const avatarUrl = currentUser?.image;
@@ -93,7 +94,11 @@ export default function Navbar({
     } catch (e) {
       console.error("Logout error", e);
     }
-    router.push("/login");
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    } else {
+      router.push("/login");
+    }
   }
 
   return (

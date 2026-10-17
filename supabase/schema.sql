@@ -152,3 +152,26 @@ alter publication supabase_realtime add table public.tasks;
 alter publication supabase_realtime add table public.categories;
 alter publication supabase_realtime add table public.subtasks;
 alter publication supabase_realtime add table public.notifications;
+
+-- ------------------------------------------------------------------------------
+-- 6. AUTOMATION & CLEANUP FUNCTIONS (Zero-Cost Free Tier Maintenance)
+-- ------------------------------------------------------------------------------
+create or replace function public.purge_old_completed_tasks()
+returns integer
+language plpgsql
+security definer
+as $$
+declare
+  deleted_count integer;
+begin
+  delete from public.tasks
+  where selesai = true
+    and selesai_pada is not null
+    and selesai_pada < (now() - interval '14 days');
+  get diagnostics deleted_count = row_count;
+  return deleted_count;
+end;
+$$;
+
+grant execute on function public.purge_old_completed_tasks() to anon, authenticated, service_role;
+

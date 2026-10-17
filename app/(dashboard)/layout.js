@@ -1,109 +1,42 @@
-'use client';
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { getInitialDashboardData } from "@/lib/server-data";
+import { TaskProvider } from "@/lib/task-context";
+import DashboardShell from "@/components/layout/DashboardShell";
 
-import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
-import BottomNav from "@/components/layout/BottomNav";
-import AddTaskModal from "@/components/tugas/AddTaskModal";
-import EditTaskModal from "@/components/tugas/EditTaskModal";
-import AddCategoryModal from "@/components/kategori/AddCategoryModal";
-import EditCategoryModal from "@/components/kategori/EditCategoryModal";
-import { TaskProvider, useTasks } from "@/lib/task-context";
+export const dynamic = "force-dynamic";
 
-function DashboardShell({ children }) {
-  const {
-    tasks,
-    categories,
-    stats,
-    addTask,
-    updateTask,
-    addCategory,
-    updateCategory,
-    isAddTaskOpen,
-    closeAddTask,
-    openAddTask,
-    editingTask,
-    closeEditTask,
-    isAddCategoryOpen,
-    closeAddCategory,
-    openAddCategory,
-    editingCategory,
-    closeEditCategory,
-    toggleComplete,
-  } = useTasks();
+export default async function DashboardLayout({ children }) {
+  const reqHeaders = await headers();
+  let session = null;
+
+  try {
+    session = await auth.api.getSession({
+      headers: reqHeaders,
+    });
+  } catch (err) {
+    console.error("DashboardLayout auth.api.getSession error:", err);
+  }
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  // Bersihkan data session menjadi serializable JSON murni untuk boundary Client Component
+  const serializableSession = JSON.parse(JSON.stringify(session));
+
+  // Ambil data awal tugas dan kategori langsung dari database di server (SSR)
+  const { tasks: initialTasks, categories: initialCategories, error: serverError } =
+    await getInitialDashboardData(session.user.id);
 
   return (
-    <div className="min-h-[100dvh] flex flex-col">
-      {/* Top Navbar */}
-      <Navbar
-        onOpenAddTask={openAddTask}
-        overdueTasks={stats.overdueList}
-        todayTasks={stats.todayList}
-        upcomingTasks={stats.upcomingList}
-        categories={categories}
-        onMarkDone={toggleComplete}
-      />
-
-      <div className="flex-1 flex pt-[calc(4rem+env(safe-area-inset-top,0px))]">
-        {/* Left Sidebar (Desktop Only) */}
-        <Sidebar
-          badges={{
-            total: stats.total,
-            hariIni: stats.today,
-            penting: stats.important,
-            selesai: stats.completed,
-            kategori: categories.length,
-            notifikasi: stats.overdue + stats.today,
-          }}
-        />
-
-        {/* Main Workspace Content */}
-        <main className="flex-1 lg:ml-64 w-full min-w-0 p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 overflow-y-auto">
-          <div className="max-w-6xl mx-auto space-y-8">
-            {children}
-          </div>
-        </main>
-      </div>
-
-      {/* Mobile Bottom Navigation Bar (4 tabs) */}
-      <BottomNav />
-
-      {/* Global Modals */}
-      <AddTaskModal
-        isOpen={isAddTaskOpen}
-        onClose={closeAddTask}
-        categories={categories}
-        onAddTask={addTask}
-        onOpenAddCategory={openAddCategory}
-      />
-
-      <EditTaskModal
-        isOpen={Boolean(editingTask)}
-        onClose={closeEditTask}
-        task={editingTask}
-        categories={categories}
-        onUpdateTask={updateTask}
-        onOpenAddCategory={openAddCategory}
-      />
-
-      <AddCategoryModal
-        isOpen={isAddCategoryOpen}
-        onClose={closeAddCategory}
-        onAdd={addCategory}
-      />
-
-      <EditCategoryModal
-        isOpen={Boolean(editingCategory)}
-        onClose={closeEditCategory}
-        kategori={editingCategory}
-        onUpdate={updateCategory}
-      />
-    </div>
-  );
-}
-
-export default function DashboardLayout({ children }) {
-  return (
-    <TaskProvider>
+    <TaskProvider
+      initialSession={serializableSession}
+      initialTasks={initialTasks}
+      initialCategories={initialCategories}
+      hasServerError={serverError}
+    >
       <DashboardShell>{children}</DashboardShell>
     </TaskProvider>
   );

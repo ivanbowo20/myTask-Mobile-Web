@@ -10,15 +10,21 @@ export default function CustomSelect({
   categories = [],
   onOpenAddCategory,
   id = 'task-category',
-  placeholder = 'Tanpa Kategori',
+  placeholder,
+  isFilter = false,
   className = '',
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredValue, setHoveredValue] = useState(null);
   const containerRef = useRef(null);
 
+  const defaultPlaceholder = isFilter ? 'Semua Kategori' : 'Tanpa Kategori';
+  const effectivePlaceholder = placeholder || defaultPlaceholder;
+
   // Normalize current category
   const selectedCategory = categories.find((c) => String(c.id) === String(value));
+  const isAll = isFilter && (value === 'all' || !value);
+  const isNone = isFilter ? value === 'none' : !value && !selectedCategory;
 
   // Outside click & keyboard dismiss
   useEffect(() => {
@@ -90,8 +96,30 @@ export default function CustomSelect({
     },
   };
 
+  // Determine trigger label and dot
+  let triggerLabel = effectivePlaceholder;
+  let triggerDot = <span className="w-2.5 h-2.5 rounded-full bg-zinc-600 border border-white/20 shrink-0" />;
+
+  if (isAll) {
+    triggerLabel = 'Semua Kategori';
+    triggerDot = <span className="w-2.5 h-2.5 rounded-full bg-white/40 border border-white/30 shrink-0" />;
+  } else if (selectedCategory) {
+    triggerLabel = selectedCategory.nama;
+    triggerDot = (
+      <span
+        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+        style={{
+          backgroundColor: selectedCategory.warna || '#A78BFA',
+          boxShadow: `0 0 8px ${selectedCategory.warna || '#A78BFA'}66`,
+        }}
+      />
+    );
+  } else if (isNone) {
+    triggerLabel = 'Tanpa Kategori';
+  }
+
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${isOpen ? 'z-30' : 'z-10'} ${className}`}>
       {/* Trigger Button */}
       <button
         id={id}
@@ -106,20 +134,9 @@ export default function CustomSelect({
         }`}
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          {selectedCategory ? (
-            <span
-              className="w-3 h-3 rounded-full shrink-0 shadow-sm"
-              style={{
-                backgroundColor: selectedCategory.warna || '#A78BFA',
-                boxShadow: `0 0 8px ${selectedCategory.warna || '#A78BFA'}66`,
-              }}
-            />
-          ) : (
-            <span className="w-3 h-3 rounded-full bg-zinc-600 border border-white/20 shrink-0" />
-          )}
-
+          {triggerDot}
           <span className="text-base sm:text-sm font-medium text-[#FAFAFA] truncate">
-            {selectedCategory ? selectedCategory.nama : placeholder}
+            {triggerLabel}
           </span>
         </div>
 
@@ -138,36 +155,38 @@ export default function CustomSelect({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl glass-dropdown p-1.5 shadow-2xl max-h-64 overflow-y-auto"
+            className="absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl glass-dropdown p-1.5 shadow-2xl max-h-60 sm:max-h-64 overflow-y-auto overscroll-contain"
             onMouseLeave={() => setHoveredValue(null)}
           >
-            {/* Opsi "Tanpa Kategori" */}
-            <motion.div
-              variants={itemVariants}
-              className="relative"
-              onMouseEnter={() => setHoveredValue('__none__')}
-            >
-              {hoveredValue === '__none__' && (
-                <motion.div
-                  layoutId="select-hover-pill"
-                  className="absolute inset-0 rounded-xl bg-white/[0.08]"
-                  transition={{ type: 'spring', bounce: 0.15, duration: 0.2 }}
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => handleSelect('')}
-                className={`relative z-10 w-full px-3 py-2 rounded-xl flex items-center justify-between text-left text-sm transition-colors cursor-pointer ${
-                  !value ? 'text-white font-semibold' : 'text-zinc-300'
-                }`}
+            {/* Opsi "Semua Kategori" (Hanya pada mode filter) */}
+            {isFilter && (
+              <motion.div
+                variants={itemVariants}
+                className="relative"
+                onMouseEnter={() => setHoveredValue('__all__')}
               >
-                <div className="flex items-center gap-2.5 truncate">
-                  <span className="w-2.5 h-2.5 rounded-full bg-zinc-600 border border-white/20 shrink-0" />
-                  <span>Tanpa Kategori</span>
-                </div>
-                {!value && <Check className="w-4 h-4 text-white shrink-0" />}
-              </button>
-            </motion.div>
+                {hoveredValue === '__all__' && (
+                  <motion.div
+                    layoutId="select-hover-pill"
+                    className="absolute inset-0 rounded-xl bg-white/[0.08]"
+                    transition={{ type: 'spring', bounce: 0.15, duration: 0.2 }}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleSelect('all')}
+                  className={`relative z-10 w-full px-3 py-2 rounded-xl flex items-center justify-between text-left text-sm transition-colors cursor-pointer ${
+                    isAll ? 'text-white font-semibold' : 'text-zinc-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 truncate">
+                    <span className="w-2.5 h-2.5 rounded-full bg-white/40 border border-white/30 shrink-0" />
+                    <span>Semua Kategori</span>
+                  </div>
+                  {isAll && <Check className="w-4 h-4 text-white shrink-0" />}
+                </button>
+              </motion.div>
+            )}
 
             {/* List Kategori */}
             {categories.map((c) => {
@@ -213,30 +232,62 @@ export default function CustomSelect({
               );
             })}
 
-            {/* Divider & Aksi Tambah Kategori Baru */}
-            <div className="my-1 border-t border-white/[0.08]" />
-
+            {/* Opsi "Tanpa Kategori" */}
             <motion.div
               variants={itemVariants}
               className="relative"
-              onMouseEnter={() => setHoveredValue('__new__')}
+              onMouseEnter={() => setHoveredValue('__none__')}
             >
-              {hoveredValue === '__new__' && (
+              {hoveredValue === '__none__' && (
                 <motion.div
                   layoutId="select-hover-pill"
-                  className="absolute inset-0 rounded-xl bg-violet-500/15"
+                  className="absolute inset-0 rounded-xl bg-white/[0.08]"
                   transition={{ type: 'spring', bounce: 0.15, duration: 0.2 }}
                 />
               )}
               <button
                 type="button"
-                onClick={() => handleSelect('__new__')}
-                className="relative z-10 w-full px-3 py-2 rounded-xl flex items-center gap-2 text-left text-sm font-medium text-violet-300 hover:text-violet-200 transition-colors cursor-pointer"
+                onClick={() => handleSelect(isFilter ? 'none' : '')}
+                className={`relative z-10 w-full px-3 py-2 rounded-xl flex items-center justify-between text-left text-sm transition-colors cursor-pointer ${
+                  isNone ? 'text-white font-semibold' : 'text-zinc-300'
+                }`}
               >
-                <Plus className="w-4 h-4 text-violet-400 shrink-0" />
-                <span>Tambah Kategori Baru...</span>
+                <div className="flex items-center gap-2.5 truncate">
+                  <span className="w-2.5 h-2.5 rounded-full bg-zinc-600 border border-white/20 shrink-0" />
+                  <span>Tanpa Kategori</span>
+                </div>
+                {isNone && <Check className="w-4 h-4 text-white shrink-0" />}
               </button>
             </motion.div>
+
+            {/* Divider & Aksi Tambah Kategori Baru (hanya jika bukan mode filter dan ada handler) */}
+            {!isFilter && onOpenAddCategory && (
+              <>
+                <div className="my-1 border-t border-white/[0.08]" />
+
+                <motion.div
+                  variants={itemVariants}
+                  className="relative"
+                  onMouseEnter={() => setHoveredValue('__new__')}
+                >
+                  {hoveredValue === '__new__' && (
+                    <motion.div
+                      layoutId="select-hover-pill"
+                      className="absolute inset-0 rounded-xl bg-violet-500/15"
+                      transition={{ type: 'spring', bounce: 0.15, duration: 0.2 }}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleSelect('__new__')}
+                    className="relative z-10 w-full px-3 py-2 rounded-xl flex items-center gap-2 text-left text-sm font-medium text-violet-300 hover:text-violet-200 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 text-violet-400 shrink-0" />
+                    <span>Tambah Kategori Baru...</span>
+                  </button>
+                </motion.div>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

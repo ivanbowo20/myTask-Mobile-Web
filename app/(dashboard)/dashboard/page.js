@@ -90,6 +90,7 @@ export default function DashboardPage() {
     tasks,
     categories,
     stats,
+    user: contextUser,
     toggleComplete,
     toggleImportant,
     openEditTask,
@@ -98,7 +99,7 @@ export default function DashboardPage() {
   } = useTasks();
 
   const { data: session } = useSession();
-  const currentUser = session?.user;
+  const currentUser = session?.user || contextUser;
 
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [seed, setSeed] = useState(0);
