@@ -1,7 +1,25 @@
 import Link from "next/link";
 import { CheckSquare } from "lucide-react";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 
-export default function AuthLayout({ children }) {
+export default async function AuthLayout({ children }) {
+  // Hanya redirect ke dashboard jika sesi benar-benar tervalidasi di database Supabase aktif
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (session?.user) {
+      redirect("/dashboard");
+    }
+  } catch (err) {
+    // Biarkan render halaman login jika error atau redirect dipicu
+    if (err?.digest?.startsWith?.("NEXT_REDIRECT")) {
+      throw err;
+    }
+  }
+
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 sm:p-6 bg-transparent relative z-10">
       {/* Brand Header */}

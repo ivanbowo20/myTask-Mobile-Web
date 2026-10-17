@@ -29,10 +29,9 @@ export function middleware(request) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Jika sudah login tapi buka /login atau /register -> lempar ke dashboard
-  if (isAuthPage && sessionToken) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
+  // Catatan: Pengecekan sesi untuk halaman auth (/login, /register) dipindahkan ke AuthLayout
+  // menggunakan auth.api.getSession() yang memvalidasi database sesungguhnya, bukan sekadar
+  // mengecek adanya string cookie, guna mencegah infinite redirect loop jika cookie basi/expired.
 
   return NextResponse.next();
 }
