@@ -33,17 +33,21 @@ async function pingSupabase() {
   loadLocalEnv();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const authKey = serviceKey || anonKey;
 
-  if (!supabaseUrl || !anonKey) {
-    console.error('❌ Error: NEXT_PUBLIC_SUPABASE_URL atau NEXT_PUBLIC_SUPABASE_ANON_KEY tidak ditemukan di .env.local!');
-    process.exit(1);
+  if (!supabaseUrl || !authKey) {
+    console.error('❌ Error: NEXT_PUBLIC_SUPABASE_URL atau SUPABASE_SERVICE_ROLE_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY tidak ditemukan di .env.local!');
+    process.exitCode = 1;
+    return;
   }
 
   const endpoint = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/purge_old_completed_tasks`;
   console.log(`📡 Mengirim ping & maintenance auto-purge ke Supabase RPC:`);
   console.log(`   URL: ${supabaseUrl}`);
-  console.log(`   Endpoint: /rest/v1/rpc/purge_old_completed_tasks\n`);
+  console.log(`   Endpoint: /rest/v1/rpc/purge_old_completed_tasks`);
+  console.log(`   Key Type: ${serviceKey ? 'Service Role Key (Admin)' : 'Anon Key (Public)'}\n`);
 
   const startTime = Date.now();
 
@@ -51,8 +55,8 @@ async function pingSupabase() {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'apikey': anonKey,
-        'Authorization': `Bearer ${anonKey}`,
+        'apikey': authKey,
+        'Authorization': `Bearer ${authKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({})
@@ -70,12 +74,18 @@ async function pingSupabase() {
       console.log('   Koneksi PostgreSQL aktif, auto-pause terhindar, dan cleanup otomatis berjalan.');
     } else {
       console.error(`\n❌ [GAGAL] Supabase merespons dengan error: ${response.status}`);
-      process.exit(1);
+      if (response.status === 401 || response.status === 403) {
+        console.error('   Catatan Keamanan: Izin eksekusi anon telah dicabut di schema.sql.');
+        console.error('   Harap sertakan SUPABASE_SERVICE_ROLE_KEY di .env.local untuk mengeksekusi RPC ini.');
+      }
+      process.exitCode = 1;
+      return;
     }
   } catch (err) {
     console.error('\n❌ [ERROR] Gagal menghubungi Supabase:');
     console.error(`   ${err.message}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
@@ -43,16 +43,6 @@ export default function CompletedTasksPage() {
           </div>
           <p className="text-xs sm:text-sm text-[#A1A1AA]">
             Riwayat keberhasilan dan produktivitas yang telah Anda capai.
-          </p>
-        </div>
-      </AnimatedContent>
-
-      {/* Auto-Purge 15 Menit Info Banner */}
-      <AnimatedContent delay={0.04}>
-        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 text-xs text-amber-200">
-          <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-          <p>
-            Tugas selesai disimpan sementara selama <strong>15 menit</strong> sebelum otomatis dihapus permanen. Klik centang jika ingin membatalkan dan mengembalikannya ke daftar aktif.
           </p>
         </div>
       </AnimatedContent>

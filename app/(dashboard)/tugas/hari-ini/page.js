@@ -12,7 +12,6 @@ import {
   formatTanggalSederhana,
   hitungStatusDeadline,
   getKategoriById,
-  WAKTU_ACUAN,
 } from "@/lib/utils";
 
 export default function TodayTasksPage() {
@@ -30,7 +29,7 @@ export default function TodayTasksPage() {
 
   // Filter tasks with deadline today (pending only)
   const todayTasks = tasks.filter(
-    (t) => !t.selesai && hitungStatusDeadline(t, WAKTU_ACUAN) === "hari-ini"
+    (t) => !t.selesai && hitungStatusDeadline(t) === "hari-ini"
   );
 
   const pendingCount = todayTasks.length;
@@ -52,7 +51,7 @@ export default function TodayTasksPage() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-[#A1A1AA]">
-            {formatTanggalSederhana(WAKTU_ACUAN.toISOString())} — Fokus selesaikan target hari ini.
+            {formatTanggalSederhana(new Date().toISOString())} — Fokus selesaikan target hari ini.
           </p>
         </div>
       </AnimatedContent>

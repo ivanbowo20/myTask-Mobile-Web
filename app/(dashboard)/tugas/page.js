@@ -8,8 +8,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  Info,
 } from "lucide-react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -179,17 +177,6 @@ function AllTasksContent() {
         </div>
       </AnimatedContent>
 
-      {/* Info Banner untuk Tab Selesai (Auto-Purge 15 Menit) */}
-      {selectedStatus === "completed" && (
-        <AnimatedContent delay={0.12}>
-          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3 text-xs text-amber-200">
-            <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-            <p>
-              Tugas selesai disimpan sementara selama <strong>15 menit</strong> sebelum otomatis dihapus permanen. Klik centang jika ingin membatalkan dan mengembalikannya ke daftar aktif.
-            </p>
-          </div>
-        </AnimatedContent>
-      )}
 
       {/* Filter and Search Bar */}
       <AnimatedContent delay={0.16} className="relative z-20">

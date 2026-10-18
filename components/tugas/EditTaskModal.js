@@ -9,7 +9,6 @@ import ReminderPicker from "./ReminderPicker";
 import DateTimePicker from "@/components/ui/DateTimePicker";
 import CustomSelect from "@/components/ui/CustomSelect";
 import Magnet from "@/components/ui/Magnet";
-import { WAKTU_ACUAN } from "@/lib/utils";
 import { Plus } from "lucide-react";
 
 export default function EditTaskModal({
@@ -60,7 +59,7 @@ export default function EditTaskModal({
   const isDeadlinePast =
     isDeadlineChanged &&
     deadline &&
-    new Date(deadline).getTime() <= (WAKTU_ACUAN || new Date()).getTime();
+    new Date(deadline).getTime() <= Date.now();
 
   function handleSubmit(e) {
     e.preventDefault();

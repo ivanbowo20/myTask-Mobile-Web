@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { isTaskExpired } from "@/lib/utils";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const MAX_JUDUL_LENGTH = 255;
 const MAX_DESKRIPSI_LENGTH = 2000;
@@ -51,24 +51,32 @@ export async function GET(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Zero-Cost Free Tier Optimization: purge completed tasks > 14 days old for this user
-    await query(
-      `DELETE FROM public.tasks
-       WHERE user_id = $1
-         AND selesai = true
-         AND selesai_pada IS NOT NULL
-         AND selesai_pada < NOW() - INTERVAL '14 days';`,
-      [session.user.id]
-    );
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get("limit");
+    const offsetParam = searchParams.get("offset");
 
-    const result = await query(
-      `SELECT * FROM public.tasks WHERE user_id = $1 ORDER BY dibuat_pada DESC;`,
-      [session.user.id]
-    );
+    let querySql = `SELECT * FROM public.tasks WHERE user_id = $1 ORDER BY dibuat_pada DESC`;
+    const queryParams = [session.user.id];
 
-    const tasks = result.rows
-      .map(mapRowToTask)
-      .filter((t) => !isTaskExpired(t));
+    if (limitParam !== null) {
+      const parsedLimit = Math.min(Math.max(1, parseInt(limitParam, 10) || 50), 300);
+      queryParams.push(parsedLimit);
+      querySql += ` LIMIT $${queryParams.length}`;
+
+      if (offsetParam !== null) {
+        const parsedOffset = Math.max(0, parseInt(offsetParam, 10) || 0);
+        queryParams.push(parsedOffset);
+        querySql += ` OFFSET $${queryParams.length}`;
+      }
+    } else {
+      // Safe default cap to prevent memory exhaustion on massive historical data
+      queryParams.push(300);
+      querySql += ` LIMIT $${queryParams.length}`;
+    }
+
+    const result = await query(querySql, queryParams);
+
+    const tasks = result.rows.map(mapRowToTask);
     return NextResponse.json({ tasks });
   } catch (error) {
     console.error("GET /api/tasks error:", error);
@@ -87,6 +95,27 @@ export async function POST(request) {
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Perlindungan rate limiting untuk mutasi tambah tugas
+    const rl = checkRateLimit(`task_post_${session.user.id}`, 60, 60000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan tunggu beberapa saat." },
+        { status: 429 }
+      );
+    }
+
+    // Batasi kuota maksimal 1.000 tugas per akun untuk perlindungan resource database
+    const countRes = await query(
+      `SELECT COUNT(*)::int as count FROM public.tasks WHERE user_id = $1;`,
+      [session.user.id]
+    );
+    if (countRes.rows[0]?.count >= 1000) {
+      return NextResponse.json(
+        { error: "Batas maksimal 1.000 tugas per akun telah tercapai." },
+        { status: 400 }
+      );
     }
 
     const body = await request.json();
@@ -136,13 +165,23 @@ export async function POST(request) {
       cleanReminder = String(reminder).trim().slice(0, MAX_REMINDER_LENGTH);
     }
 
-    // Validasi kategoriId
+    // Validasi kategoriId & Proteksi IDOR (Memastikan kategori benar-benar milik user aktif)
     let cleanKategoriId = null;
     if (kategoriId !== null && kategoriId !== undefined && kategoriId !== "") {
       const parsedCatId = Number(kategoriId);
       if (!Number.isFinite(parsedCatId)) {
         return NextResponse.json(
           { error: "Kategori ID tidak valid" },
+          { status: 400 }
+        );
+      }
+      const catCheck = await query(
+        `SELECT id FROM public.categories WHERE id = $1 AND user_id = $2;`,
+        [parsedCatId, session.user.id]
+      );
+      if (catCheck.rows.length === 0) {
+        return NextResponse.json(
+          { error: "Kategori tidak ditemukan atau Anda tidak memiliki akses" },
           { status: 400 }
         );
       }
@@ -184,6 +223,15 @@ export async function PUT(request) {
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Perlindungan rate limiting untuk mutasi update tugas
+    const rl = checkRateLimit(`task_put_${session.user.id}`, 120, 60000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan tunggu beberapa saat." },
+        { status: 429 }
+      );
     }
 
     const body = await request.json();
@@ -241,13 +289,23 @@ export async function PUT(request) {
       cleanReminder = String(reminder).trim().slice(0, MAX_REMINDER_LENGTH);
     }
 
-    // Validasi kategoriId
+    // Validasi kategoriId & Proteksi IDOR (Memastikan kategori benar-benar milik user aktif)
     let cleanKategoriId = null;
     if (kategoriId !== null && kategoriId !== undefined && kategoriId !== "") {
       const parsedCatId = Number(kategoriId);
       if (!Number.isFinite(parsedCatId)) {
         return NextResponse.json(
           { error: "Kategori ID tidak valid" },
+          { status: 400 }
+        );
+      }
+      const catCheck = await query(
+        `SELECT id FROM public.categories WHERE id = $1 AND user_id = $2;`,
+        [parsedCatId, session.user.id]
+      );
+      if (catCheck.rows.length === 0) {
+        return NextResponse.json(
+          { error: "Kategori tidak ditemukan atau Anda tidak memiliki akses" },
           { status: 400 }
         );
       }
@@ -314,6 +372,15 @@ export async function DELETE(request) {
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Perlindungan rate limiting untuk mutasi hapus tugas
+    const rl = checkRateLimit(`task_del_${session.user.id}`, 120, 60000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan tunggu beberapa saat." },
+        { status: 429 }
+      );
     }
 
     const { searchParams } = new URL(request.url);

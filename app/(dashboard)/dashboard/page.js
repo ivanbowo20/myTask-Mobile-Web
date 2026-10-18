@@ -27,7 +27,6 @@ import {
   hitungSisaWaktu,
   hitungStatusDeadline,
   getKategoriById,
-  WAKTU_ACUAN,
 } from "@/lib/utils";
 
 const containerVariants = {
@@ -143,7 +142,7 @@ export default function DashboardPage() {
   // Today's tasks (active pending tasks only)
   const todayTasksList = useMemo(() => {
     return tasks.filter(
-      (t) => !t.selesai && hitungStatusDeadline(t, WAKTU_ACUAN) === "hari-ini"
+      (t) => !t.selesai && hitungStatusDeadline(t) === "hari-ini"
     );
   }, [tasks]);
 
@@ -290,7 +289,7 @@ export default function DashboardPage() {
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 -mx-4 px-4 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-3 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
               {upcomingDeadlines.map((task) => {
                 const kat = getKategoriById(categories, task.kategoriId);
-                const status = hitungStatusDeadline(task, WAKTU_ACUAN);
+                const status = hitungStatusDeadline(task);
                 const isOverdue = status === "terlewat";
                 const isToday = status === "hari-ini";
 
@@ -330,7 +329,7 @@ export default function DashboardPage() {
                               : "text-zinc-300"
                           }`}
                         >
-                          {hitungSisaWaktu(task.deadline, WAKTU_ACUAN)}
+                          {hitungSisaWaktu(task.deadline)}
                         </span>
                       </div>
                     </div>

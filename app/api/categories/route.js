@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const MAX_CAT_NAMA_LENGTH = 50;
 const MAX_CAT_WARNA_LENGTH = 25;
@@ -37,7 +38,7 @@ export async function GET(request) {
       { categories },
       {
         headers: {
-          "Cache-Control": "private, no-transform, max-age=30, stale-while-revalidate=120",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       }
     );
@@ -60,6 +61,27 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Perlindungan rate limiting untuk penambahan kategori
+    const rl = checkRateLimit(`cat_post_${session.user.id}`, 30, 60000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan tunggu beberapa saat." },
+        { status: 429 }
+      );
+    }
+
+    // Batasi kuota maksimal 50 kategori per akun
+    const countRes = await query(
+      `SELECT COUNT(*)::int as count FROM public.categories WHERE user_id = $1;`,
+      [session.user.id]
+    );
+    if (countRes.rows[0]?.count >= 50) {
+      return NextResponse.json(
+        { error: "Batas maksimal 50 kategori per akun telah tercapai." },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { nama, warna = "#38BDF8", icon = "Briefcase" } = body;
 
@@ -70,6 +92,18 @@ export async function POST(request) {
     if (cleanNama.length > MAX_CAT_NAMA_LENGTH) {
       return NextResponse.json(
         { error: `Nama kategori maksimal ${MAX_CAT_NAMA_LENGTH} karakter` },
+        { status: 400 }
+      );
+    }
+
+    // Cek duplikasi nama kategori (case-insensitive)
+    const duplicateCheck = await query(
+      `SELECT id FROM public.categories WHERE user_id = $1 AND LOWER(nama) = LOWER($2);`,
+      [session.user.id, cleanNama]
+    );
+    if (duplicateCheck.rows.length > 0) {
+      return NextResponse.json(
+        { error: `Kategori dengan nama "${cleanNama}" sudah ada.` },
         { status: 400 }
       );
     }
@@ -105,6 +139,15 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Perlindungan rate limiting untuk update kategori
+    const rl = checkRateLimit(`cat_put_${session.user.id}`, 60, 60000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan tunggu beberapa saat." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { id, nama, warna, icon } = body;
 
@@ -120,6 +163,18 @@ export async function PUT(request) {
     if (cleanNama.length > MAX_CAT_NAMA_LENGTH) {
       return NextResponse.json(
         { error: `Nama kategori maksimal ${MAX_CAT_NAMA_LENGTH} karakter` },
+        { status: 400 }
+      );
+    }
+
+    // Cek duplikasi nama kategori jika diubah (case-insensitive)
+    const duplicateCheck = await query(
+      `SELECT id FROM public.categories WHERE user_id = $1 AND LOWER(nama) = LOWER($2) AND id != $3;`,
+      [session.user.id, cleanNama, parsedId]
+    );
+    if (duplicateCheck.rows.length > 0) {
+      return NextResponse.json(
+        { error: `Kategori dengan nama "${cleanNama}" sudah ada.` },
         { status: 400 }
       );
     }
@@ -160,6 +215,15 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Perlindungan rate limiting untuk hapus kategori
+    const rl = checkRateLimit(`cat_del_${session.user.id}`, 60, 60000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan tunggu beberapa saat." },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const parsedId = Number(id);
@@ -167,12 +231,6 @@ export async function DELETE(request) {
     if (!id || !Number.isFinite(parsedId)) {
       return NextResponse.json({ error: "Category ID valid diperlukan" }, { status: 400 });
     }
-
-    // Lepas relasi tugas yang memiliki kategori ini
-    await query(
-      `UPDATE public.tasks SET kategori_id = NULL WHERE kategori_id = $1 AND user_id = $2;`,
-      [parsedId, session.user.id]
-    );
 
     await query(
       `DELETE FROM public.categories WHERE id = $1 AND user_id = $2;`,

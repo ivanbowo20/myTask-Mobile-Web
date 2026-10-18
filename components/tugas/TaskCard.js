@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Calendar,
   Check,
@@ -8,9 +8,8 @@ import {
   Pencil,
   Star,
   Trash2,
-  Clock,
 } from "lucide-react";
-import { formatTanggal, hitungSisaWaktu, hitungStatusDeadline, hitungSisaWaktuHapus, cn } from "@/lib/utils";
+import { formatTanggal, hitungSisaWaktu, hitungStatusDeadline, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function TaskCard({
@@ -22,20 +21,9 @@ export default function TaskCard({
   onDelete,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [, setTick] = useState(0);
-
-  // Live timer tick untuk countdown 15 menit jika tugas selesai
-  useEffect(() => {
-    if (!task.selesai || !task.selesaiPada) return;
-    const interval = setInterval(() => {
-      setTick((t) => t + 1);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [task.selesai, task.selesaiPada]);
 
   const status = hitungStatusDeadline(task);
   const sisaWaktu = hitungSisaWaktu(task.deadline);
-  const sisaHapus = task.selesai ? hitungSisaWaktuHapus(task.selesaiPada) : null;
 
   // Status-based container styling (theme specular glassmorphism)
   let containerStyles = "border-[var(--glass-border,rgba(255,255,255,0.08))] bg-[var(--glass-bg,rgba(22,17,14,0.55))] hover:border-[var(--glass-border-hover,rgba(255,255,255,0.2))]";
@@ -146,11 +134,6 @@ export default function TaskCard({
               ) : task.selesai ? (
                 <span className="text-[#8FB88F] font-medium shrink-0 inline-flex items-center gap-1">
                   <span>Selesai</span>
-                  {sisaHapus && (
-                    <span className="text-amber-300 font-normal">
-                      · {sisaHapus}
-                    </span>
-                  )}
                 </span>
               ) : task.deadline ? (
                 <span className="text-zinc-300 truncate">
@@ -395,21 +378,10 @@ export default function TaskCard({
             )}
 
             {task.selesai && (
-              <>
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#8FB88F]/15 text-[#8FB88F] border border-[#8FB88F]/30 whitespace-nowrap">
-                  <Check className="w-3 h-3" />
-                  Selesai
-                </span>
-                {sisaHapus && (
-                  <span
-                    className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap"
-                    title="Tugas akan otomatis terhapus permanen setelah 15 menit selesai"
-                  >
-                    <Clock className="w-3 h-3" />
-                    Hapus dlm {sisaHapus}
-                  </span>
-                )}
-              </>
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#8FB88F]/15 text-[#8FB88F] border border-[#8FB88F]/30 whitespace-nowrap">
+                <Check className="w-3 h-3" />
+                Selesai
+              </span>
             )}
           </div>
 

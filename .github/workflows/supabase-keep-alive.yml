@@ -12,22 +12,25 @@ jobs:
   ping:
     name: Ping & Maintain Supabase Database
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Ping and Purge via PostgREST RPC
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::error::SUPABASE_URL atau SUPABASE_ANON_KEY belum diatur di GitHub Secrets!"
+          AUTH_KEY="${SUPABASE_SERVICE_ROLE_KEY:-$SUPABASE_ANON_KEY}"
+          if [ -z "$SUPABASE_URL" ] || [ -z "$AUTH_KEY" ]; then
+            echo "::error::SUPABASE_URL atau SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY belum diatur di GitHub Secrets!"
             exit 1
           fi
 
           CLEAN_URL="${SUPABASE_URL%/}"
           RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}s" \
             -X POST \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "apikey: ${AUTH_KEY}" \
+            -H "Authorization: Bearer ${AUTH_KEY}" \
             -H "Content-Type: application/json" \
             -d "{}" \
             "${CLEAN_URL}/rest/v1/rpc/purge_old_completed_tasks")
