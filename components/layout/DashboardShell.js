@@ -34,7 +34,7 @@ export default function DashboardShell({ children }) {
   } = useTasks();
 
   return (
-    <div className="min-h-[100dvh] flex flex-col">
+    <div className="min-h-[100dvh] flex flex-col overflow-x-clip">
       {/* Top Global Navigation Progress Bar */}
       <TopProgressBar />
 
@@ -63,7 +63,7 @@ export default function DashboardShell({ children }) {
         />
 
         {/* Main Workspace Content */}
-        <main className="flex-1 lg:ml-64 w-full min-w-0 p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 overflow-y-auto">
+        <main className="flex-1 lg:ml-64 min-w-0 p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 overflow-y-auto">
           <div className="max-w-6xl mx-auto space-y-8">
             {children}
           </div>

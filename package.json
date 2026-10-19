@@ -17,14 +17,18 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "better-auth": "^1.7.10",
+    "clsx": "^2.1.1",
     "framer-motion": "^14.1.0",
     "gsap": "^3.15.0",
     "lucide-react": "^1.16.0",
     "next": "^15.5.0",
+    "nodemailer": "^10.1.7",
     "pg": "^8.23.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sonner": "^2.0.8"
+    "resend": "^6.34.1",
+    "sonner": "^2.0.8",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",

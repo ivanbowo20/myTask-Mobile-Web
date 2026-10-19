@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import DeadlineAlert from "./DeadlineAlert";
@@ -31,6 +31,16 @@ export default function AddTaskModal({
   // Mobile quick-capture disclosure states
   const [showDeskripsi, setShowDeskripsi] = useState(false);
   const [activeMobileSection, setActiveMobileSection] = useState(null);
+
+  // Delay auto-focus 250ms to allow mobile sheet entrance animation to complete smoothly
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        document.getElementById('task-title-input')?.focus();
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   // Real-time deadline validation
   const isDeadlinePast =
@@ -104,13 +114,14 @@ export default function AddTaskModal({
         {/* Judul Tugas: Prominent & Borderless on Mobile, Boxed on Desktop */}
         <div className="space-y-1.5">
           <label
-            htmlFor="task-title"
+            htmlFor="task-title-input"
             className="hidden lg:block text-xs font-semibold uppercase tracking-wider text-zinc-300"
           >
             Judul Tugas
           </label>
           <input
-            id="task-title"
+            id="task-title-input"
+            data-delayed-focus="true"
             type="text"
             placeholder="Apa yang perlu diselesaikan?"
             value={judul}
@@ -118,7 +129,6 @@ export default function AddTaskModal({
               setJudul(e.target.value);
               if (errorJudul) setErrorJudul("");
             }}
-            autoFocus
             className="w-full text-lg lg:text-base font-medium text-[#FAFAFA] placeholder:text-zinc-500 bg-transparent lg:bg-white/[0.02] border-0 lg:border border-transparent lg:border-white/[0.08] lg:hover:border-white/[0.16] focus:outline-none lg:focus:border-[#FAFAFA] lg:focus:ring-1 lg:focus:ring-white/20 rounded-none lg:rounded-xl px-0 lg:px-3.5 py-2 lg:py-2.5 transition-all duration-200"
           />
           {errorJudul && (
@@ -385,8 +395,8 @@ export default function AddTaskModal({
           </label>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.08]">
+        {/* Sticky Footer Actions */}
+        <div className="sticky bottom-0 z-10 bg-[#0A0A0C]/90 backdrop-blur-md p-4 border-t border-white/10 flex items-center justify-end gap-3 mt-4 -mx-1 sm:-mx-0">
           {/* Desktop-only Batal Button */}
           <Button
             type="button"
@@ -399,7 +409,13 @@ export default function AddTaskModal({
           </Button>
 
           {/* Primary Save CTA: Full-width on mobile, auto on desktop */}
-          <Magnet padding={50} magnetStrength={3} maxOffset={8} className="w-full lg:w-auto">
+          <Magnet
+            padding={50}
+            magnetStrength={3}
+            maxOffset={8}
+            className="w-full lg:w-auto"
+            innerClassName="w-full"
+          >
             <Button
               type="submit"
               variant="primary"

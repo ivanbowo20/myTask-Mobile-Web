@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import NotifDropdown from "@/components/notifikasi/NotifDropdown";
 import Button from "@/components/ui/Button";
+import SpecularButton from "@/components/ui/SpecularButton";
 import { useSession, signOut } from "@/lib/auth-client";
 import { toast } from "@/lib/use-toast";
 
@@ -126,9 +127,9 @@ export default function Navbar({
           </button>
         </div>
       ) : (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-3">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-3">
           {/* Left: Brand Logo */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link
               href="/dashboard"
               prefetch={true}
@@ -144,7 +145,7 @@ export default function Navbar({
           </div>
 
           {/* Center: Desktop Search Form */}
-          <div className="hidden sm:block flex-1 max-w-md mx-3 sm:mx-6">
+          <div suppressHydrationWarning={true} className="hidden sm:block flex-1 max-w-md mx-3 sm:mx-6 min-w-0">
             <form onSubmit={handleSearchSubmit} className="relative w-full">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
               <input
@@ -158,7 +159,7 @@ export default function Navbar({
           </div>
 
           {/* Right: Search Toggle (Mobile), Add Task, Notifications & User Avatar */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Mobile Search Icon Trigger (collapse on mobile) */}
             <button
               type="button"
@@ -169,17 +170,18 @@ export default function Navbar({
               <Search className="w-5 h-5" />
             </button>
 
-            {/* Add Task Button (Desktop / Tablet) */}
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={onOpenAddTask}
-              className="hidden sm:inline-flex shadow-sm"
-              aria-label="Tambah tugas baru"
-            >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Tambah Tugas</span>
-            </Button>
+            {/* Add Task Button (Desktop / Tablet Animated Specular Button) */}
+            <div suppressHydrationWarning={true} className="hidden sm:inline-flex">
+              <SpecularButton
+                size="sm"
+                onClick={onOpenAddTask}
+                className="shadow-sm min-h-[40px] px-3.5 py-1.5"
+                aria-label="Tambah tugas baru"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Tambah Tugas</span>
+              </SpecularButton>
+            </div>
 
             {/* Notifications Dropdown */}
             <NotifDropdown

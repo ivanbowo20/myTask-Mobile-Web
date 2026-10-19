@@ -64,10 +64,8 @@ export default function Sidebar({
           )}
         >
           {isActive && (
-            <motion.div
-              layoutId="sidebar-active-pill"
+            <div
               className="absolute inset-0 bg-[var(--theme-glow-subtle,rgba(217,119,6,0.1))] border-l-2 border-l-[var(--theme-accent,#D97706)] border-y border-r border-white/[0.08] rounded-lg pointer-events-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-              transition={{ type: "spring", stiffness: 380, damping: 30 }}
             />
           )}
           <div className="relative z-10 flex items-center gap-3">
@@ -136,10 +134,8 @@ export default function Sidebar({
                 )}
               >
                 {isThemeModalOpen && (
-                  <motion.div
-                    layoutId="sidebar-active-pill-theme"
+                  <div
                     className="absolute inset-0 bg-[var(--theme-glow-subtle,rgba(217,119,6,0.1))] border-l-2 border-l-[var(--theme-accent,#D97706)] border-y border-r border-white/[0.08] rounded-lg pointer-events-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
                 <div className="relative z-10 flex items-center gap-3">

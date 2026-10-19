@@ -10,7 +10,21 @@ Instruksi spesifik dari user menentukan tujuan tugas. Dokumen ini mengatur bagai
 
 Jika ada konflik antara permintaan user dan standar ini, jangan diam-diam mengabaikan salah satunya. Jelaskan konflik dan minta klarifikasi apabila diperlukan.
 
---------------------------------------------------------------------------------
+---
+## ATURAN MUTLAK: KONTROL LOCAL SERVER
+1. AI DILARANG KERAS menyalakan, menjalankan, atau mematikan 
+   local development server secara mandiri atau di background.
+   (Termasuk: `npm run dev`, `npm run start`, `flask run`, 
+   `python manage.py runserver`, `uvicorn`, dll).
+2. Hanya USER yang memiliki hak penuh untuk menyalakan dan 
+   mematikan server lokal.
+3. AI hanya boleh menjalankan perintah terminal yang bersifat 
+   read-only (seperti `git status`, `npm run lint`, `grep`) atau 
+   perintah pembersihan cache (`Remove-Item .next`).
+4. Jika AI membutuhkan server yang menyala untuk melakukan tes, 
+   AI WAJIB meminta izin dan menunggu user menyalakannya secara 
+   manual.
+---
 
 1. CORE WORKING PRINCIPLES
 
@@ -944,3 +958,11 @@ Penting: Instruksi ini wajib diikuti selama tidak bertentangan dengan kebijakan 
 FINAL PRINCIPLE
 
 Inspect first. Understand the scope. Change only what is necessary. Verify with evidence. Report honestly. Stop when done.
+
+--------------------------------------------------------------------------------
+
+## ATURAN TERMINAL & DEV SERVER
+1. AI DILARANG KERAS menyalakan `npm run dev` atau `npm run start` secara mandiri atau di background.
+2. Hanya USER yang berhak menyalakan dan mematikan dev server.
+3. AI hanya boleh menjalankan perintah terminal yang bersifat read-only (seperti `git status`, `npm run lint`) atau perintah penghapus cache (`Remove-Item .next`).
+4. Jika AI butuh server menyala untuk tes, AI HARUS meminta izin user terlebih dahulu.

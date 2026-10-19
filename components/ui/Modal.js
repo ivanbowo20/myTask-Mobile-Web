@@ -85,6 +85,11 @@ export default function Modal({
           return;
         }
 
+        // 0. If container has elements requesting delayed focus, yield focus to their handler
+        if (modalRef.current.querySelector('[data-delayed-focus]')) {
+          return;
+        }
+
         // 1. Check for explicit autofocus attribute
         const autoFocusEl = modalRef.current.querySelector('[autofocus], [data-autofocus]');
         if (autoFocusEl && typeof autoFocusEl.focus === 'function') {
@@ -166,7 +171,7 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: "easeOut" } }}
             exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15, ease: "easeIn" } }}
             className={cn(
-              "relative w-full rounded-t-2xl lg:rounded-2xl p-5 lg:p-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] lg:pb-6 my-0 lg:my-8 z-10 space-y-4 max-h-[95vh] lg:max-h-[90vh] flex flex-col shadow-2xl focus:outline-none",
+              "relative w-full rounded-t-2xl lg:rounded-2xl p-5 lg:p-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] lg:pb-6 my-0 lg:my-8 z-10 space-y-4 max-h-[90dvh] lg:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl focus:outline-none",
               "glass-modal",
               maxWidth,
               className
@@ -201,7 +206,7 @@ export default function Modal({
             </div>
 
             {/* Content Body */}
-            <div className="overflow-y-auto flex-1 pr-1">
+            <div className="overflow-y-auto flex-1 pr-1 min-h-0">
               {children}
             </div>
           </motion.div>

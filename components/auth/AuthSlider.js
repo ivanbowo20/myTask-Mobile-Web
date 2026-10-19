@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   AlertCircle,
   Loader2,
-  ArrowRight,
+  UserPlus,
+  LogIn,
   CheckSquare,
 } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -792,9 +793,9 @@ export default function AuthSlider({ initialMode = "login" }) {
                     className="group relative inline-flex items-center gap-3 pl-6 pr-2 py-2 rounded-full bg-[#FAFAFA] text-[#0A0A0A] font-semibold text-sm transition-all duration-200 hover:bg-[#E4E4E7] active:scale-[0.98] shadow-lg shadow-black/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
                     <span>Masuk Sekarang</span>
-                    <div className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-200 group-hover:translate-x-0.5">
-                      <ArrowRight className="w-4 h-4 text-[#0A0A0A]" />
-                    </div>
+                    <span className="w-8 h-8 rounded-full bg-black/10 inline-flex items-center justify-center transition-all duration-200 group-hover:scale-110 group-hover:bg-black/15">
+                      <LogIn className="w-4 h-4 text-[#0A0A0A]" />
+                    </span>
                   </button>
                 </motion.div>
               ) : (
@@ -833,9 +834,9 @@ export default function AuthSlider({ initialMode = "login" }) {
                     className="group relative inline-flex items-center gap-3 pl-6 pr-2 py-2 rounded-full bg-[#FAFAFA] text-[#0A0A0A] font-semibold text-sm transition-all duration-200 hover:bg-[#E4E4E7] active:scale-[0.98] shadow-lg shadow-black/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
                     <span>Daftar Akun</span>
-                    <div className="w-8 h-8 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-200 group-hover:translate-x-0.5">
-                      <ArrowRight className="w-4 h-4 text-[#0A0A0A]" />
-                    </div>
+                    <span className="w-8 h-8 rounded-full bg-black/10 inline-flex items-center justify-center transition-all duration-200 group-hover:scale-110 group-hover:bg-black/15">
+                      <UserPlus className="w-4 h-4 text-[#0A0A0A]" />
+                    </span>
                   </button>
                 </motion.div>
               )}

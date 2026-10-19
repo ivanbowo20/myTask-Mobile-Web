@@ -319,6 +319,7 @@ export default function SpecularButton({
     };
 
     const draw = s => {
+      if (view.width <= 4 || view.height <= 4) return;
       const { width, height } = view;
       const scaleX = canvas.width / (width + PAD * 2);
       const scaleY = canvas.height / (height + PAD * 2);
@@ -382,8 +383,15 @@ export default function SpecularButton({
 
     const measure = entry => {
       const box = entry?.borderBoxSize?.[0];
-      view.width = Math.max(1, box ? box.inlineSize : button.offsetWidth);
-      view.height = Math.max(1, box ? box.blockSize : button.offsetHeight);
+      const measuredW = box ? box.inlineSize : button.offsetWidth;
+      const measuredH = box ? box.blockSize : button.offsetHeight;
+      if (measuredW <= 4 || measuredH <= 4) {
+        canvas.style.display = 'none';
+        return;
+      }
+      canvas.style.display = 'block';
+      view.width = measuredW;
+      view.height = measuredH;
       view.ratio = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = Math.max(1, Math.round((view.width + PAD * 2) * view.ratio));
       canvas.height = Math.max(1, Math.round((view.height + PAD * 2) * view.ratio));
@@ -463,6 +471,7 @@ export default function SpecularButton({
       type={type}
       disabled={disabled}
       onClick={onClick}
+      suppressHydrationWarning={true}
       className={`specular-button specular-button--${size}${className ? ` ${className}` : ''}`}
       style={{
         '--sb-radius': `${radius}px`,
