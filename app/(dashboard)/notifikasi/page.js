@@ -46,7 +46,7 @@ export default function NotificationsPage() {
 
       {/* Section 1: Tenggat Terlewat */}
       <AnimatedContent delay={0.08}>
-        <section className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] space-y-4">
+        <section className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm sm:backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="relative flex h-3 w-3">
@@ -84,7 +84,7 @@ export default function NotificationsPage() {
 
       {/* Section 2: Tenggat Hari Ini */}
       <AnimatedContent delay={0.16}>
-        <section className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] space-y-4">
+        <section className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm sm:backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[var(--theme-accent,#D97706)]" />
@@ -119,7 +119,7 @@ export default function NotificationsPage() {
 
       {/* Section 3: Tenggat Mendatang */}
       <AnimatedContent delay={0.24}>
-        <section className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] space-y-4">
+        <section className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm sm:backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#A1A1AA]" />

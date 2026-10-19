@@ -55,6 +55,7 @@ export default function Sidebar({
       >
         <Link
           href={href}
+          prefetch={true}
           className={cn(
             "relative flex items-center justify-between min-h-[44px] px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 group cursor-pointer",
             isActive

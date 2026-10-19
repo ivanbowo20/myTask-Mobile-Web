@@ -35,28 +35,66 @@ async function pingSupabase() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-  const authKey = serviceKey || anonKey;
 
-  if (!supabaseUrl || !authKey) {
+  if (!supabaseUrl || (!serviceKey && !anonKey)) {
     console.error('❌ Error: NEXT_PUBLIC_SUPABASE_URL atau SUPABASE_SERVICE_ROLE_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY tidak ditemukan di .env.local!');
     process.exitCode = 1;
     return;
   }
 
-  const endpoint = `${supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/purge_old_completed_tasks`;
-  console.log(`📡 Mengirim ping & maintenance auto-purge ke Supabase RPC:`);
-  console.log(`   URL: ${supabaseUrl}`);
-  console.log(`   Endpoint: /rest/v1/rpc/purge_old_completed_tasks`);
-  console.log(`   Key Type: ${serviceKey ? 'Service Role Key (Admin)' : 'Anon Key (Public)'}\n`);
+  const cleanUrl = supabaseUrl.replace(/\/$/, '');
+
+  // Tier 1: Coba RPC purge_old_completed_tasks jika serviceKey tersedia
+  if (serviceKey) {
+    console.log(`📡 [Tier 1] Menjalankan maintenance auto-purge via service_role:`);
+    console.log(`   URL      : ${cleanUrl}`);
+    console.log(`   Endpoint : /rest/v1/rpc/purge_old_completed_tasks`);
+    console.log(`   Key Type : Service Role Key (Admin)\n`);
+
+    const startTime = Date.now();
+    try {
+      const response = await fetch(`${cleanUrl}/rest/v1/rpc/purge_old_completed_tasks`, {
+        method: 'POST',
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
+
+      const duration = Date.now() - startTime;
+      const data = await response.text();
+
+      console.log(`📊 Status Code : ${response.status} ${response.statusText}`);
+      console.log(`⏱️ Durasi      : ${duration} ms`);
+      console.log(`📦 Data Return : ${data.trim() || '0'} tugas lama terhapus`);
+
+      if (response.ok) {
+        console.log('\n✅ [BERHASIL] Supabase RPC purge_old_completed_tasks merespons dengan sukses!');
+        console.log('   Koneksi PostgreSQL aktif, auto-pause terhindar, dan cleanup otomatis berjalan.');
+        return;
+      }
+      console.warn(`⚠️ [Tier 1 Warning] Purge RPC mengembalikan status ${response.status}. Berpindah ke Tier 2 Keep-Alive Ping...`);
+    } catch (err) {
+      console.warn(`⚠️ [Tier 1 Warning] Gagal memanggil purge RPC: ${err.message}. Berpindah ke Tier 2 Keep-Alive Ping...`);
+    }
+  }
+
+  // Tier 2: Jalankan Keep-Alive Ping via public RPC ping() menggunakan anonKey
+  const activeKey = anonKey || serviceKey;
+  console.log(`📡 [Tier 2] Menjalankan Keep-Alive Ping via RPC ping():`);
+  console.log(`   URL      : ${cleanUrl}`);
+  console.log(`   Endpoint : /rest/v1/rpc/ping`);
+  console.log(`   Key Type : ${anonKey ? 'Anon Key (Public)' : 'Service Role Key (Admin)'}\n`);
 
   const startTime = Date.now();
-
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${cleanUrl}/rest/v1/rpc/ping`, {
       method: 'POST',
       headers: {
-        'apikey': authKey,
-        'Authorization': `Bearer ${authKey}`,
+        'apikey': activeKey,
+        'Authorization': `Bearer ${activeKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({})
@@ -67,25 +105,23 @@ async function pingSupabase() {
 
     console.log(`📊 Status Code : ${response.status} ${response.statusText}`);
     console.log(`⏱️ Durasi      : ${duration} ms`);
-    console.log(`📦 Data Return : ${data.trim() || '[]'} (tugas lama terhapus)`);
+    console.log(`📦 Data Return : ${data.trim()}`);
 
     if (response.ok) {
-      console.log('\n✅ [BERHASIL] Supabase RPC purge_old_completed_tasks merespons dengan sukses!');
-      console.log('   Koneksi PostgreSQL aktif, auto-pause terhindar, dan cleanup otomatis berjalan.');
+      console.log('\n✅ [BERHASIL] Supabase RPC ping merespons dengan sukses!');
+      console.log('   Koneksi PostgreSQL aktif & timer inaktivitas Supabase Free Tier berhasil di-reset!');
+      if (!serviceKey) {
+        console.log('   💡 Tips: Tambahkan SUPABASE_SERVICE_ROLE_KEY di .env.local / GitHub Secrets jika ingin fitur auto-purge tugas lama berjalan otomatis.');
+      }
     } else {
       console.error(`\n❌ [GAGAL] Supabase merespons dengan error: ${response.status}`);
-      if (response.status === 401 || response.status === 403) {
-        console.error('   Catatan Keamanan: Izin eksekusi anon telah dicabut di schema.sql.');
-        console.error('   Harap sertakan SUPABASE_SERVICE_ROLE_KEY di .env.local untuk mengeksekusi RPC ini.');
-      }
+      console.error(`   Respons: ${data}`);
       process.exitCode = 1;
-      return;
     }
   } catch (err) {
     console.error('\n❌ [ERROR] Gagal menghubungi Supabase:');
     console.error(`   ${err.message}`);
     process.exitCode = 1;
-    return;
   }
 }
 

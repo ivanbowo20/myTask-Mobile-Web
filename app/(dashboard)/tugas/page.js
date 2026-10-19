@@ -19,6 +19,7 @@ import CustomSelect from "@/components/ui/CustomSelect";
 import { useTasks } from "@/lib/task-context";
 import { getKategoriById, cn } from "@/lib/utils";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import DashboardSkeleton from "@/components/ui/DashboardSkeleton";
 
 function AllTasksContent() {
   const searchParams = useSearchParams();
@@ -40,9 +41,20 @@ function AllTasksContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [direction, setDirection] = useState(0);
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
   const ITEMS_PER_PAGE = 6;
+
+  // Viewport mobile check (< 640px)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 639px)");
+    setIsMobile(mql.matches);
+    const handler = (e) => setIsMobile(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
 
   // Sync with URL query parameter
   useEffect(() => {
@@ -129,7 +141,7 @@ function AllTasksContent() {
 
       {/* Status Filter Tabs with Arc UI Sliding Pill */}
       <AnimatedContent delay={0.08}>
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-[16px] overflow-x-auto scrollbar-none w-full sm:w-fit">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm sm:backdrop-blur-[16px] overflow-x-auto scrollbar-none w-full sm:w-fit">
           {[
             { id: "pending", label: "Belum Selesai", count: tasks.filter((t) => !t.selesai).length },
             { id: "important", label: "Penting", count: tasks.filter((t) => t.prioritas && !t.selesai).length },
@@ -180,7 +192,7 @@ function AllTasksContent() {
 
       {/* Filter and Search Bar */}
       <AnimatedContent delay={0.16} className="relative z-20">
-        <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] flex flex-col md:flex-row items-center gap-3">
+        <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm sm:backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] flex flex-col md:flex-row items-center gap-3">
           {/* Search Input */}
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
@@ -241,26 +253,43 @@ function AllTasksContent() {
           <div className="space-y-6">
             <AnimatePresence mode="wait" custom={direction}>
               <div key={`${currentPage}-${selectedStatus}-${selectedCategory}`}>
-                <AnimatedList
-                  items={paginatedTasks}
-                  gap={16}
-                  animation="pop"
-                  stagger={0.05}
-                  trackClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                  enableArrowNavigation={true}
-                  renderItem={(task) => (
-                    <div className="h-full w-full">
-                      <TaskCard
-                        task={task}
-                        kategori={getKategoriById(categories, task.kategoriId)}
-                        onToggleSelesai={toggleComplete}
-                        onTogglePrioritas={toggleImportant}
-                        onEdit={openEditTask}
-                        onDelete={(t) => setTaskToDelete(t)}
-                      />
-                    </div>
-                  )}
-                />
+                {isMobile ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {paginatedTasks.map((task) => (
+                      <div key={task.id} className="h-full w-full">
+                        <TaskCard
+                          task={task}
+                          kategori={getKategoriById(categories, task.kategoriId)}
+                          onToggleSelesai={toggleComplete}
+                          onTogglePrioritas={toggleImportant}
+                          onEdit={openEditTask}
+                          onDelete={(t) => setTaskToDelete(t)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <AnimatedList
+                    items={paginatedTasks}
+                    gap={16}
+                    animation="pop"
+                    stagger={0.05}
+                    trackClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                    enableArrowNavigation={true}
+                    renderItem={(task) => (
+                      <div className="h-full w-full">
+                        <TaskCard
+                          task={task}
+                          kategori={getKategoriById(categories, task.kategoriId)}
+                          onToggleSelesai={toggleComplete}
+                          onTogglePrioritas={toggleImportant}
+                          onEdit={openEditTask}
+                          onDelete={(t) => setTaskToDelete(t)}
+                        />
+                      </div>
+                    )}
+                  />
+                )}
               </div>
             </AnimatePresence>
 
@@ -365,7 +394,7 @@ function AllTasksContent() {
 
 export default function AllTasksPage() {
   return (
-    <Suspense fallback={<div className="text-xs text-[#71717A] p-4">Memuat daftar tugas...</div>}>
+    <Suspense fallback={<DashboardSkeleton />}>
       <AllTasksContent />
     </Suspense>
   );

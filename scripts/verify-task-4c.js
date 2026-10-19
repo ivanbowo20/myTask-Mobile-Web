@@ -168,7 +168,42 @@ filesToTest.forEach(f => {
 });
 console.log('  [PASS] Checked all Lucide icon imports.');
 
+// 8. MOBILE BLUEPRINT & UX REGRESSION CHECKS
+console.log('\n8. Mobile Blueprint & UX Regression Checks:');
+
+// 8a. Dashboard Mobile Agenda prioritas filter check
+const dashContent = fs.readFileSync('app/(dashboard)/dashboard/page.js', 'utf8');
+if (dashContent.includes('(t.prioritas || t.penting) && !t.selesai') || dashContent.includes('t.prioritas && !t.selesai')) {
+  console.log('  [PASS] Mobile filter "penting" correctly filters by t.prioritas.');
+} else {
+  allPassed = false;
+  console.error('  [FAIL] Mobile filter "penting" must filter by t.prioritas.');
+}
+
+// 8b. AddTaskModal progressive disclosure & collapsible sections
+const addTaskModalContent = fs.readFileSync('components/tugas/AddTaskModal.js', 'utf8');
+if (
+  addTaskModalContent.includes('setShowDeskripsi((prev) => !prev)') &&
+  !addTaskModalContent.includes('activeMobileSection === "deadline" || deadline') &&
+  !addTaskModalContent.includes('activeMobileSection === "kategori" || kategoriId')
+) {
+  console.log('  [PASS] AddTaskModal progressive disclosure & collapsible pickers verified.');
+} else {
+  allPassed = false;
+  console.error('  [FAIL] AddTaskModal progressive disclosure has sticky section traps.');
+}
+
+// 8c. BottomNav 5 slots with elevated button
+const bNav = fs.readFileSync('components/layout/BottomNav.js', 'utf8');
+if (bNav.includes('grid-cols-5') && bNav.includes('-top-3.5') && bNav.includes('Plus')) {
+  console.log('  [PASS] BottomNav 5 slots & elevated thumb zone quick-add button verified.');
+} else {
+  allPassed = false;
+  console.error('  [FAIL] BottomNav missing 5 slots or elevated quick-add button.');
+}
+
 console.log('\n=== VERIFICATION RESULT ===');
 console.log(allPassed ? 'ALL CHECKS PASSED PERFECTLY!' : 'SOME CHECKS FAILED!');
 process.exit(allPassed ? 0 : 1);
+
 

@@ -7,6 +7,7 @@ import AddTaskModal from "@/components/tugas/AddTaskModal";
 import EditTaskModal from "@/components/tugas/EditTaskModal";
 import AddCategoryModal from "@/components/kategori/AddCategoryModal";
 import EditCategoryModal from "@/components/kategori/EditCategoryModal";
+import TopProgressBar from "@/components/ui/TopProgressBar";
 import { useTasks } from "@/lib/task-context";
 
 export default function DashboardShell({ children }) {
@@ -34,6 +35,9 @@ export default function DashboardShell({ children }) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col">
+      {/* Top Global Navigation Progress Bar */}
+      <TopProgressBar />
+
       {/* Top Navbar */}
       <Navbar
         user={user}
@@ -66,8 +70,8 @@ export default function DashboardShell({ children }) {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation Bar (4 tabs) */}
-      <BottomNav />
+      {/* Mobile Bottom Navigation Bar (5 slots with prominent center add) */}
+      <BottomNav onOpenAddTask={openAddTask} />
 
       {/* Global Modals */}
       <AddTaskModal

@@ -154,6 +154,59 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [tasks]);
 
+  const [mobileFilter, setMobileFilter] = useState("semua");
+
+  // Mobile Unified Focus Agenda: Filtered and sorted by urgency
+  const mobileAgendaTasks = useMemo(() => {
+    let list = [...tasks];
+
+    if (mobileFilter === "hari-ini") {
+      list = list.filter(
+        (t) => !t.selesai && hitungStatusDeadline(t) === "hari-ini"
+      );
+    } else if (mobileFilter === "penting") {
+      list = list.filter((t) => (t.prioritas || t.penting) && !t.selesai);
+    } else if (mobileFilter === "selesai") {
+      list = list.filter((t) => t.selesai);
+    } else {
+      list = list.filter((t) => !t.selesai);
+    }
+
+    return list.sort((a, b) => {
+      const statusA = hitungStatusDeadline(a);
+      const statusB = hitungStatusDeadline(b);
+
+      const rankA =
+        statusA === "terlewat" ? 1 : statusA === "hari-ini" ? 2 : a.deadline ? 3 : 4;
+      const rankB =
+        statusB === "terlewat" ? 1 : statusB === "hari-ini" ? 2 : b.deadline ? 3 : 4;
+
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+
+      if (a.deadline && b.deadline) {
+        return new Date(a.deadline) - new Date(b.deadline);
+      }
+
+      return new Date(b.dibuatPada) - new Date(a.dibuatPada);
+    });
+  }, [tasks, mobileFilter]);
+
+  const mobileProgressPercent =
+    stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+
+  const pendingActiveCount = useMemo(() => {
+    return tasks.filter((t) => !t.selesai).length;
+  }, [tasks]);
+
+  const mobileFilterChips = [
+    { id: "semua", label: "Semua", count: pendingActiveCount },
+    { id: "hari-ini", label: "Hari Ini", count: stats.today },
+    { id: "penting", label: "Penting", count: stats.important },
+    { id: "selesai", label: "Selesai", count: stats.completed },
+  ];
+
   return (
     <div className="space-y-8">
       {/* Header Greeting Dinamis Anti-Slop */}
@@ -161,6 +214,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.08] pb-5">
           <div className="space-y-1">
             <motion.h1
+              suppressHydrationWarning={true}
               key={greeting.headline}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
@@ -170,6 +224,7 @@ export default function DashboardPage() {
               {greeting.headline}
             </motion.h1>
             <motion.p
+              suppressHydrationWarning={true}
               key={greeting.subtext}
               initial={{ opacity: 0, y: 2 }}
               animate={{ opacity: 1, y: 0 }}
@@ -179,19 +234,147 @@ export default function DashboardPage() {
               {greeting.subtext}
             </motion.p>
           </div>
-          <div className="flex items-center gap-2 text-xs font-medium text-zinc-300 bg-white/[0.04] border border-white/[0.08] backdrop-blur-md px-3.5 py-2 rounded-xl self-start sm:self-auto">
+          <div
+            suppressHydrationWarning={true}
+            className="flex items-center gap-2 text-xs font-medium text-zinc-300 bg-white/[0.04] border border-white/[0.08] backdrop-blur-md px-3.5 py-2 rounded-xl self-start sm:self-auto"
+          >
             <Calendar className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
-            <span>{formatTanggalSederhana(new Date().toISOString())}</span>
+            <span suppressHydrationWarning={true}>
+              {formatTanggalSederhana(new Date().toISOString())}
+            </span>
           </div>
         </div>
       </AnimatedContent>
+
+      {/* Mobile-First Progress & Unified Focus Agenda (< 1024px) */}
+      <div className="lg:hidden space-y-4">
+        {/* Sleek 1-Row Progress Card */}
+        <div className="glass-card p-4 rounded-2xl border border-white/[0.08] space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/30 text-[var(--theme-accent,#D97706)] flex items-center justify-center">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-semibold text-[#FAFAFA]">
+                Progress Tugas
+              </span>
+            </div>
+            <span className="text-xs font-bold text-zinc-300">
+              <span className="text-[var(--theme-accent,#D97706)]">{stats.completed}</span> dari {stats.total} tugas ({mobileProgressPercent}%)
+            </span>
+          </div>
+
+          {/* Progress Bar Track */}
+          <div className="w-full h-2 rounded-full bg-white/[0.06] overflow-hidden p-0.5">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${mobileProgressPercent}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="h-full rounded-full bg-gradient-to-r from-[var(--theme-accent,#D97706)] to-[#8FB88F]"
+            />
+          </div>
+        </div>
+
+        {/* Horizontal Quick-Filter Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {mobileFilterChips.map((chip) => {
+            const isActive = mobileFilter === chip.id;
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => setMobileFilter(chip.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                  isActive
+                    ? "bg-[var(--theme-accent,#D97706)] text-[#0A0A0A] border-[var(--theme-accent,#D97706)] shadow-sm"
+                    : "bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08]"
+                }`}
+              >
+                <span>{chip.label}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                    isActive
+                      ? "bg-black/20 text-[#0A0A0A]"
+                      : "bg-white/[0.08] text-zinc-400"
+                  }`}
+                >
+                  {chip.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Unified Focus Agenda List */}
+        <div className="space-y-3 pt-1">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
+              <h2 className="font-heading text-sm font-bold text-[#FAFAFA]">
+                Agenda Fokus
+              </h2>
+              <span className="text-[11px] font-medium text-zinc-400">
+                ({mobileAgendaTasks.length})
+              </span>
+            </div>
+            <Link
+              href="/tugas"
+              prefetch={true}
+              className="text-xs font-semibold text-zinc-400 hover:text-[#FAFAFA] inline-flex items-center gap-1 transition-colors"
+            >
+              Semua
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {mobileAgendaTasks.length === 0 ? (
+            <EmptyState
+              icon={mobileFilter === "selesai" ? CheckCircle2 : ListTodo}
+              title={
+                mobileFilter === "selesai"
+                  ? "Belum ada tugas selesai"
+                  : mobileFilter === "hari-ini"
+                  ? "Semua tugas hari ini selesai!"
+                  : mobileFilter === "penting"
+                  ? "Tidak ada tugas penting"
+                  : "Belum ada tugas"
+              }
+              description={
+                mobileFilter === "selesai"
+                  ? "Tugas yang Anda selesaikan akan muncul di sini."
+                  : mobileFilter === "hari-ini"
+                  ? "Tidak ada tugas tertunda yang jatuh tempo hari ini."
+                  : mobileFilter === "penting"
+                  ? "Tandai tugas dengan bintang untuk melihatnya di sini."
+                  : "Mulai hari produktif Anda dengan membuat tugas pertama."
+              }
+              actionLabel={mobileFilter === "semua" ? "Tambah Tugas" : undefined}
+              onAction={mobileFilter === "semua" ? openAddTask : undefined}
+            />
+          ) : (
+            <div className="space-y-2.5">
+              {mobileAgendaTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  kategori={getKategoriById(categories, task.kategoriId)}
+                  onToggleSelesai={toggleComplete}
+                  onTogglePrioritas={toggleImportant}
+                  onEdit={openEditTask}
+                  onDelete={(t) => setTaskToDelete(t)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* 4 Stat Cards */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4"
+        className="hidden lg:grid lg:grid-cols-4 gap-4"
       >
         {/* Total Tugas */}
         <motion.div variants={itemVariants} className="h-full">
@@ -266,8 +449,9 @@ export default function DashboardPage() {
         </motion.div>
       </motion.div>
 
-      {/* Section: Tenggat Waktu Terdekat (Upcoming Deadlines Carousel / Grid) */}
-      <AnimatedContent delay={0.22}>
+      {/* Section: Tenggat Waktu Terdekat (Upcoming Deadlines Carousel / Grid - Desktop Only) */}
+      <div className="hidden lg:block">
+        <AnimatedContent delay={0.22}>
         <div className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -355,9 +539,10 @@ export default function DashboardPage() {
           )}
         </div>
       </AnimatedContent>
+      </div>
 
       {/* Two Column Section: Tugas Hari Ini & Tugas Terbaru */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="hidden lg:grid lg:grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Kolom Kiri: Tugas Hari Ini */}
         <AnimatedContent delay={0.28} className="h-full">
           <div className="glass-panel h-full p-5 sm:p-6 rounded-2xl space-y-4">
@@ -373,6 +558,7 @@ export default function DashboardPage() {
               </div>
               <Link
                 href="/tugas/hari-ini"
+                prefetch={true}
                 className="text-xs font-semibold text-zinc-300 hover:text-[#FAFAFA] inline-flex items-center gap-1 transition-colors"
               >
                 Lihat Semua
@@ -414,6 +600,7 @@ export default function DashboardPage() {
               </div>
               <Link
                 href="/tugas"
+                prefetch={true}
                 className="text-xs font-semibold text-zinc-300 hover:text-[#FAFAFA] inline-flex items-center gap-1 transition-colors"
               >
                 Lihat Semua

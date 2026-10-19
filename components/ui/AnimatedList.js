@@ -113,6 +113,7 @@ export default function AnimatedList({
     if (!root || !viewport || !track || !indicator || !ring) return;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
     const springEase = CSS.supports?.('transition-timing-function', 'linear(0, 1)')
       ? SPRING
       : 'cubic-bezier(0.34, 1.4, 0.64, 1)';
@@ -128,6 +129,7 @@ export default function AnimatedList({
     let last = 0;
 
     const mode = () => {
+      if (isMobile()) return 'none';
       const chosen = settingsRef.current.animation;
       if (chosen === 'none' || !HIDDEN[chosen]) return 'none';
       return reduced ? 'fade' : chosen;
@@ -183,7 +185,7 @@ export default function AnimatedList({
 
     const place = snap => {
       const item = itemRefs.current[settingsRef.current.selected];
-      if (!item) {
+      if (!item || isMobile()) {
         indicator.style.opacity = '0';
         motion.ready = false;
         return;
@@ -275,7 +277,9 @@ export default function AnimatedList({
           apply(item, current === 'none' ? 'in' : 'below');
         }
         if (changed) apply(ring, itemRefs.current[s.selected]?.dataset.state || 'in');
-        void root.offsetHeight;
+        if (current !== 'none' && !isMobile()) {
+          void root.offsetHeight;
+        }
         for (const element of elements) element.style.transition = transition;
       }
       measure();
@@ -328,6 +332,10 @@ export default function AnimatedList({
     }
 
     const resizeObserver = new ResizeObserver(() => {
+      if (isMobile()) {
+        indicator.style.opacity = '0';
+        return;
+      }
       place(true);
       updateFades();
       measure();
@@ -337,11 +345,13 @@ export default function AnimatedList({
     resizeObserver.observe(track);
 
     const onScroll = () => {
+      if (isMobile()) return;
       updateFades();
       reveal(false);
     };
 
     const onKey = event => {
+      if (isMobile()) return;
       const s = settingsRef.current;
       if (!s.enableArrowNavigation || event.defaultPrevented) return;
       if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -371,6 +381,7 @@ export default function AnimatedList({
     };
 
     const onPointerMove = event => {
+      if (isMobile()) return;
       const moved = event.clientX !== pointer[0] || event.clientY !== pointer[1];
       pointer = [event.clientX, event.clientY];
       if (!navigatingRef.current || !moved) return;
@@ -380,9 +391,11 @@ export default function AnimatedList({
     };
 
     const onEnter = () => {
+      if (isMobile()) return;
       engaged = true;
     };
     const onLeave = () => {
+      if (isMobile()) return;
       engaged = false;
     };
 

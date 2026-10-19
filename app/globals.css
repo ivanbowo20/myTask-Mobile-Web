@@ -363,6 +363,46 @@ html[data-theme="abyssal-teal"] .glass-card:hover {
 }
 
 /* ============================================================ */
+/* MOBILE GLASS & GPU OPTIMIZATION (< 768px)                   */
+/* Placed after base glass classes to guarantee CSS cascade win */
+/* ============================================================ */
+@media (max-width: 768px) {
+  .glass-card {
+    background: var(--glass-bg, rgba(22, 17, 14, 0.85));
+    backdrop-filter: blur(4px) saturate(110%);
+    -webkit-backdrop-filter: blur(4px) saturate(110%);
+  }
+
+  .glass-panel {
+    background: var(--glass-bg, rgba(22, 17, 14, 0.82));
+    backdrop-filter: blur(8px) saturate(115%);
+    -webkit-backdrop-filter: blur(8px) saturate(115%);
+  }
+
+  .glass-modal {
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+  }
+
+  .glass-dropdown {
+    backdrop-filter: blur(10px) saturate(120%);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+  }
+
+  .dynamic-island-toast {
+    backdrop-filter: blur(10px) saturate(120%);
+    -webkit-backdrop-filter: blur(10px) saturate(120%);
+  }
+
+  /* Hardware acceleration hints for fixed navigation bars */
+  header,
+  nav[aria-label="Navigasi bawah mobile"] {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* ============================================================ */
 /* THEME TOKEN UTILITIES                                        */
 /* ============================================================ */
 .text-theme-accent {

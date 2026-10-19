@@ -139,7 +139,7 @@ export default function Modal({
       {isOpen && (
         <div
           key="modal-container"
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-end lg:items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
@@ -166,12 +166,18 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: "easeOut" } }}
             exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15, ease: "easeIn" } }}
             className={cn(
-              "relative w-full rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-6 my-0 sm:my-8 z-10 space-y-4 max-h-[95vh] sm:max-h-[90vh] flex flex-col shadow-2xl focus:outline-none",
+              "relative w-full rounded-t-2xl lg:rounded-2xl p-5 lg:p-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] lg:pb-6 my-0 lg:my-8 z-10 space-y-4 max-h-[95vh] lg:max-h-[90vh] flex flex-col shadow-2xl focus:outline-none",
               "glass-modal",
               maxWidth,
               className
             )}
           >
+            {/* Mobile Bottom Sheet Pull Pill */}
+            <div
+              className="w-10 h-1 rounded-full bg-white/20 mx-auto -mt-2 mb-1 lg:hidden shrink-0 self-center"
+              aria-hidden="true"
+            />
+
             {/* Header */}
             <div className="flex items-start justify-between pb-3 border-b border-[rgba(255,255,255,0.08)] gap-4">
               <div className="space-y-1">
@@ -181,7 +187,7 @@ export default function Modal({
                   </h2>
                 )}
                 {description && (
-                  <p className="text-xs text-[#A1A1AA]">{description}</p>
+                  <p className="text-xs text-[#A1A1AA] hidden lg:block">{description}</p>
                 )}
               </div>
               <button

@@ -106,18 +106,6 @@ export async function POST(request) {
       );
     }
 
-    // Batasi kuota maksimal 1.000 tugas per akun untuk perlindungan resource database
-    const countRes = await query(
-      `SELECT COUNT(*)::int as count FROM public.tasks WHERE user_id = $1;`,
-      [session.user.id]
-    );
-    if (countRes.rows[0]?.count >= 1000) {
-      return NextResponse.json(
-        { error: "Batas maksimal 1.000 tugas per akun telah tercapai." },
-        { status: 400 }
-      );
-    }
-
     const body = await request.json();
     const {
       judul,
@@ -165,7 +153,7 @@ export async function POST(request) {
       cleanReminder = String(reminder).trim().slice(0, MAX_REMINDER_LENGTH);
     }
 
-    // Validasi kategoriId & Proteksi IDOR (Memastikan kategori benar-benar milik user aktif)
+    // Validasi format kategoriId
     let cleanKategoriId = null;
     if (kategoriId !== null && kategoriId !== undefined && kategoriId !== "") {
       const parsedCatId = Number(kategoriId);
@@ -175,17 +163,38 @@ export async function POST(request) {
           { status: 400 }
         );
       }
-      const catCheck = await query(
-        `SELECT id FROM public.categories WHERE id = $1 AND user_id = $2;`,
-        [parsedCatId, session.user.id]
-      );
-      if (catCheck.rows.length === 0) {
-        return NextResponse.json(
-          { error: "Kategori tidak ditemukan atau Anda tidak memiliki akses" },
-          { status: 400 }
-        );
-      }
       cleanKategoriId = parsedCatId;
+    }
+
+    // Eksekusi pemeriksaan kuota tugas dan proteksi IDOR kategori secara paralel
+    const countPromise = query(
+      `SELECT COUNT(*)::int as count FROM public.tasks WHERE user_id = $1;`,
+      [session.user.id]
+    );
+    const catPromise =
+      cleanKategoriId !== null
+        ? query(
+            `SELECT id FROM public.categories WHERE id = $1 AND user_id = $2;`,
+            [cleanKategoriId, session.user.id]
+          )
+        : Promise.resolve(null);
+
+    const [countRes, catCheck] = await Promise.all([countPromise, catPromise]);
+
+    // Batasi kuota maksimal 1.000 tugas per akun untuk perlindungan resource database
+    if (countRes.rows[0]?.count >= 1000) {
+      return NextResponse.json(
+        { error: "Batas maksimal 1.000 tugas per akun telah tercapai." },
+        { status: 400 }
+      );
+    }
+
+    // Validasi hasil kepemilikan kategori
+    if (cleanKategoriId !== null && (!catCheck || catCheck.rows.length === 0)) {
+      return NextResponse.json(
+        { error: "Kategori tidak ditemukan atau Anda tidak memiliki akses" },
+        { status: 400 }
+      );
     }
 
     const result = await query(

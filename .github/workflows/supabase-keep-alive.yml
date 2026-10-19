@@ -14,38 +14,79 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     steps:
-      - name: Ping and Purge via PostgREST RPC
+      - name: Ping and Maintain Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          AUTH_KEY="${SUPABASE_SERVICE_ROLE_KEY:-$SUPABASE_ANON_KEY}"
-          if [ -z "$SUPABASE_URL" ] || [ -z "$AUTH_KEY" ]; then
-            echo "::error::SUPABASE_URL atau SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY belum diatur di GitHub Secrets!"
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::SUPABASE_URL belum diatur di GitHub Secrets!"
+            exit 1
+          fi
+
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] && [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Harus ada minimal salah satu dari SUPABASE_SERVICE_ROLE_KEY atau SUPABASE_ANON_KEY di GitHub Secrets!"
             exit 1
           fi
 
           CLEAN_URL="${SUPABASE_URL%/}"
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}s" \
-            -X POST \
-            -H "apikey: ${AUTH_KEY}" \
-            -H "Authorization: Bearer ${AUTH_KEY}" \
-            -H "Content-Type: application/json" \
-            -d "{}" \
-            "${CLEAN_URL}/rest/v1/rpc/purge_old_completed_tasks")
+          PING_SUCCESS=false
 
-          HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
-          TIME_TOTAL=$(echo "$RESPONSE" | grep "TIME_TOTAL" | cut -d':' -f2)
-          BODY=$(echo "$RESPONSE" | grep -v "HTTP_STATUS" | grep -v "TIME_TOTAL")
+          # Tier 1: Jika SUPABASE_SERVICE_ROLE_KEY tersedia, jalankan maintenance auto-purge
+          if [ -n "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "📡 [Tier 1] Menjalankan maintenance auto-purge via service_role..."
+            RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}s" \
+              -X POST \
+              -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+              -H "Content-Type: application/json" \
+              -d "{}" \
+              "${CLEAN_URL}/rest/v1/rpc/purge_old_completed_tasks")
 
-          echo "Status: $HTTP_STATUS"
-          echo "Durasi: $TIME_TOTAL"
-          echo "Respons: $BODY"
+            HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
+            TIME_TOTAL=$(echo "$RESPONSE" | grep "TIME_TOTAL" | cut -d':' -f2)
+            BODY=$(echo "$RESPONSE" | grep -v "HTTP_STATUS" | grep -v "TIME_TOTAL")
 
-          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
-            echo "✅ [SUCCESS] Supabase berhasil di-ping dan auto-purge berhasil! PostgreSQL aktif, free tier terhindar dari limit & auto-pause."
-          else
-            echo "::error::❌ [FAILED] Gagal ping Supabase dengan status HTTP $HTTP_STATUS"
-            exit 1
+            echo "Status: $HTTP_STATUS ($TIME_TOTAL)"
+            echo "Respons: $BODY"
+
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+              echo "✅ [SUCCESS] Maintenance auto-purge berhasil! PostgreSQL aktif, tugas lama dibersihkan, free tier terhindar dari auto-pause."
+              PING_SUCCESS=true
+            else
+              echo "⚠️ [Tier 1 Warning] Purge RPC mengembalikan status HTTP $HTTP_STATUS. Melanjutkan ke Tier 2 Keep-Alive Ping..."
+            fi
+          fi
+
+          # Tier 2: Jika Tier 1 tidak dijalankan atau gagal, fallback ke RPC ping()
+          if [ "$PING_SUCCESS" = false ]; then
+            ACTIVE_KEY="${SUPABASE_ANON_KEY:-$SUPABASE_SERVICE_ROLE_KEY}"
+            echo "📡 [Tier 2] Menjalankan Keep-Alive Ping via RPC ping()..."
+
+            RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}s" \
+              -X POST \
+              -H "apikey: ${ACTIVE_KEY}" \
+              -H "Authorization: Bearer ${ACTIVE_KEY}" \
+              -H "Content-Type: application/json" \
+              -d "{}" \
+              "${CLEAN_URL}/rest/v1/rpc/ping")
+
+            HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
+            TIME_TOTAL=$(echo "$RESPONSE" | grep "TIME_TOTAL" | cut -d':' -f2)
+            BODY=$(echo "$RESPONSE" | grep -v "HTTP_STATUS" | grep -v "TIME_TOTAL")
+
+            echo "Status: $HTTP_STATUS ($TIME_TOTAL)"
+            echo "Respons: $BODY"
+
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+              echo "✅ [SUCCESS] Supabase Keep-Alive Ping berhasil! PostgreSQL aktif dan auto-pause 7 hari terhindar."
+              if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+                echo "💡 Tips: Tambahkan SUPABASE_SERVICE_ROLE_KEY di GitHub Secrets jika ingin mengaktifkan auto-purge tugas lama >14 hari secara otomatis."
+              fi
+              PING_SUCCESS=true
+            else
+              echo "::error::❌ [FAILED] Gagal ping Supabase dengan status HTTP $HTTP_STATUS"
+              exit 1
+            fi
           fi

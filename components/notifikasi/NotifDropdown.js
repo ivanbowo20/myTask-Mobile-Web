@@ -160,6 +160,7 @@ export default function NotifDropdown({
           <div className="p-3 border-t border-white/[0.08] bg-white/[0.02]">
             <Link
               href="/notifikasi"
+              prefetch={true}
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-semibold text-[#FAFAFA] hover:text-[#E4E4E7] transition-colors"
             >

@@ -9,7 +9,7 @@ import ReminderPicker from "./ReminderPicker";
 import DateTimePicker from "@/components/ui/DateTimePicker";
 import CustomSelect from "@/components/ui/CustomSelect";
 import Magnet from "@/components/ui/Magnet";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 
 export default function EditTaskModal({
   isOpen,
@@ -26,6 +26,7 @@ export default function EditTaskModal({
   const [kategoriId, setKategoriId] = useState("");
   const [prioritas, setPrioritas] = useState(false);
   const [errorJudul, setErrorJudul] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper to format ISO to datetime-local input (YYYY-MM-DDTHH:mm)
   function toLocalInputDate(iso) {
@@ -61,8 +62,10 @@ export default function EditTaskModal({
     deadline &&
     new Date(deadline).getTime() <= Date.now();
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!judul.trim()) {
       setErrorJudul("Judul tugas wajib diisi");
       return;
@@ -71,17 +74,30 @@ export default function EditTaskModal({
       return;
     }
 
-    onUpdateTask({
-      ...task,
-      judul: judul.trim(),
-      deskripsi: deskripsi.trim(),
-      deadline: deadline ? new Date(deadline).toISOString() : null,
-      reminder,
-      kategoriId: kategoriId ? Number(kategoriId) : null,
-      prioritas,
-    });
+    try {
+      setIsSubmitting(true);
+      const startTime = Date.now();
+      const res = await onUpdateTask({
+        ...task,
+        judul: judul.trim(),
+        deskripsi: deskripsi.trim(),
+        deadline: deadline ? new Date(deadline).toISOString() : null,
+        reminder,
+        kategoriId: kategoriId ? Number(kategoriId) : null,
+        prioritas,
+      });
 
-    onClose();
+      // Berikan jeda visual minimal ~350ms agar animasi loading spinner sempat terlihat oleh mata pengguna
+      if (res?.success !== false) {
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 350) {
+          await new Promise((resolve) => setTimeout(resolve, 350 - elapsed));
+        }
+        onClose();
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -207,17 +223,29 @@ export default function EditTaskModal({
 
         {/* Footer Actions */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-4 border-t border-white/[0.08]">
-          <Button variant="secondary" onClick={onClose} className="w-full sm:w-auto">
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="w-full sm:w-auto"
+          >
             Batal
           </Button>
           <Magnet padding={50} magnetStrength={3} maxOffset={8} className="w-full sm:w-auto">
             <Button
               type="submit"
               variant="primary"
-              disabled={Boolean(isDeadlinePast)}
-              className="w-full sm:w-auto"
+              disabled={Boolean(isDeadlinePast) || isSubmitting}
+              className="w-full sm:w-auto min-w-[150px]"
             >
-              Simpan Perubahan
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-[#0A0A0A]" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                "Simpan Perubahan"
+              )}
             </Button>
           </Magnet>
         </div>

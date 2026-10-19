@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import NotifDropdown from "@/components/notifikasi/NotifDropdown";
 import Button from "@/components/ui/Button";
-import SpecularButton from "@/components/ui/SpecularButton";
 import { useSession, signOut } from "@/lib/auth-client";
 import { toast } from "@/lib/use-toast";
 
@@ -102,7 +101,7 @@ export default function Navbar({
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 min-h-[64px] bg-[var(--theme-nav-bg,rgba(16,12,10,0.75))] backdrop-blur-[20px] backdrop-saturate-[130%] border-b border-[var(--glass-border,rgba(255,255,255,0.08))] shadow-[0_4px_24px_rgba(0,0,0,0.35)] pt-[env(safe-area-inset-top,0px)]">
+    <header className="fixed top-0 left-0 right-0 z-40 min-h-[64px] bg-[var(--theme-nav-bg,rgba(16,12,10,0.88))] sm:bg-[var(--theme-nav-bg,rgba(16,12,10,0.75))] backdrop-blur-md sm:backdrop-blur-[20px] backdrop-saturate-[120%] sm:backdrop-saturate-[130%] border-b border-[var(--glass-border,rgba(255,255,255,0.08))] shadow-[0_4px_24px_rgba(0,0,0,0.35)] pt-[env(safe-area-inset-top,0px)] will-change-transform transform-gpu">
       {/* Mobile Search Overlay Bar */}
       {isMobileSearchOpen ? (
         <div className="h-16 px-4 flex items-center gap-3 sm:hidden animate-in fade-in duration-150">
@@ -132,6 +131,7 @@ export default function Navbar({
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/dashboard"
+              prefetch={true}
               className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA] rounded-lg p-1"
             >
               <div className="w-8 h-8 rounded-lg bg-[#FAFAFA] text-[#0A0A0A] flex items-center justify-center font-bold shadow-sm">
@@ -143,7 +143,7 @@ export default function Navbar({
             </Link>
           </div>
 
-          {/* Center: Desktop / Tablet Search Form */}
+          {/* Center: Desktop Search Form */}
           <div className="hidden sm:block flex-1 max-w-md mx-3 sm:mx-6">
             <form onSubmit={handleSearchSubmit} className="relative w-full">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
@@ -169,16 +169,17 @@ export default function Navbar({
               <Search className="w-5 h-5" />
             </button>
 
-            {/* Add Task Button (Specular Glass Highlight) */}
-            <SpecularButton
+            {/* Add Task Button (Desktop / Tablet) */}
+            <Button
               size="sm"
+              variant="primary"
               onClick={onOpenAddTask}
-              className="shadow-sm min-h-[44px] min-w-[44px]"
+              className="hidden sm:inline-flex shadow-sm"
               aria-label="Tambah tugas baru"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Tambah Tugas</span>
-            </SpecularButton>
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Tambah Tugas</span>
+            </Button>
 
             {/* Notifications Dropdown */}
             <NotifDropdown
@@ -213,7 +214,7 @@ export default function Navbar({
               <span className="text-xs font-medium text-[#FAFAFA] hidden lg:inline-block">
                 {displayName}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#71717A] hidden sm:block" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#71717A] hidden lg:block" />
             </button>
 
             {/* Dropdown Menu */}
