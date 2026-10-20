@@ -38,6 +38,16 @@ const nextConfig = {
     // Di production, aktifkan cache jangka panjang untuk performa optimal
     return [
       {
+        // Manifest dan Service Worker wajib revalidate langsung agar update PWA selalu instan
+        source: "/(manifest.json|sw.js)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+        ],
+      },
+      {
         // Cache aset statis & gambar hingga 1 tahun di browser dan CDN
         source: "/:all*(svg|jpg|jpeg|png|webp|ico|woff|woff2)",
         headers: [
