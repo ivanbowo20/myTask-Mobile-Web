@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn, lockBodyScroll, unlockBodyScroll } from "@/lib/utils";
@@ -13,9 +13,42 @@ export default function Modal({
   children,
   maxWidth = "max-w-lg",
   className,
+  defaultMobileExpanded = false,
 }) {
   const modalRef = useRef(null);
   const previousActiveElement = useRef(null);
+  const [isMobileExpanded, setIsMobileExpanded] = useState(defaultMobileExpanded);
+  const touchStartY = useRef(null);
+
+  // Reset status ekspansi saat modal dibuka ulang
+  useEffect(() => {
+    if (isOpen) {
+      setIsMobileExpanded(defaultMobileExpanded);
+    }
+  }, [isOpen, defaultMobileExpanded]);
+
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartY.current === null) return;
+    const touchEndY = e.changedTouches[0].clientY;
+    const diff = touchEndY - touchStartY.current;
+    // Geser ke atas (swipe up) -> Perluas ke atas
+    if (diff < -40 && !isMobileExpanded) {
+      setIsMobileExpanded(true);
+    }
+    // Geser ke bawah (swipe down) -> Perkecil jika sedang luas, atau tutup jika sudah kecil
+    else if (diff > 40) {
+      if (isMobileExpanded) {
+        setIsMobileExpanded(false);
+      } else {
+        onClose();
+      }
+    }
+    touchStartY.current = null;
+  };
 
   // Focus trap & ESC key handling
   useEffect(() => {
@@ -161,27 +194,40 @@ export default function Modal({
             aria-hidden="true"
           />
 
-          {/* Modal Dialog Box with 20px blur and scale(0.98 -> 1) */}
+          {/* Modal Dialog Box (Fluid Responsive Bottom Sheet on Mobile, Centered Modal on Desktop) */}
           <motion.div
             key="modal-dialog"
             ref={modalRef}
             tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: "easeOut" } }}
-            exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15, ease: "easeIn" } }}
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.22, ease: "easeOut" } }}
+            exit={{ opacity: 0, y: 30, scale: 0.98, transition: { duration: 0.16, ease: "easeIn" } }}
             className={cn(
-              "relative w-full rounded-t-2xl lg:rounded-2xl p-5 lg:p-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] lg:pb-6 my-0 lg:my-8 z-10 space-y-4 max-h-[90dvh] lg:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl focus:outline-none",
+              "relative w-full rounded-t-3xl lg:rounded-2xl p-4 sm:p-5 lg:p-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] lg:pb-6 my-0 lg:my-8 z-10 space-y-3 lg:space-y-4 flex flex-col overflow-hidden shadow-2xl focus:outline-none transition-[height,max-height] duration-300 ease-out",
+              isMobileExpanded
+                ? "h-[92dvh] max-h-[95dvh]"
+                : "h-[68dvh] max-h-[75dvh]",
+              "lg:h-auto lg:max-h-[90vh]",
               "glass-modal",
               maxWidth,
               className
             )}
           >
-            {/* Mobile Bottom Sheet Pull Pill */}
-            <div
-              className="w-10 h-1 rounded-full bg-white/20 mx-auto -mt-2 mb-1 lg:hidden shrink-0 self-center"
-              aria-hidden="true"
-            />
+            {/* Interactive Mobile Bottom Sheet Pull Pill Handle */}
+            <button
+              type="button"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onClick={() => setIsMobileExpanded((prev) => !prev)}
+              aria-label={isMobileExpanded ? "Kecilkan jendela" : "Perluas jendela ke atas"}
+              className="w-full py-1.5 -mt-2 mb-0.5 lg:hidden flex flex-col items-center justify-center cursor-pointer select-none touch-none group focus:outline-none"
+            >
+              <div className="w-12 h-1.5 rounded-full bg-white/30 group-hover:bg-white/50 group-active:bg-white/70 transition-colors" />
+              <span className="text-[10px] text-zinc-400 mt-1 font-medium group-hover:text-zinc-200 transition-colors">
+                {isMobileExpanded ? "Tarik turun untuk perkecil" : "Tarik naik untuk perluas layar"}
+              </span>
+            </button>
 
             {/* Header */}
             <div className="flex items-start justify-between pb-3 border-b border-[rgba(255,255,255,0.08)] gap-4">

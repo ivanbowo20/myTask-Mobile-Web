@@ -20,6 +20,39 @@ const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
+function getPresetDate(type) {
+  const now = new Date();
+  if (type === "today-17") {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0, 0);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T17:00`;
+  }
+  if (type === "tomorrow-09") {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 9, 0, 0);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T09:00`;
+  }
+  if (type === "tomorrow-17") {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 17, 0, 0);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T17:00`;
+  }
+  if (type === "next-day-09") {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 9, 0, 0);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T09:00`;
+  }
+  return '';
+}
+
+function toDatetimeLocalString(val) {
+  if (!val) return '';
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day}T${h}:${min}`;
+}
+
 function formatDisplayDate(val) {
   if (!val) return '';
   const d = new Date(val);
@@ -230,8 +263,74 @@ export default function DateTimePicker({
               </button>
             </div>
 
-            {/* Responsive Content: Split View (Calendar Left, Dual OptionWheel Right) */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            {/* Quick Preset Shortcuts (1-Tap Selection) */}
+            <div className="mb-3 pb-3 border-b border-white/[0.08]">
+              <div className="text-[11px] font-semibold text-zinc-400 mb-1.5 flex items-center justify-between">
+                <span>Pilihan Cepat (1-Tap):</span>
+                {value && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    className="text-[11px] text-red-400 hover:text-red-300 hover:underline cursor-pointer"
+                  >
+                    Hapus Tenggat
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {[
+                  { id: 'today-17', label: 'Hari Ini 17:00' },
+                  { id: 'tomorrow-09', label: 'Besok 09:00' },
+                  { id: 'tomorrow-17', label: 'Besok 17:00' },
+                  { id: 'next-day-09', label: 'Lusa 09:00' },
+                ].map((preset) => {
+                  const presetDate = getPresetDate(preset.id);
+                  const isCurrent = value && toDatetimeLocalString(value) === presetDate;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => {
+                        onChange?.(presetDate);
+                        setIsOpen(false);
+                      }}
+                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors text-center border cursor-pointer ${
+                        isCurrent
+                          ? 'bg-[var(--theme-accent,#D97706)] text-black border-[var(--theme-accent,#D97706)] font-semibold shadow-sm'
+                          : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.1] hover:text-white'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Mobile Native Date-Time Picker Section (sm:hidden) */}
+            <div className="block sm:hidden space-y-2 mb-3">
+              <label className="text-[11px] font-semibold text-zinc-300 block">
+                Atau Tentukan Tanggal & Jam Bebas:
+              </label>
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  value={toDatetimeLocalString(value)}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      onChange?.(e.target.value);
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.16] text-sm text-white focus:outline-none focus:border-white transition-all cursor-pointer [color-scheme:dark]"
+                />
+              </div>
+              <p className="text-[10px] text-zinc-400">
+                Gunakan scroll roda jam bawaan HP yang 100% mulus mengikuti jari Anda tanpa macet.
+              </p>
+            </div>
+
+            {/* Responsive Content: Split View for Desktop (Calendar Left, Dual OptionWheel Right) */}
+            <div className="hidden sm:flex flex-col sm:flex-row gap-4">
               {/* Left Column: Calendar */}
               <div className="flex-1 min-w-[210px]">
                 {/* Month Navigation */}

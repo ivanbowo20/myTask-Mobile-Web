@@ -26,7 +26,6 @@ export default function EditTaskModal({
   const [kategoriId, setKategoriId] = useState("");
   const [prioritas, setPrioritas] = useState(false);
   const [errorJudul, setErrorJudul] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper to format ISO to datetime-local input (YYYY-MM-DDTHH:mm)
   function toLocalInputDate(iso) {
@@ -62,9 +61,8 @@ export default function EditTaskModal({
     deadline &&
     new Date(deadline).getTime() <= Date.now();
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
-    if (isSubmitting) return;
 
     if (!judul.trim()) {
       setErrorJudul("Judul tugas wajib diisi");
@@ -74,30 +72,23 @@ export default function EditTaskModal({
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const startTime = Date.now();
-      const res = await onUpdateTask({
-        ...task,
-        judul: judul.trim(),
-        deskripsi: deskripsi.trim(),
-        deadline: deadline ? new Date(deadline).toISOString() : null,
-        reminder,
-        kategoriId: kategoriId ? Number(kategoriId) : null,
-        prioritas,
-      });
+    const payload = {
+      ...task,
+      judul: judul.trim(),
+      deskripsi: deskripsi.trim(),
+      deadline: deadline ? new Date(deadline).toISOString() : null,
+      reminder,
+      kategoriId: kategoriId ? Number(kategoriId) : null,
+      prioritas,
+    };
 
-      // Berikan jeda visual minimal ~350ms agar animasi loading spinner sempat terlihat oleh mata pengguna
-      if (res?.success !== false) {
-        const elapsed = Date.now() - startTime;
-        if (elapsed < 350) {
-          await new Promise((resolve) => setTimeout(resolve, 350 - elapsed));
-        }
-        onClose();
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    // 1. Tutup modal seketika (0ms)
+    onClose();
+
+    // 2. Kirim update ke background (TaskContext sudah update state secara optimistik)
+    onUpdateTask(payload).catch((err) => {
+      console.error("Gagal sinkronisasi update tugas di background:", err);
+    });
   }
 
   return (
@@ -226,28 +217,18 @@ export default function EditTaskModal({
           <Button
             variant="secondary"
             onClick={onClose}
-            disabled={isSubmitting}
             className="w-full sm:w-auto"
           >
             Batal
           </Button>
-          <Magnet padding={50} magnetStrength={3} maxOffset={8} className="w-full sm:w-auto">
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={Boolean(isDeadlinePast) || isSubmitting}
-              className="w-full sm:w-auto min-w-[150px]"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin text-[#0A0A0A]" />
-                  <span>Menyimpan...</span>
-                </>
-              ) : (
-                "Simpan Perubahan"
-              )}
-            </Button>
-          </Magnet>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={Boolean(isDeadlinePast)}
+            className="w-full sm:w-auto min-w-[150px] font-semibold"
+          >
+            Simpan Perubahan
+          </Button>
         </div>
       </form>
     </Modal>

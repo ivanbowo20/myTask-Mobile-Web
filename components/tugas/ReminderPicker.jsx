@@ -115,8 +115,33 @@ export default function ReminderPicker({
               </button>
             </div>
 
-            {/* 3D Curved Dial Wheel Box (Compact h-24 / 96px) - Solid Pure Black */}
-            <div className="relative h-24 w-full rounded-xl bg-black border border-white/[0.08] overflow-hidden">
+            {/* Mobile Touch-Friendly Reminder Grid (< 640px) */}
+            <div className="grid grid-cols-2 gap-1.5 sm:hidden py-1">
+              {REMINDER_OPTIONS.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange?.(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-medium text-left border transition-colors cursor-pointer flex items-center justify-between ${
+                      isSelected
+                        ? 'bg-[var(--theme-accent,#D97706)] text-black border-[var(--theme-accent,#D97706)] font-semibold shadow-sm'
+                        : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.1] hover:text-white'
+                    }`}
+                  >
+                    <span>{opt.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-black" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Desktop 3D Curved Dial Wheel Box (sm:block) */}
+            <div className="hidden sm:block relative h-24 w-full rounded-xl bg-black border border-white/[0.08] overflow-hidden">
               {/* Top & bottom depth fade gradients */}
               <div className="pointer-events-none absolute inset-x-0 top-0 h-7 bg-gradient-to-b from-black via-black/80 to-transparent z-10" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-black via-black/80 to-transparent z-10" />

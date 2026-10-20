@@ -172,75 +172,59 @@ select {
 }
 
 /* Mobile Background Optimization (< 768px):
-   Pusatkan orbs cahaya utama ke tengah layar (vertikal & horizontal)
-   dengan pendaran blur halus (80px-100px) agar cahaya terkonsentrasi
-   tepat di balik kartu tugas dan tidak terpotong di tepi layar.
+   Matikan looping animasi keyframe transform & blur berat yang membebani GPU HP.
+   Gunakan gradien statis halus tanpa repainting terus-menerus agar 60-120 FPS lancar dan HP dingin.
 */
 @media (max-width: 768px) {
   .ambient-orb {
-    filter: blur(85px);
-    -webkit-filter: blur(85px);
+    animation: none !important;
+    will-change: auto !important;
+    filter: blur(35px) !important;
+    -webkit-filter: blur(35px) !important;
+    opacity: 0.55;
   }
 
   .orb-amber {
-    top: 35%;
-    left: 50%;
+    top: 15%;
+    left: 10%;
     right: auto;
     bottom: auto;
-    width: 340px;
-    height: 340px;
-    transform: translate3d(-50%, -50%, 0);
-    animation: orb-mobile-pulse-1 14s ease-in-out infinite alternate;
+    width: 240px;
+    height: 240px;
+    transform: none !important;
   }
 
   .orb-mocha {
-    top: 55%;
-    left: 50%;
-    right: auto;
+    top: 60%;
+    right: 5%;
+    left: auto;
     bottom: auto;
-    width: 360px;
-    height: 360px;
-    transform: translate3d(-50%, -50%, 0);
-    animation: orb-mobile-pulse-2 16s ease-in-out infinite alternate;
+    width: 260px;
+    height: 260px;
+    transform: none !important;
   }
 
   .orb-caramel {
-    top: 45%;
-    left: 50%;
+    top: 40%;
+    left: 20%;
     right: auto;
     bottom: auto;
-    width: 280px;
-    height: 280px;
-    transform: translate3d(-50%, -50%, 0);
-    opacity: 0.7;
-    animation: orb-mobile-pulse-3 12s ease-in-out infinite alternate;
+    width: 200px;
+    height: 200px;
+    opacity: 0.45;
+    transform: none !important;
   }
 
-  @keyframes orb-mobile-pulse-1 {
-    0% {
-      transform: translate3d(-50%, -50%, 0) scale(1);
-    }
-    100% {
-      transform: translate3d(-50%, -45%, 0) scale(1.12);
-    }
+  /* Ringankan backdrop-filter pada komponen glass di layar HP */
+  .glass-card,
+  .glass-panel {
+    backdrop-filter: blur(8px) saturate(110%);
+    -webkit-backdrop-filter: blur(8px) saturate(110%);
   }
 
-  @keyframes orb-mobile-pulse-2 {
-    0% {
-      transform: translate3d(-50%, -50%, 0) scale(1);
-    }
-    100% {
-      transform: translate3d(-50%, -55%, 0) scale(1.1);
-    }
-  }
-
-  @keyframes orb-mobile-pulse-3 {
-    0% {
-      transform: translate3d(-50%, -50%, 0) scale(0.95);
-    }
-    100% {
-      transform: translate3d(-48%, -50%, 0) scale(1.08);
-    }
+  .glass-modal {
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
   }
 }
 

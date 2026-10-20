@@ -26,7 +26,6 @@ export default function AddTaskModal({
   const [kategoriId, setKategoriId] = useState("");
   const [prioritas, setPrioritas] = useState(false);
   const [errorJudul, setErrorJudul] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Mobile quick-capture disclosure states
   const [showDeskripsi, setShowDeskripsi] = useState(false);
@@ -50,9 +49,8 @@ export default function AddTaskModal({
   const selectedCategory = categories?.find((c) => String(c.id) === String(kategoriId));
   const reminderLabel = REMINDER_OPTIONS?.find((r) => r.value === reminder)?.label || reminder;
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
-    if (isSubmitting) return;
 
     if (!judul.trim()) {
       setErrorJudul("Judul tugas wajib diisi");
@@ -62,34 +60,26 @@ export default function AddTaskModal({
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const startTime = Date.now();
-      const res = await onAddTask({
-        judul: judul.trim(),
-        deskripsi: deskripsi.trim(),
-        deadline: deadline ? new Date(deadline).toISOString() : null,
-        reminder,
-        kategoriId: kategoriId ? Number(kategoriId) : null,
-        prioritas,
-        selesai: false,
-      });
+    const payload = {
+      judul: judul.trim(),
+      deskripsi: deskripsi.trim(),
+      deadline: deadline ? new Date(deadline).toISOString() : null,
+      reminder,
+      kategoriId: kategoriId ? Number(kategoriId) : null,
+      prioritas,
+      selesai: false,
+    };
 
-      // Berikan jeda visual minimal ~350ms agar animasi loading spinner sempat terlihat oleh mata pengguna
-      if (res?.success !== false) {
-        const elapsed = Date.now() - startTime;
-        if (elapsed < 350) {
-          await new Promise((resolve) => setTimeout(resolve, 350 - elapsed));
-        }
-        handleClose();
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    // 1. Reset form & TUTUP MODAL INSTAN (0ms) untuk sensasi kilat di HP
+    handleClose();
+
+    // 2. Kirim ke background (TaskContext sudah memasukkan tugas ke state secara optimistik seketika)
+    onAddTask(payload).catch((err) => {
+      console.error("Gagal sinkronisasi tambah tugas di background:", err);
+    });
   }
 
   function handleClose() {
-    if (isSubmitting) return;
     setJudul("");
     setDeskripsi("");
     setDeadline("");
@@ -402,36 +392,20 @@ export default function AddTaskModal({
             type="button"
             variant="secondary"
             onClick={handleClose}
-            disabled={isSubmitting}
             className="hidden lg:inline-flex w-auto"
           >
             Batal
           </Button>
 
           {/* Primary Save CTA: Full-width on mobile, auto on desktop */}
-          <Magnet
-            padding={50}
-            magnetStrength={3}
-            maxOffset={8}
-            className="w-full lg:w-auto"
-            innerClassName="w-full"
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={Boolean(isDeadlinePast)}
+            className="w-full lg:w-auto min-w-[130px] font-semibold"
           >
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={Boolean(isDeadlinePast) || isSubmitting}
-              className="w-full lg:w-auto min-w-[130px]"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin text-[#0A0A0A]" />
-                  <span>Menyimpan...</span>
-                </>
-              ) : (
-                "Simpan Tugas"
-              )}
-            </Button>
-          </Magnet>
+            Simpan Tugas
+          </Button>
         </div>
       </form>
     </Modal>
