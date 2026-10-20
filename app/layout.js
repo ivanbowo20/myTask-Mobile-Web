@@ -4,6 +4,7 @@ import ToastProvider from "@/components/ui/ToastProvider";
 import { ThemeProvider } from "@/lib/theme-context";
 import ThemeBackground from "@/components/theme/ThemeBackground";
 import ThemeModal from "@/components/theme/ThemeModal";
+import { Analytics } from "@vercel/analytics/next";
 
 /*
 const arvo = Arvo({
@@ -88,6 +89,8 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
+        {/* Vercel Web Analytics */}
+        <Analytics />
       </body>
     </html>
   );
