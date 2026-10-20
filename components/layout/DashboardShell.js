@@ -8,6 +8,7 @@ import EditTaskModal from "@/components/tugas/EditTaskModal";
 import AddCategoryModal from "@/components/kategori/AddCategoryModal";
 import EditCategoryModal from "@/components/kategori/EditCategoryModal";
 import TopProgressBar from "@/components/ui/TopProgressBar";
+import PwaInstallPrompt from "@/components/pwa/PwaInstallPrompt";
 import { useTasks } from "@/lib/task-context";
 
 export default function DashboardShell({ children }) {
@@ -103,6 +104,9 @@ export default function DashboardShell({ children }) {
         kategori={editingCategory}
         onUpdate={updateCategory}
       />
+
+      {/* Floating In-App PWA Install Prompt (Android & iOS) */}
+      <PwaInstallPrompt />
     </div>
   );
 }

@@ -22,10 +22,22 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export const metadata = {
   title: "MyTask — Manajemen Tugas Pintar",
-  description: "Aplikasi manajemen tugas modern dengan desain glassmorphism minimalis.",
+  description: "Aplikasi manajemen tugas modern dengan desain glassmorphism minimalis & performa kilat.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "64x64", type: "image/x-icon" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "MyTask",
   },
 };
 
