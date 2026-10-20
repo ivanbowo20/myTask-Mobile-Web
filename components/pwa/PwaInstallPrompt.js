@@ -11,6 +11,11 @@ export default function PwaInstallPrompt() {
   const [showIosGuide, setShowIosGuide] = useState(false);
 
   useEffect(() => {
+    // 0. Jika sudah pernah dipasang (tercatat di storage), JANGAN PERNAH tampilkan lagi
+    if (typeof window !== 'undefined' && localStorage.getItem('mytask_pwa_installed') === 'true') {
+      return;
+    }
+
     // 1. Jika aplikasi sudah berjalan dalam mode PWA Standalone (Homescreen), jangan tampilkan
     const isStandalone =
       window.matchMedia?.('(display-mode: standalone)').matches ||
@@ -18,10 +23,24 @@ export default function PwaInstallPrompt() {
       document.referrer.includes('android-app://');
 
     if (isStandalone) {
+      localStorage.setItem('mytask_pwa_installed', 'true');
       return;
     }
 
-    // 2. Cek apakah pengguna sudah menekan tombol "Nanti" dalam 3 hari terakhir
+    // 2. Cek apakah browser Android sudah memiliki aplikasi ini terpasang (getInstalledRelatedApps)
+    if ('getInstalledRelatedApps' in navigator) {
+      navigator
+        .getInstalledRelatedApps()
+        .then((relatedApps) => {
+          if (relatedApps && relatedApps.length > 0) {
+            localStorage.setItem('mytask_pwa_installed', 'true');
+            setIsVisible(false);
+          }
+        })
+        .catch(() => {});
+    }
+
+    // 3. Cek apakah pengguna sudah menekan tombol "Nanti" dalam 3 hari terakhir
     const dismissedTime = localStorage.getItem('mytask_pwa_dismissed');
     if (dismissedTime) {
       const elapsed = Date.now() - Number(dismissedTime);
@@ -81,10 +100,16 @@ export default function PwaInstallPrompt() {
     }
 
     try {
+      // Tandai langsung di storage bahwa user telah memulai proses install
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('mytask_pwa_installed', 'true');
+      }
+      setIsVisible(false);
+
       await deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
-      if (choiceResult.outcome === 'accepted') {
-        setIsVisible(false);
+      if (choiceResult && choiceResult.outcome === 'accepted') {
+        localStorage.setItem('mytask_pwa_installed', 'true');
       }
       setDeferredPrompt(null);
     } catch (err) {
@@ -117,9 +142,9 @@ export default function PwaInstallPrompt() {
 
             {/* Header Content */}
             <div className="flex items-start gap-3">
-              {/* MyTask App Logo CheckSquare */}
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#2A1B12] to-[#120B07] border border-[var(--theme-accent,#D97706)]/60 flex items-center justify-center shrink-0 shadow-md shadow-amber-950/40">
-                <CheckSquare className="w-5 h-5 text-[var(--theme-accent,#D97706)] stroke-[2.5]" />
+              {/* MyTask App Logo CheckSquare (100% Identik Navbar) */}
+              <div className="w-10 h-10 rounded-xl bg-[#FAFAFA] text-[#0A0A0A] flex items-center justify-center font-bold shadow-md shrink-0">
+                <CheckSquare className="w-5 h-5 stroke-[2.5]" />
               </div>
 
               {/* Title & Description */}

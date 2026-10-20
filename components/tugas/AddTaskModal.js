@@ -100,7 +100,7 @@ export default function AddTaskModal({
       description="Isi rincian tugas, tenggat waktu, dan pengingat."
       maxWidth="max-w-xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+      <form onSubmit={handleSubmit} className="space-y-4 pt-1 flex flex-col min-h-full">
         {/* Judul Tugas: Prominent & Borderless on Mobile, Boxed on Desktop */}
         <div className="space-y-1.5">
           <label
@@ -385,24 +385,22 @@ export default function AddTaskModal({
           </label>
         </div>
 
-        {/* Sticky Footer Actions */}
-        <div className="sticky bottom-0 z-10 bg-[#0A0A0C]/90 backdrop-blur-md p-4 border-t border-white/10 flex items-center justify-end gap-3 mt-4 -mx-1 sm:-mx-0">
-          {/* Desktop-only Batal Button */}
+        {/* Sticky Footer Actions (Stays anchored at bottom of screen / adapts above keyboard) */}
+        <div className="sticky bottom-0 z-10 bg-[#0C0A09]/95 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:p-0 lg:pt-4 border-t border-white/10 lg:border-white/[0.08] flex items-center justify-end gap-3 mt-auto -mx-4 lg:-mx-0">
           <Button
             type="button"
             variant="secondary"
             onClick={handleClose}
-            className="hidden lg:inline-flex w-auto"
+            className="w-1/3 lg:w-auto font-medium"
           >
             Batal
           </Button>
 
-          {/* Primary Save CTA: Full-width on mobile, auto on desktop */}
           <Button
             type="submit"
             variant="primary"
             disabled={Boolean(isDeadlinePast)}
-            className="w-full lg:w-auto min-w-[130px] font-semibold"
+            className="flex-1 lg:w-auto min-w-[130px] font-semibold"
           >
             Simpan Tugas
           </Button>
