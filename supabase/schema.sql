@@ -125,6 +125,7 @@ create table if not exists public.push_subscriptions (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 create index if not exists idx_push_subs_user on public.push_subscriptions(user_id);
+alter table public.push_subscriptions enable row level security;
 
 -- Tabel Notifikasi (Notifications & Reminder Logs)
 create table if not exists public.notifications (
@@ -226,6 +227,7 @@ alter table public.profiles enable row level security;
 alter table public.categories enable row level security;
 alter table public.tasks enable row level security;
 alter table public.subtasks enable row level security;
+alter table public.push_subscriptions enable row level security;
 alter table public.notifications enable row level security;
 
 -- Cabut seluruh izin PostgREST public dari role anon dan authenticated

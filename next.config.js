@@ -6,7 +6,7 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   experimental: {
-    optimizePackageImports: ["lucide-react", "date-fns", "framer-motion"],
+    optimizePackageImports: ["lucide-react", "framer-motion"],
   },
   async headers() {
     const securityHeaders = [

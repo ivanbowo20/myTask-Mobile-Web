@@ -263,7 +263,7 @@ export default function AddTaskModal({
             placeholder="Tambahkan catatan atau detail instruksi tugas..."
             value={deskripsi}
             onChange={(e) => setDeskripsi(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-white/20 text-base sm:text-sm text-[#FAFAFA] placeholder:text-zinc-400 transition-all duration-200 resize-y backdrop-blur-sm"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/[0.08] hover:border-white/[0.16] focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-white/20 text-base sm:text-sm text-[#FAFAFA] placeholder:text-zinc-400 transition-all duration-200 resize-y"
           />
         </div>
 

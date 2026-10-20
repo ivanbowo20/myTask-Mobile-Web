@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { sendImportantTaskCreatedEmail } from "@/lib/email";
 
 const MAX_JUDUL_LENGTH = 255;
 const MAX_DESKRIPSI_LENGTH = 2000;
@@ -214,6 +215,19 @@ export async function POST(request) {
     );
 
     const task = mapRowToTask(result.rows[0]);
+
+    // Kirim notifikasi email untuk tugas penting secara asynchronous (non-blocking)
+    if (Boolean(prioritas) && session.user.email) {
+      sendImportantTaskCreatedEmail({
+        to: session.user.email,
+        taskTitle: cleanJudul,
+        deadline: parsedDeadline.value,
+        deskripsi: cleanDeskripsi,
+      }).catch((err) => {
+        console.error("[MAIL] Gagal mengirim email tugas penting:", err);
+      });
+    }
+
     return NextResponse.json({ task }, { status: 201 });
   } catch (error) {
     console.error("POST /api/tasks error:", error);

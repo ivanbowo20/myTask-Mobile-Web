@@ -18,6 +18,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import { getContextualGreeting } from "@/lib/greeting";
 import AnimatedContent from "@/components/ui/AnimatedContent";
+import NotificationBanner from "@/components/notifikasi/NotificationBanner";
 import { useTasks } from "@/lib/task-context";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "@/lib/use-toast";
@@ -245,6 +246,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </AnimatedContent>
+
+      {/* Smart Notification Permission & Test Banner */}
+      <NotificationBanner dismissible={true} />
 
       {/* Mobile-First Progress & Unified Focus Agenda (< 1024px) */}
       <div className="lg:hidden space-y-4">

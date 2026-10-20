@@ -410,7 +410,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="nama@email.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 backdrop-blur-sm"
+                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
                       required
                       autoComplete="email"
                     />
@@ -435,7 +435,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="••••••••"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 backdrop-blur-sm"
+                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
                       required
                       autoComplete="current-password"
                     />
@@ -585,7 +585,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="Contoh: Budi Santoso"
                       value={nama}
                       onChange={(e) => setNama(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 backdrop-blur-sm"
+                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
                       required
                       autoComplete="name"
                     />
@@ -610,7 +610,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="nama@email.com"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 backdrop-blur-sm"
+                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
                       required
                       autoComplete="email"
                     />
@@ -635,7 +635,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="Minimal 8 karakter"
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 backdrop-blur-sm"
+                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
                       required
                       minLength={8}
                       autoComplete="new-password"
@@ -673,7 +673,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="Ulangi kata sandi"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 backdrop-blur-sm"
+                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
                       required
                       autoComplete="new-password"
                     />

@@ -5,6 +5,7 @@ import { Bell, AlertTriangle, Calendar, Clock } from "lucide-react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AnimatedContent from "@/components/ui/AnimatedContent";
+import NotificationBanner from "@/components/notifikasi/NotificationBanner";
 import { useTasks } from "@/lib/task-context";
 import { getKategoriById } from "@/lib/utils";
 
@@ -42,6 +43,11 @@ export default function NotificationsPage() {
             Ringkasan seluruh pengingat tenggat waktu tugas, terbagi dalam tiga tingkatan urgensi.
           </p>
         </div>
+      </AnimatedContent>
+
+      {/* Interactive Web Push Notification Status & Control Banner */}
+      <AnimatedContent delay={0.04}>
+        <NotificationBanner dismissible={false} />
       </AnimatedContent>
 
       {/* Section 1: Tenggat Terlewat */}
