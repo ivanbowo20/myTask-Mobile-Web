@@ -30,9 +30,9 @@ export default function TaskCard({
   if (task.selesai) {
     containerStyles = "border-[#8FB88F]/30 bg-[#8FB88F]/5 hover:border-[#8FB88F]/40";
   } else if (status === "terlewat") {
-    containerStyles = "border-l-4 border-l-[#E88B8B] border-[var(--glass-border,rgba(255,255,255,0.08))] bg-[#E88B8B]/[0.06] hover:border-[var(--glass-border-hover,rgba(255,255,255,0.2))]";
+    containerStyles = "border-[#E88B8B]/30 bg-[#E88B8B]/[0.04] hover:border-[#E88B8B]/50";
   } else if (status === "hari-ini") {
-    containerStyles = "border-l-4 border-l-[var(--theme-accent,#D97706)] border-[var(--glass-border,rgba(255,255,255,0.08))] bg-[var(--theme-accent,#D97706)]/[0.06] hover:border-[var(--glass-border-hover,rgba(255,255,255,0.2))]";
+    containerStyles = "border-[var(--theme-accent,#D97706)]/30 bg-[var(--theme-accent,#D97706)]/[0.04] hover:border-[var(--theme-accent,#D97706)]/50";
   }
 
   return (

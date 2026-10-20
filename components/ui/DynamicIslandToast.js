@@ -62,7 +62,7 @@ export default function DynamicIslandToast({ item, onDismiss }) {
           onDismiss();
         }
       }}
-      className={`pointer-events-auto cursor-grab active:cursor-grabbing w-full max-w-[380px] min-w-[280px] rounded-2xl dynamic-island-toast border-l-4 ${variant.borderColor} pl-4 pr-2 py-3 flex items-center gap-3 select-none transition-all duration-200`}
+      className={`pointer-events-auto cursor-grab active:cursor-grabbing w-full max-w-[380px] min-w-[280px] rounded-2xl dynamic-island-toast px-3.5 py-3 flex items-center gap-3 select-none transition-all duration-200`}
     >
       {/* Icon: Masuk dengan delay 20ms */}
       <motion.div
