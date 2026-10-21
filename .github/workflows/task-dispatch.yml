@@ -8,9 +8,19 @@ on:
 jobs:
   dispatch:
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Trigger Notification Dispatcher
+        env:
+          VERCEL_URL: ${{ secrets.VERCEL_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -X GET "https://${{ secrets.VERCEL_URL }}/api/notifications/dispatch" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -f
+          if [ -z "$VERCEL_URL" ]; then
+            echo "::error::VERCEL_URL belum diatur di GitHub Secrets!"
+            exit 1
+          fi
+          CLEAN_URL="${VERCEL_URL#https://}"
+          CLEAN_URL="${CLEAN_URL%/}"
+          curl -X GET "https://${CLEAN_URL}/api/notifications/dispatch" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -f
