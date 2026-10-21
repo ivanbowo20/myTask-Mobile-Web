@@ -4,6 +4,25 @@ import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sendImportantTaskCreatedEmail } from "@/lib/email";
+import { handleDispatch } from "@/app/api/notifications/dispatch/route";
+
+function getReminderOffsetMs(reminder) {
+  switch (reminder) {
+    case "30m":
+      return 30 * 60 * 1000;
+    case "1h":
+      return 60 * 60 * 1000;
+    case "3h":
+      return 3 * 60 * 60 * 1000;
+    case "6h":
+      return 6 * 60 * 60 * 1000;
+    case "1d":
+      return 24 * 60 * 60 * 1000;
+    case "15m":
+    default:
+      return 15 * 60 * 1000;
+  }
+}
 
 const MAX_JUDUL_LENGTH = 255;
 const MAX_DESKRIPSI_LENGTH = 2000;
@@ -228,6 +247,17 @@ export async function POST(request) {
       });
     }
 
+    // Instant Dispatch jika deadline <= threshold reminder saat tugas dibuat
+    if (parsedDeadline.value && !Boolean(selesai)) {
+      const deadlineTime = new Date(parsedDeadline.value).getTime();
+      const reminderOffset = getReminderOffsetMs(cleanReminder);
+      if (deadlineTime - reminderOffset <= Date.now()) {
+        handleDispatch().catch((err) => {
+          console.error("[TASK_POST] Instant dispatch error:", err);
+        });
+      }
+    }
+
     return NextResponse.json({ task }, { status: 201 });
   } catch (error) {
     console.error("POST /api/tasks error:", error);
@@ -355,7 +385,11 @@ export async function PUT(request) {
            kategori_id = $5,
            prioritas = $6,
            selesai = $7,
-           selesai_pada = $8
+           selesai_pada = $8,
+           reminder_sent = CASE 
+             WHEN (deadline IS DISTINCT FROM $3) OR (reminder IS DISTINCT FROM $4) THEN false 
+             ELSE reminder_sent 
+           END
        WHERE id = $9 AND user_id = $10
        RETURNING *;`,
       [
@@ -377,6 +411,18 @@ export async function PUT(request) {
     }
 
     const task = mapRowToTask(result.rows[0]);
+
+    // Instant Dispatch jika deadline <= threshold reminder saat tugas di-update
+    if (parsedDeadline.value && !Boolean(selesai)) {
+      const deadlineTime = new Date(parsedDeadline.value).getTime();
+      const reminderOffset = getReminderOffsetMs(cleanReminder);
+      if (deadlineTime - reminderOffset <= Date.now()) {
+        handleDispatch().catch((err) => {
+          console.error("[TASK_PUT] Instant dispatch error:", err);
+        });
+      }
+    }
+
     return NextResponse.json({ task });
   } catch (error) {
     console.error("PUT /api/tasks error:", error);

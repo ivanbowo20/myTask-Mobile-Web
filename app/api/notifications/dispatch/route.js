@@ -3,10 +3,11 @@ import crypto from "crypto";
 import webpush from "web-push";
 import { query } from "@/lib/db";
 import { formatTanggal } from "@/lib/utils";
+import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-async function handleDispatch() {
+export async function handleDispatch() {
   try {
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -138,35 +139,56 @@ async function handleDispatch() {
 }
 
 function validateCronAuth(request) {
-  if (!process.env.CRON_SECRET) {
+  try {
+    if (!process.env.CRON_SECRET) {
+      return false;
+    }
+
+    const authHeader = request.headers.get("authorization") || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return false;
+    }
+
+    const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
+    const providedSecret = authHeader;
+
+    // Pastikan panjang string sama sebelum compare (wajib untuk timingSafeEqual)
+    const isLengthMatch = expectedSecret.length === providedSecret.length;
+
+    return (
+      isLengthMatch &&
+      crypto.timingSafeEqual(
+        Buffer.from(expectedSecret),
+        Buffer.from(providedSecret)
+      )
+    );
+  } catch (err) {
     return false;
   }
-
-  const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
-  const providedSecret = request.headers.get("authorization") || "";
-
-  // Pastikan panjang string sama sebelum compare (wajib untuk timingSafeEqual)
-  const isLengthMatch = expectedSecret.length === providedSecret.length;
-
-  return (
-    isLengthMatch &&
-    crypto.timingSafeEqual(
-      Buffer.from(expectedSecret),
-      Buffer.from(providedSecret)
-    )
-  );
 }
 
 export async function POST(request) {
-  if (!validateCronAuth(request)) {
-    return new Response("Unauthorized", { status: 401 });
+  const isCron = validateCronAuth(request);
+  if (!isCron) {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+    if (!session?.user) {
+      return new Response("Unauthorized", { status: 401 });
+    }
   }
   return handleDispatch();
 }
 
 export async function GET(request) {
-  if (!validateCronAuth(request)) {
-    return new Response("Unauthorized", { status: 401 });
+  const isCron = validateCronAuth(request);
+  if (!isCron) {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+    if (!session?.user) {
+      return new Response("Unauthorized", { status: 401 });
+    }
   }
   return handleDispatch();
 }

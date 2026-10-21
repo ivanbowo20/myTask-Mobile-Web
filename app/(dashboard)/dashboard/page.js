@@ -109,6 +109,18 @@ export default function DashboardPage() {
     setSeed(Math.floor(Math.random() * 10));
   }, []);
 
+  // Passive dispatch trigger: periksa dan kirim notifikasi pengingat tertunda satu kali saat dashboard dibuka
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    fetch("/api/notifications/dispatch", {
+      method: "POST",
+    }).catch((err) => {
+      // Fire-and-forget: abaikan kesalahan jaringan latar belakang
+      console.warn("[PASSIVE_DISPATCH] Gagal memicu dispatch pasif:", err);
+    });
+  }, []);
+
   // Notifikasi sambutan login satu kali per sesi browser
   useEffect(() => {
     if (currentUser?.name) {

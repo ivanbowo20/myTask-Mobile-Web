@@ -20,8 +20,8 @@ self.addEventListener('push', function (event) {
   const title = data.title || 'TaskFlow Pengingat';
   const options = {
     body: data.body || 'Anda memiliki pemberitahuan tugas baru.',
-    icon: data.icon || '/favicon.ico',
-    badge: data.badge || '/favicon.ico',
+    icon: data.icon || '/icons/icon-192.png',
+    badge: data.badge || '/icons/icon-192.png',
     data: {
       url: data.url || '/dashboard',
     },
