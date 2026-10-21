@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import webpush from "web-push";
 import { query } from "@/lib/db";
 import { formatTanggal } from "@/lib/utils";
@@ -136,17 +137,35 @@ async function handleDispatch() {
   }
 }
 
+function validateCronAuth(request) {
+  if (!process.env.CRON_SECRET) {
+    return false;
+  }
+
+  const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
+  const providedSecret = request.headers.get("authorization") || "";
+
+  // Pastikan panjang string sama sebelum compare (wajib untuk timingSafeEqual)
+  const isLengthMatch = expectedSecret.length === providedSecret.length;
+
+  return (
+    isLengthMatch &&
+    crypto.timingSafeEqual(
+      Buffer.from(expectedSecret),
+      Buffer.from(providedSecret)
+    )
+  );
+}
+
 export async function POST(request) {
-  const authHeader = request.headers.get("authorization");
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!validateCronAuth(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
   return handleDispatch();
 }
 
 export async function GET(request) {
-  const authHeader = request.headers.get("authorization");
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!validateCronAuth(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
   return handleDispatch();
