@@ -22,36 +22,38 @@ export async function handleDispatch() {
     const subject = "mailto:admin@mytask.local";
     webpush.setVapidDetails(subject, publicKey, privateKey);
 
-    // 1. Cari tugas aktif yang belum dikirimi reminder dan waktu deadline-nya telah memenuhi syarat reminder
-    const findTasksSql = `
-      SELECT 
-        t.id, 
-        t.user_id, 
-        t.judul, 
-        t.deskripsi, 
-        t.deadline, 
-        t.reminder
-      FROM public.tasks t
-      WHERE t.selesai = false
-        AND t.reminder_sent = false
-        AND t.deadline IS NOT NULL
-        AND (
-          CASE t.reminder
-            WHEN '15m' THEN t.deadline - INTERVAL '15 minutes'
-            WHEN '30m' THEN t.deadline - INTERVAL '30 minutes'
-            WHEN '1h'  THEN t.deadline - INTERVAL '1 hour'
-            WHEN '3h'  THEN t.deadline - INTERVAL '3 hours'
-            WHEN '6h'  THEN t.deadline - INTERVAL '6 hours'
-            WHEN '1d'  THEN t.deadline - INTERVAL '1 day'
-            ELSE t.deadline - INTERVAL '15 minutes'
-          END
-        ) <= NOW()
-        AND t.deadline >= NOW() - INTERVAL '3 days'
-      ORDER BY t.deadline ASC
-      LIMIT 50;
+    // 1. Kunci dan tandai tugas secara atomik (Anti-Race Condition)
+    const reserveTasksSql = `
+      WITH target_tasks AS (
+        SELECT t.id
+        FROM public.tasks t
+        WHERE t.selesai = false
+          AND t.reminder_sent = false
+          AND t.deadline IS NOT NULL
+          AND (
+            CASE t.reminder
+              WHEN '15m' THEN t.deadline - INTERVAL '15 minutes'
+              WHEN '30m' THEN t.deadline - INTERVAL '30 minutes'
+              WHEN '1h'  THEN t.deadline - INTERVAL '1 hour'
+              WHEN '3h'  THEN t.deadline - INTERVAL '3 hours'
+              WHEN '6h'  THEN t.deadline - INTERVAL '6 hours'
+              WHEN '1d'  THEN t.deadline - INTERVAL '1 day'
+              ELSE t.deadline - INTERVAL '15 minutes'
+            END
+          ) <= NOW()
+          AND t.deadline >= NOW() - INTERVAL '3 days'
+        ORDER BY t.deadline ASC
+        LIMIT 50
+        FOR UPDATE SKIP LOCKED
+      )
+      UPDATE public.tasks
+      SET reminder_sent = true
+      FROM target_tasks
+      WHERE public.tasks.id = target_tasks.id
+      RETURNING public.tasks.id, public.tasks.user_id, public.tasks.judul, public.tasks.deskripsi, public.tasks.deadline, public.tasks.reminder;
     `;
 
-    const tasksResult = await query(findTasksSql);
+    const tasksResult = await query(reserveTasksSql);
     const tasks = tasksResult.rows;
 
     let totalSent = 0;
@@ -114,12 +116,6 @@ export async function handleDispatch() {
       } catch (notifErr) {
         console.warn(`[DISPATCH] Gagal insert log notifications:`, notifErr.message);
       }
-
-      // 3. Update status tugas menjadi reminder_sent = true agar tidak dikirim berulang kali
-      await query(
-        `UPDATE public.tasks SET reminder_sent = true WHERE id = $1;`,
-        [task.id]
-      );
 
       processedTaskIds.push(task.id);
     }
