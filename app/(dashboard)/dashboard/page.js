@@ -120,6 +120,29 @@ export default function DashboardPage() {
     }
   }, [currentUser]);
 
+  // Alert (Toast) otomatis saat membuka dashboard jika ada tugas terlewat belum lama (< 30 menit)
+  useEffect(() => {
+    if (typeof window === "undefined" || !stats?.overdueList || stats.overdueList.length === 0) return;
+
+    const now = Date.now();
+    const THIRTY_MINUTES_MS = 30 * 60 * 1000;
+
+    stats.overdueList.forEach((task) => {
+      if (!task?.deadline) return;
+      const deadlineTime = new Date(task.deadline).getTime();
+      const diffMs = now - deadlineTime;
+
+      // Jika statusnya terlewat belum lama ini (< 30 menit) dan belum dialert di sesi ini
+      if (diffMs >= 0 && diffMs <= THIRTY_MINUTES_MS) {
+        const sessionKey = `overdue_alert_${task.id}`;
+        if (!sessionStorage.getItem(sessionKey)) {
+          sessionStorage.setItem(sessionKey, "true");
+          toast.error(`Tugas "${task.judul}" terlewat!`);
+        }
+      }
+    });
+  }, [stats?.overdueList]);
+
   const greeting = useMemo(() => {
     return getContextualGreeting({
       user: {

@@ -1,0 +1,16 @@
+name: TaskFlow Notification Dispatcher
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # Jalan setiap 10 menit
+  workflow_dispatch: # Bisa di-run manual
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Notification Dispatcher
+        run: |
+          curl -X GET "https://${{ secrets.VERCEL_URL }}/api/notifications/dispatch" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          -f
