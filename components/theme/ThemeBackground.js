@@ -4,6 +4,7 @@ import { useTheme } from '@/lib/theme-context';
 import DarkChocolateBackground from './backgrounds/DarkChocolateBackground';
 import SoftAuroraBackground from './backgrounds/SoftAuroraBackground';
 import AbyssalTealBackground from './backgrounds/AbyssalTealBackground';
+import CelestialSkyBackground from './backgrounds/CelestialSkyBackground';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function ThemeBackground() {
@@ -36,16 +37,19 @@ export default function ThemeBackground() {
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
         >
+          {activeThemeId === 'celestial-sky' && <CelestialSkyBackground />}
           {activeThemeId === 'soft-aurora' && <SoftAuroraBackground />}
           {activeThemeId === 'abyssal-teal' && <AbyssalTealBackground />}
           {activeThemeId === 'dark-chocolate' && <DarkChocolateBackground />}
         </motion.div>
       </AnimatePresence>
 
-      {/* Adaptive scrim mask: Calibrated on Abyssal Teal for rich bioluminescence + WCAG AA text legibility */}
+      {/* Adaptive scrim mask: Dinonaktifkan pada celestial-sky agar langit biru cerah alami & kontras teks terjaga */}
       <div
         className={`absolute inset-0 pointer-events-none transition-all duration-500 ${
-          activeThemeId === 'abyssal-teal'
+          activeThemeId === 'celestial-sky'
+            ? 'bg-transparent backdrop-blur-none'
+            : activeThemeId === 'abyssal-teal'
             ? 'bg-black/55 backdrop-blur-none sm:backdrop-blur-[1.5px]'
             : 'bg-black/65 backdrop-blur-none sm:backdrop-blur-[2px]'
         }`}
@@ -53,13 +57,15 @@ export default function ThemeBackground() {
       />
 
       {/* Subtle noise texture for frosted crystal refraction (Desktop only, hemat GPU HP) */}
-      <div
-        className="hidden sm:block absolute inset-0 opacity-[0.025] mix-blend-overlay pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-        }}
-        aria-hidden="true"
-      />
+      {activeThemeId !== 'celestial-sky' && (
+        <div
+          className="hidden sm:block absolute inset-0 opacity-[0.025] mix-blend-overlay pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          }}
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 }

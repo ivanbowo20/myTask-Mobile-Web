@@ -144,7 +144,7 @@ export default function ThemeModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-            className="relative w-full max-w-2xl glass-modal rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-7 z-10 border-t sm:border border-white/[0.12] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)] max-h-[92vh] sm:max-h-[90vh] overflow-y-auto focus:outline-none"
+            className="relative w-full max-w-4xl glass-modal rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-7 z-10 border-t sm:border border-white/[0.12] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)] max-h-[92vh] sm:max-h-[90vh] overflow-y-auto focus:outline-none"
           >
             {/* Mobile Bottom Sheet Grab Handle */}
             <div className="w-12 h-1 rounded-full bg-white/20 mx-auto mb-4 sm:hidden" aria-hidden="true" />
@@ -183,7 +183,7 @@ export default function ThemeModal() {
             </div>
 
             {/* Theme Swatch Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-5 pb-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-5 pb-2">
               {themes.map((t) => {
                 const isActive = theme === t.id;
 
@@ -243,6 +243,14 @@ export default function ThemeModal() {
                           <div className="absolute top-1/4 -right-2 w-28 h-20 rounded-full bg-[#0D9488]/55 filter blur-[14px]" />
                           <div className="absolute -bottom-2 -left-2 w-28 h-18 rounded-full bg-[#2DD4BF]/45 filter blur-[16px]" />
                           <div className="absolute top-1/2 left-1/3 w-20 h-20 rounded-full bg-[#10B981]/35 filter blur-[12px]" />
+                        </div>
+                      )}
+
+                      {t.id === 'celestial-sky' && (
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#3172B8] via-[#60A5FA] to-[#BAE6FD] overflow-hidden">
+                          <div className="absolute top-1 left-2 w-20 h-10 rounded-full bg-white/75 filter blur-[7px]" />
+                          <div className="absolute top-6 right-1 w-24 h-12 rounded-full bg-white/85 filter blur-[8px]" />
+                          <div className="absolute -bottom-2 left-1/3 w-28 h-14 rounded-full bg-white/70 filter blur-[8px]" />
                         </div>
                       )}
 
