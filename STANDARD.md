@@ -26,6 +26,54 @@ Jika ada konflik antara permintaan user dan standar ini, jangan diam-diam mengab
    manual.
 ---
 
+---
+## ATURAN MUTLAK: GIT SAFETY (DILARANG KERAS `git add .`)
+1. AI DILARANG KERAS mengeksekusi perintah `git add .`, `git add -A`, 
+   atau `git commit -a`.
+2. AI WAJIB melakukan staging file secara spesifik (satu per satu) 
+   menggunakan `git add nama_file`.
+3. SEBELUM melakukan `git commit`, AI WAJIB menjalankan `git status` 
+   dan memverifikasi bahwa file `.env`, `.env.local`, file log, atau 
+   folder berisi kredensial lokal (seperti `scripts/`) TIDAK ADA 
+   dalam daftar file hijau (staged).
+4. Jika menemukan file sensitif di staging, AI WAJIB membatalkannya 
+   dengan `git restore --staged <nama_file>` sebelum commit.
+5. Jika AI tidak yakin file mana yang harus di-push, AI harus 
+   BERTANYA ke user terlebih dahulu.
+---
+
+---
+## ATURAN MUTLAK: DILARANG MENGHAPUS DATA (DESTRUCTIVE COMMANDS)
+1. AI DILARANG KERAS menjalankan perintah database atau terminal yang 
+   bersifat menghapus, me-reset, atau mengosongkan data TANPA IZIN 
+   TERTULIS DARI USER.
+2. Perintah yang masuk daftar hitam (Blacklist):
+   - SQL: `DROP TABLE`, `TRUNCATE`, `DELETE` (tanpa klausa WHERE).
+   - Laravel/PHP: `php artisan migrate:fresh`, `php artisan db:wipe`.
+   - Prisma/Node.js: `npx prisma migrate reset`, `prisma db push --force-reset`.
+   - Supabase/PSQL: `supabase db reset`.
+3. Jika AI merasa perlu menjalankan perintah di atas untuk memperbaiki 
+   bug atau migrasi, AI WAJIB:
+   - BERHENTI.
+   - Memberikan peringatan merah (⚠️ DESTRUCTIVE ACTION WARNING).
+   - Menjelaskan perintah apa yang akan dijalankan dan dampaknya.
+   - Menunggu user mengetik "SAYA SETUJU HAPUS DATA" sebelum mengeksekusi.
+4. AI DILARANG menggunakan trik `--force` atau `-y` pada CLI database 
+   kecuali user memerintahkan secara eksplisit.
+---
+
+---
+## ATURAN MUTLAK: 7 PILAR KEAMANAN (VIBE CODING DEFENSE)
+Setiap kali melakukan audit atau perubahan kode, AI WAJIB mematuhi 7 pilar ini:
+1. **Zero Secret Leakage:** Tidak ada API Key/Secret hardcoded. Kunci rahasia backend (OpenAI, Stripe, Service Role) TIDAK PERNAH diletakkan di variabel `NEXT_PUBLIC_`.
+2. **RLS (Row Level Security) & Policy Audit:** RLS wajib aktif di semua tabel. Jangan pernah gunakan `USING (true)` untuk data sensitif. Pisahkan data sensitif (seperti role/status premium) dari profil publik/editable user.
+3. **Server-Side Validation:** Validasi form frontend hanya untuk UX. API Route wajib memvalidasi tipe data dan otorisasi (`user_id`) sebelum query database.
+4. **Auth & Authorization:** Endpoint API wajib diproteksi dengan verifikasi session server-side (bukan sekadar menyembunyikan tombol/link di UI).
+5. **Rate Limiting Backend:** Wajib ada rate limit (berbasis IP atau User ID) di endpoint rawan diserang (Login, Register, Send Email, AI API).
+6. **Sensitive API Calls (Backend Only):** Panggilan ke layanan pihak ketiga (Email, AI, Payment, Web Push) wajib melalui API Route (Server), bukan langsung dari Client Component.
+7. **Budget Caps & Cloud Alerts (Manual Reminder):** Ingatkan user untuk menyalakan Spend Alerts / Budget Caps di dashboard cloud provider (Supabase, Vercel, dll.) guna mencegah pembengkakan biaya saat terjadi serangan DDoS/Spam.
+---
+
 1. CORE WORKING PRINCIPLES
 
 1.1 Understand Before Acting

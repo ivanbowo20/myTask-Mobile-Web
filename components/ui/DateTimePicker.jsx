@@ -2,8 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight, Check, X, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
-import OptionWheel from '@/components/ui/OptionWheel';
+import { Calendar, ChevronLeft, ChevronRight, Check, X, Clock, ArrowRight, ArrowLeft, ChevronUp, ChevronDown } from 'lucide-react';
 
 const MONTH_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -17,9 +16,6 @@ const MONTH_SHORT = [
 
 const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
-
 const QUICK_HOURS = [
   { label: '09:00', h: 9, m: 0 },
   { label: '12:00', h: 12, m: 0 },
@@ -27,6 +23,8 @@ const QUICK_HOURS = [
   { label: '17:00', h: 17, m: 0 },
   { label: '20:00', h: 20, m: 0 },
 ];
+
+const QUICK_MINUTES = [0, 15, 30, 45];
 
 function getPresetDate(type) {
   const now = new Date();
@@ -181,6 +179,22 @@ export default function DateTimePicker({
     setSelectedYear(viewYear);
   }
 
+  function incrementHour() {
+    setSelectedHour((prev) => (prev + 1) % 24);
+  }
+
+  function decrementHour() {
+    setSelectedHour((prev) => (prev - 1 + 24) % 24);
+  }
+
+  function incrementMinute() {
+    setSelectedMinute((prev) => (prev + 1) % 60);
+  }
+
+  function decrementMinute() {
+    setSelectedMinute((prev) => (prev - 1 + 60) % 60);
+  }
+
   function handleApply() {
     const y = selectedYear;
     const m = String(selectedMonth + 1).padStart(2, '0');
@@ -315,7 +329,7 @@ export default function DateTimePicker({
     </div>
   );
 
-  // Reusable Time Picker Content
+  // Reusable Time Picker Content (Zero-Lag Stepper & Direct Tap)
   const renderTimePicker = (isMobile = false) => (
     <div className={`w-full ${isMobile ? 'space-y-3' : 'flex flex-col justify-between'}`}>
       <div>
@@ -331,89 +345,164 @@ export default function DateTimePicker({
           </span>
         </div>
 
-        {/* Quick Hour Presets for Mobile */}
-        {isMobile && (
-          <div className="mb-3">
-            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold block mb-1.5">
-              Pilihan Jam Cepat:
-            </span>
-            <div className="grid grid-cols-5 gap-1">
-              {QUICK_HOURS.map((t) => {
-                const isActive = selectedHour === t.h && selectedMinute === t.m;
-                return (
-                  <button
-                    key={t.label}
-                    type="button"
-                    onClick={() => {
-                      setSelectedHour(t.h);
-                      setSelectedMinute(t.m);
-                    }}
-                    className={`py-1 rounded-lg text-[11px] font-medium border text-center transition-all cursor-pointer active:scale-95 ${
-                      isActive
-                        ? 'bg-[var(--theme-accent,#D97706)] text-black font-semibold border-[var(--theme-accent,#D97706)] shadow-sm'
-                        : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08] hover:text-white'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                );
-              })}
-            </div>
+        {/* Quick Hour Presets */}
+        <div className="mb-3">
+          <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold block mb-1.5">
+            Pilihan Jam Cepat:
+          </span>
+          <div className="grid grid-cols-5 gap-1">
+            {QUICK_HOURS.map((t) => {
+              const isActive = selectedHour === t.h && selectedMinute === t.m;
+              return (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={() => {
+                    setSelectedHour(t.h);
+                    setSelectedMinute(t.m);
+                  }}
+                  className={`py-1 rounded-lg text-[11px] font-medium border text-center transition-all cursor-pointer active:scale-95 ${
+                    isActive
+                      ? 'bg-[var(--theme-accent,#D97706)] text-black font-semibold border-[var(--theme-accent,#D97706)] shadow-sm'
+                      : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08] hover:text-white'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
 
-        {/* Dual OptionWheel Box (Jam & Menit) */}
-        <div className="flex items-center justify-center gap-2 pt-1">
-          {/* Hour Wheel */}
-          <div className="flex-1 text-center">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+        {/* Dual Stepper Input Box (Jam & Menit) */}
+        <div className="flex items-center justify-center gap-3 py-1">
+          {/* Jam Stepper Box */}
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
               Jam
-            </div>
-            <div className="relative h-32 w-full rounded-xl bg-black border border-white/[0.08] overflow-hidden">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black via-black/80 to-transparent z-10" />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black via-black/80 to-transparent z-10" />
-              <OptionWheel
-                items={HOURS}
-                selectedIndex={selectedHour}
-                onChange={(idx) => setSelectedHour(idx)}
-                side="center"
-                fontSize={0.88}
-                spacing={1.8}
-                tilt={10}
-                curve={0.5}
-                fade={0.6}
-                blur={1.2}
-                minOpacity={0.12}
-                smoothing={150}
-              />
+            </span>
+            <div className="flex flex-col items-center bg-black/60 border border-white/[0.1] rounded-2xl p-1 shadow-inner">
+              <button
+                type="button"
+                onClick={incrementHour}
+                className="w-14 h-8 sm:w-16 sm:h-8 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-90 active:bg-white/[0.18] flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
+                aria-label="Tambah 1 Jam"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+
+              <div className="my-0.5">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={2}
+                  value={String(selectedHour).padStart(2, '0')}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '');
+                    if (raw === '') {
+                      setSelectedHour(0);
+                      return;
+                    }
+                    const num = parseInt(raw, 10);
+                    if (!isNaN(num)) {
+                      setSelectedHour(Math.min(23, Math.max(0, num)));
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  className="w-14 sm:w-16 h-11 text-center text-2xl font-bold font-mono text-white bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-white/30 rounded-lg selection:bg-white/20"
+                  aria-label="Input Jam"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={decrementHour}
+                className="w-14 h-8 sm:w-16 sm:h-8 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-90 active:bg-white/[0.18] flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
+                aria-label="Kurang 1 Jam"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <span className="text-lg font-bold text-zinc-500 mt-5">:</span>
+          <span className="text-xl font-bold text-zinc-500 font-mono select-none pt-4">:</span>
 
-          {/* Minute Wheel */}
-          <div className="flex-1 text-center">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+          {/* Menit Stepper Box */}
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
               Menit
+            </span>
+            <div className="flex flex-col items-center bg-black/60 border border-white/[0.1] rounded-2xl p-1 shadow-inner">
+              <button
+                type="button"
+                onClick={incrementMinute}
+                className="w-14 h-8 sm:w-16 sm:h-8 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-90 active:bg-white/[0.18] flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
+                aria-label="Tambah 1 Menit"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+
+              <div className="my-0.5">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={2}
+                  value={String(selectedMinute).padStart(2, '0')}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '');
+                    if (raw === '') {
+                      setSelectedMinute(0);
+                      return;
+                    }
+                    const num = parseInt(raw, 10);
+                    if (!isNaN(num)) {
+                      setSelectedMinute(Math.min(59, Math.max(0, num)));
+                    }
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  className="w-14 sm:w-16 h-11 text-center text-2xl font-bold font-mono text-white bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-white/30 rounded-lg selection:bg-white/20"
+                  aria-label="Input Menit"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={decrementMinute}
+                className="w-14 h-8 sm:w-16 sm:h-8 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-90 active:bg-white/[0.18] flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
+                aria-label="Kurang 1 Menit"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
             </div>
-            <div className="relative h-32 w-full rounded-xl bg-black border border-white/[0.08] overflow-hidden">
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black via-black/80 to-transparent z-10" />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black via-black/80 to-transparent z-10" />
-              <OptionWheel
-                items={MINUTES}
-                selectedIndex={selectedMinute}
-                onChange={(idx) => setSelectedMinute(idx)}
-                side="center"
-                fontSize={0.88}
-                spacing={1.8}
-                tilt={10}
-                curve={0.5}
-                fade={0.6}
-                blur={1.2}
-                minOpacity={0.12}
-                smoothing={150}
-              />
-            </div>
+          </div>
+        </div>
+
+        {/* Quick Minute Chips (:00, :15, :30, :45) */}
+        <div className="mt-2.5">
+          <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-400 font-semibold mb-1">
+            <span>Menit Cepat:</span>
+            <span className="text-[10px] text-zinc-400 font-normal lowercase">atau tap +/-</span>
+          </div>
+          <div className="grid grid-cols-4 gap-1">
+            {QUICK_MINUTES.map((min) => {
+              const isMinuteActive = selectedMinute === min;
+              return (
+                <button
+                  key={min}
+                  type="button"
+                  onClick={() => setSelectedMinute(min)}
+                  className={`py-1 rounded-lg text-xs font-mono font-medium border text-center transition-all cursor-pointer active:scale-95 ${
+                    isMinuteActive
+                      ? 'bg-white text-black font-bold border-white shadow-sm'
+                      : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08] hover:text-white'
+                  }`}
+                >
+                  :{String(min).padStart(2, '0')}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -429,7 +518,7 @@ export default function DateTimePicker({
             <span>Pilih Tanggal</span>
           </button>
           <span className="text-[11px] text-zinc-400 font-mono">
-            Scroll roda jam / sentuh angka
+            Tap +/- atau ketik angka
           </span>
         </div>
       ) : (
@@ -484,7 +573,7 @@ export default function DateTimePicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[470px] max-w-[calc(100vw-2rem)] rounded-2xl glass-dropdown p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl overscroll-contain"
+            className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[490px] max-w-[calc(100vw-2rem)] rounded-2xl glass-dropdown p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl overscroll-contain"
           >
             {/* Header Dialog */}
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.08]">
@@ -589,7 +678,7 @@ export default function DateTimePicker({
                 {renderCalendar(false)}
               </div>
               <div className="w-[1px] bg-white/[0.08] self-stretch" />
-              <div className="w-44 flex flex-col justify-between">
+              <div className="w-48 flex flex-col justify-between">
                 {renderTimePicker(false)}
               </div>
             </div>
