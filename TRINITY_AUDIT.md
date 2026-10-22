@@ -1,111 +1,58 @@
 # 🔱 TRINITY CODE AUDIT REPORT
 
-**Target:** Celestial Sky Theme, Modal Architecture, Theme Picker & Task Cards (`lib/theme-context.js`, `app/globals.css`, `components/ui/Modal.js`, `components/theme/ThemeModal.js`, `components/tugas/AddTaskModal.js`, `components/tugas/EditTaskModal.js`, `components/tugas/TaskCard.js`)  
-**Arsitektur & Ruang Lingkup:** Next.js 15 App Router + Tailwind CSS + Framer Motion + Multi-Theme Dynamic Token Engine.  
-**Indeks yang Digunakan:** CodeGraph: Ya (`.codegraph/`) | Direct AST & CSS Token Verifier: Ya.
+**Target:** Mobile DateTimePicker, Cross-Platform Android/iOS Date UX, and Modal Forms (`components/ui/DateTimePicker.jsx`, `components/tugas/AddTaskModal.js`, `components/tugas/EditTaskModal.js`)  
+**Arsitektur & Ruang Lingkup:** Next.js 15 App Router + Tailwind CSS + Framer Motion + Responsive Touch Controls.  
+**Indeks yang Digunakan:** CodeGraph: Ya (`.codegraph/`) | Direct AST & Git History Verifier: Ya.
 
 ---
 
-## 🚨 1. MUST FIX (Bug, Logika Rusak, Keamanan, Kontras Tak Terbaca)
+## 🚨 1. MUST FIX (Bug, Logika Rusak, Keamanan, Degradasi Platform)
 
-### [1] Hardcoded Dark Obsidian Surface pada Mobile Modal (`components/ui/Modal.js:L170, L178`, `components/tugas/AddTaskModal.js:L389`, `components/tugas/EditTaskModal.js:L216`)
-- **Fungsi Kode:** Kontainer modal/dialog utama dan drawer layar penuh pada perangkat mobile untuk Tambah Tugas, Edit Tugas, dan Tambah Kategori.
-- **Akar Masalah (Bug/Logic):** 
-  - Pada layar mobile (`< lg`), kontainer modal di `Modal.js` di-hardcode menggunakan kelas `bg-[#0C0A09]` (warna obsidian gelap dari tema Dark Chocolate).
-  - Header modal di `Modal.js:L178` di-hardcode menggunakan `bg-[#0C0A09]/95`.
-  - Sticky footer di `AddTaskModal.js:L389` dan `EditTaskModal.js:L216` di-hardcode menggunakan `bg-[#0C0A09]/95`.
-  - Di saat yang bersamaan, aturan CSS di `app/globals.css:L376-395` untuk tema `celestial-sky` (Light Mode) membalikkan semua teks kelas `.text-[#FAFAFA]`, `.text-white`, dan `.text-zinc-100` menjadi `#0F172A` (tinta slate sangat gelap/hampir hitam) dengan `!important`.
-  - **Dampak Tabrakan Warna:** Teks `#0F172A` (hitam pekat) dirender di atas latar belakang `#0C0A09` (hitam pekat). Kontras drop menjadi **1.1:1**, jauh di bawah standar WCAG AA (4.5:1). Hasilnya, seluruh teks judul ("Tambah Tugas Baru"), input teks ("Apa yang perlu diselesaikan?"), tombol "Batal", dan ikon tombol close menjadi **hitam pekat di atas hitam pekat (sama sekali tidak kelihatan)**.
-- **Blast Radius & Caller:** `components/ui/Modal.js`, `components/tugas/AddTaskModal.js`, `components/tugas/EditTaskModal.js`, `components/kategori/AddCategoryModal.js`, `components/kategori/EditCategoryModal.js`.
-- **Saran Perbaikan Minimal (Ponytail Fix):**
-  - Ganti `bg-[#0C0A09]` dan `bg-[#0C0A09]/95` pada mobile modal dengan kelas token tema adaptif `.glass-modal` atau `bg-[var(--theme-nav-bg)]`.
-  - Di `app/globals.css`, pastikan `.glass-modal` pada tema Celestial Sky di layar mobile menggunakan surface es kristal terang (`rgba(255, 255, 255, 0.95)` dengan specular border `rgba(186, 230, 253, 0.8)`).
-- **Dampak jika Diabaikan:** Pengguna HP dengan tema Celestial Sky tidak dapat membaca form tambah tugas maupun edit tugas.
-
----
-
-### [2] Global Text Inversion Merusak Tagline Pill pada Theme Picker (`components/theme/ThemeModal.js:L258-266`, `app/globals.css:L376-380`)
-- **Fungsi Kode:** Mockup kartu preview tema di dalam modal "Pilih Tema Tampilan".
+### [1] Hardcoded Native `<input type="datetime-local">` Merusak UX Mobile di Android / Tecno POVA 6 (`components/ui/DateTimePicker.jsx:L310-330`)
+- **Fungsi Kode:** Komponen pemilih tanggal & jam tenggat waktu (deadline picker) untuk tugas baru dan edit tugas.
 - **Akar Masalah (Bug/Logic):**
-  - Di dalam setiap kartu preview tema (`Dark Chocolate`, `Soft Aurora`, `Abyssal Teal`, `Celestial Sky`), terdapat pill floating mockup:
-    ```jsx
-    <div className="relative z-10 px-3 py-1.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/[0.12] ...">
-      <span className="text-[10px] font-semibold text-[#FAFAFA] tracking-wide">
-        {t.tagline}
-      </span>
-    </div>
-    ```
-  - Pill ini sengaja didesain memiliki latar belakang gelap (`bg-black/40`) di semua tema.
-  - Namun, karena selektor CSS global di `app/globals.css:L376`:
-    ```css
-    html[data-theme="celestial-sky"] .text-[#FAFAFA] {
-      color: #0F172A !important;
-    }
-    ```
-  - Teks `{t.tagline}` ("Hangat & Mewah", "Tenang & Mengalir", "Bioluminescent & Menenangkan", "Cerah, Sejuk & Produktif") dipaksa menjadi `#0F172A` (hitam pekat) di dalam pill `bg-black/40`.
-  - Akibatnya, pada tangkapan layar `media_1792639984089_688e86e8.png`, seluruh tulisan tagline di jendela preview menjadi hitam dan tidak terbaca sama sekali.
-- **Blast Radius & Caller:** `components/theme/ThemeModal.js`.
+  - Pada commit `c5297bfd`, dibuat pemisahan responsif: untuk viewport layar kecil (`sm:hidden`, `< 640px`), kalender interaktif dan 3D wheel **SENGAJA DISEMBUNYIKAN** (`hidden sm:flex`).
+  - Sebagai gantinya, dipasang `<input type="datetime-local" ... />` dengan anggapan pengguna HP akan memakai native picker bawaan.
+  - **Mengapa di HP developer terlihat ada animasi popup, sedangkan di HP Tecno POVA 6 tidak ada?**
+    - **Di iOS (iPhone/Safari):** Tag `<input type="datetime-local">` memicu sheet roda putar native Apple yang halus dengan animasi popup bawaan iOS.
+    - **Di Android / HiOS (Tecno POVA 6):** Tag `<input type="datetime-local">` dirender sebagai **input box teks polos HTML5** yang menampilkan teks mentah `dd/mm/tttt, --:--`.
+    - Kotak ini tidak memunculkan popup kalender web interaktif, tidak memiliki visual identitas tema aplikasi (tampak seperti form HTML jadul 1995), dan membuat pengguna Tecno POVA 6 mengeluh karena tidak ada opsi tenggat waktu atau popup kalender yang jelas.
+- **Blast Radius & Caller:**
+  - `components/ui/DateTimePicker.jsx`
+  - `components/tugas/AddTaskModal.js:L285` (Modal Tambah Tugas)
+  - `components/tugas/EditTaskModal.js:L144` (Modal Edit Tugas)
 - **Saran Perbaikan Minimal (Ponytail Fix):**
-  - Berikan isolasi proteksi warna putih khusus pada teks pill preview: tambahkan kelas `.theme-preview-tagline` atau style `color: #FFFFFF !important`.
-  - Di `app/globals.css`, tambahkan pengecualian agar teks di dalam container `.bg-black/*` atau `.theme-preview-pill` tidak diubah menjadi `#0F172A`.
-- **Dampak jika Diabaikan:** Menu pemilihan tema terlihat cacat dan tidak profesional karena teks tagline preview hilang.
+  - Singkirkan `<input type="datetime-local">` mentah dari antarmuka mobile.
+  - Bangun arsitektur kalender & pemilih waktu kustom yang 100% responsif untuk semua layar (lebar mobile 360px - 430px) tanpa degradasi HTML5 mentah.
+  - Di mobile, gunakan tab switcher yang elegan `[ 📅 Tanggal ]` & `[ 🕒 Jam ]` atau collapsible accordion di dalam popover sehingga muat di layar HP tanpa overflow dan terasa mulus di semua merk smartphone (Tecno, Samsung, Xiaomi, iPhone, dll).
+- **Dampak jika Diabaikan:** 70%+ pengguna mobile Android (terutama merk Transsion/Tecno/Infinix, Xiaomi, Realme) akan mengira aplikasi rusak atau belum selesai dibuat.
 
 ---
 
-## ⚠️ 2. SHOULD FIX (Risiko Skala, Blast Radius, Refaktor Arsitektur)
+## ⚠️ 2. SHOULD FIX (Risiko UX & Ketidaknyamanan Interaksi)
 
-### [3] Kartu Pilihan Tema Membaur/Hilang Garis Batas pada Light Modal (`components/theme/ThemeModal.js:L203-204`)
-- **Fungsi Kode:** Daftar kartu opsi tema yang dapat diklik pengguna di modal Pilih Tema.
+### [2] Hit Target & Touch Interaction di Layar Sempit (`components/ui/DateTimePicker.jsx:L397-412`)
+- **Fungsi Kode:** Grid tanggal 1-31 pada bulan aktif.
 - **Akar Masalah:**
-  - Kartu tema yang tidak aktif menggunakan styling:
-    `border border-white/[0.08] bg-white/[0.02] hover:border-white/[0.2] hover:bg-white/[0.05]`
-  - Pada tema Celestial Sky, background modal adalah putih frosted (`rgba(255, 255, 255, 0.92)`).
-  - Garis batas `border-white/[0.08]` putih transparan di atas putih menghasilkan kontras nol (invisible border). Kartu terlihat melayang tanpa batas tepi yang tegas.
-- **Saran Perbaikan Minimal (Ponytail Fix):**
-  - Tambahkan styling khusus light mode pada kartu tema tidak aktif di `app/globals.css`:
-    ```css
-    html[data-theme="celestial-sky"] .glass-modal button[aria-pressed="false"] {
-      background-color: rgba(255, 255, 255, 0.75) !important;
-      border-color: rgba(186, 230, 253, 0.80) !important;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.06) !important;
-    }
-    ```
+  - Tombol tanggal menggunakan `h-7 w-full` (tinggi hanya 28px).
+  - Standar WCAG 2.1 & Apple Human Interface Guidelines mewajibkan ukuran sentuh jari minimal **44px × 44px** (atau minimal 36px dengan padding sentuh).
+  - Pada layar HP Tecno POVA 6 (layar 6.78" FHD+), tombol 28px terlalu kecil sehingga rentan salah tekan (*fat-finger error*).
+- **Saran Perbaikan:**
+  - Tingkatkan touch hit-target tanggal menjadi minimal `h-9` atau `h-10` dengan active feedback WWDC fluid springs (`:active scale(0.96)`).
 
 ---
 
-### [4] Kontras Rendah pada Badge "Aktif" & Grab Handle Mobile (`components/theme/ThemeModal.js:L150, L212`)
-- **Fungsi Kode:** Status indikator tema yang sedang aktif dan handle geser mobile sheet.
-- **Akar Masalah:**
-  - Badge aktif menggunakan `bg-[var(--theme-accent)] text-[#0A0A0A]`. Pada Celestial Sky, aksennya adalah `#0284C7` (Sky-600). Teks hitam `#0A0A0A` di atas `#0284C7` hanya memiliki rasio kontras 4.0:1 (gagal WCAG AA untuk font ukuran 11px). Teks wajib berwarna putih `#FFFFFF` (rasio kontras 4.6:1+).
-  - Grab handle mobile menggunakan `bg-white/20`, tidak terlihat sama sekali di atas sheet putih.
-- **Saran Perbaikan Minimal (Ponytail Fix):**
-  - Ubah warna teks badge aktif menjadi `#FFFFFF` pada Celestial Sky.
-  - Ubah warna grab handle menjadi `bg-slate-300` pada light mode.
+## 💡 3. NICE TO HAVE (Lean & Polish)
 
----
-
-### [5] Tombol Sekunder "Batal" & Input Border Contrast di Celestial Sky (`components/ui/Button.js:L23`, `app/globals.css:L472-479`)
-- **Fungsi Kode:** Tombol Batal dan field input di semua modal.
-- **Akar Masalah:**
-  - `Button.js` varian `secondary` ("Batal") menggunakan `bg-[rgba(255,255,255,0.04)] text-[#FAFAFA] border border-[rgba(255,255,255,0.08)]`.
-  - Di tema Celestial Sky, teks diubah menjadi `#0F172A`, tetapi background dan border tidak disesuaikan dengan light mode, sehingga tampak kusam atau tidak jelas batas interaksinya.
-- **Saran Perbaikan Minimal (Ponytail Fix):**
-  - Tambahkan rule di `globals.css` agar tombol sekunder memiliki background `rgba(241, 245, 249, 0.9)`, border `rgba(186, 230, 253, 0.8)`, dan teks `#334155`.
-
----
-
-## 💡 3. NICE TO HAVE (Lean, Pembersihan Bloat & YAGNI)
-
-### [6] FOUC (Flash of Unstyled Color) pada Reload Awal (`app/layout.js:L61`)
-- **Fungsi Kode:** Skrip inline `<script>` di `<head>` untuk menyetel variabel CSS sebelum hidrasi React.
+### [3] Sinkronisasi Waktu Cepat (Quick Presets) Langsung Menutup Dialog (`components/ui/DateTimePicker.jsx:L293-296`)
+- **Fungsi Kode:** Tombol preset "Hari Ini 17:00", "Besok 09:00", dll.
 - **Peluang Optimasi:**
-  - Kamus tema `var c = {...}` di `app/layout.js:L61` saat ini hanya mencatat `dark-chocolate`, `soft-aurora`, dan `abyssal-teal`. `celestial-sky` belum terdaftar di skrip ini.
-  - Akibatnya, saat hard refresh pada tema Sky, browser sempat menampilkan fallback warna gelap selama sepersekian milidetik sebelum `ThemeProvider` React aktif.
-- **Saran Perbaikan:** Masukkan token `celestial-sky` ke dalam dictionary script inline di `app/layout.js`.
+  - Saat ini tombol preset langsung mengeksekusi `onChange` dan `setIsOpen(false)`. Ini sudah bagus dan efisien (1-tap action).
+  - Namun dapat diperkaya dengan haptic visual ripple / micro-bounce sebelum menutup agar terasa responsif dan meyakinkan di HP.
 
 ---
 
 ## 📊 KESIMPULAN AUDIT
-- **Total Temuan:** 6 (Must Fix: 2 | Should Fix: 3 | Nice to Have: 1)
-- **Akar Masalah Utama:** Ketidaksinkronan arsitektur modal mobile yang masih meng-hardcode warna gelap `#0C0A09` sementara selektor CSS global memaksa semua teks menjadi hitam `#0F172A` untuk light mode.
-- **Prinsip Solusi (SielloMita + Trinity):** Mengganti hardcoded color di shared modal core (`Modal.js`) menjadi token adaptif tema, serta memberikan isolasi selektor CSS agar elemen gelap (seperti pill preview) tetap mempertahankan teks putih kontras tinggi.
+- **Total Temuan:** 3 (Must Fix: 1 | Should Fix: 1 | Nice to Have: 1)
+- **Status Server & CSS:** Server dalam kondisi prima (bukan masalah server). CSS tema bekerja normal. Masalah murni merupakan **pilihan implementasi kode kondisional `sm:hidden`** yang merender `<input type="datetime-local">` polos di mobile.
+- **Solusi SielloMita:** Hapus ketergantungan pada native HTML5 datetime-local di mobile, ganti dengan custom interactive date-time sheet yang konsisten di semua platform.

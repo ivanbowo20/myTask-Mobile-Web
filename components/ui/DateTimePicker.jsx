@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight, Check, X, Clock } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Check, X, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
 import OptionWheel from '@/components/ui/OptionWheel';
 
 const MONTH_NAMES = [
@@ -19,6 +19,14 @@ const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+const QUICK_HOURS = [
+  { label: '09:00', h: 9, m: 0 },
+  { label: '12:00', h: 12, m: 0 },
+  { label: '15:00', h: 15, m: 0 },
+  { label: '17:00', h: 17, m: 0 },
+  { label: '20:00', h: 20, m: 0 },
+];
 
 function getPresetDate(type) {
   const now = new Date();
@@ -73,6 +81,7 @@ export default function DateTimePicker({
   className = '',
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState('date'); // 'date' | 'time'
   const containerRef = useRef(null);
 
   // Selected state when opening
@@ -110,6 +119,7 @@ export default function DateTimePicker({
       setSelectedMinute(validDate.getMinutes());
       setViewMonth(validDate.getMonth());
       setViewYear(validDate.getFullYear());
+      setMobileTab('date');
     }
   }, [isOpen, value, initialDate]);
 
@@ -200,6 +210,237 @@ export default function DateTimePicker({
 
   const displayString = formatDisplayDate(value);
 
+  // Reusable Calendar Content
+  const renderCalendar = (isMobile = false) => (
+    <div className="w-full">
+      {/* Month Navigation */}
+      <div className="flex items-center justify-between mb-2.5 px-1">
+        <span className="text-xs font-semibold text-[#FAFAFA] tracking-wide">
+          {MONTH_NAMES[viewMonth]} {viewYear}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handlePrevMonth}
+            className="w-7 h-7 rounded-lg hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
+            aria-label="Bulan sebelumnya"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            className="w-7 h-7 rounded-lg hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
+            aria-label="Bulan berikutnya"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Day Names Header */}
+      <div className="grid grid-cols-7 gap-1 text-center mb-1.5">
+        {DAY_NAMES.map((dn, idx) => (
+          <span
+            key={dn}
+            className={`text-[10px] font-semibold tracking-wider ${
+              idx === 0 ? 'text-red-400/90' : 'text-zinc-400'
+            }`}
+          >
+            {dn}
+          </span>
+        ))}
+      </div>
+
+      {/* Days Grid */}
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {/* Previous Month Padding Days */}
+        {Array.from({ length: firstDayIndex }).map((_, i) => {
+          const prevDay = prevMonthDays - firstDayIndex + i + 1;
+          return (
+            <span
+              key={`prev-${prevDay}`}
+              className={`${
+                isMobile ? 'h-9 text-xs' : 'h-7 text-xs'
+              } flex items-center justify-center text-zinc-600 select-none`}
+            >
+              {prevDay}
+            </span>
+          );
+        })}
+
+        {/* Current Month Days */}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const selected = isCurrentSelection(day);
+          const todayDay = isToday(day);
+
+          return (
+            <button
+              key={`day-${day}`}
+              type="button"
+              onClick={() => handleSelectDay(day)}
+              className={`${
+                isMobile ? 'h-9 text-xs' : 'h-7 text-xs'
+              } w-full rounded-lg transition-all duration-150 cursor-pointer flex items-center justify-center select-none active:scale-95 ${
+                selected
+                  ? 'bg-white text-black font-bold shadow-md scale-105 ring-2 ring-white/20'
+                  : todayDay
+                  ? 'border border-white/40 text-white font-semibold hover:bg-white/[0.08]'
+                  : 'text-zinc-300 hover:bg-white/[0.08] hover:text-white'
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Mobile Footnote / Quick Switch to Time */}
+      {isMobile && (
+        <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+          <span className="text-[11px] text-zinc-400">
+            Terpilih: <strong className="text-white">{selectedDay} {MONTH_SHORT[selectedMonth]} {selectedYear}</strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => setMobileTab('time')}
+            className="inline-flex items-center gap-1 text-xs font-medium text-[var(--theme-accent,#D97706)] hover:underline cursor-pointer"
+          >
+            <span>Atur Jam</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  // Reusable Time Picker Content
+  const renderTimePicker = (isMobile = false) => (
+    <div className={`w-full ${isMobile ? 'space-y-3' : 'flex flex-col justify-between'}`}>
+      <div>
+        <div className="flex items-center justify-between mb-2 px-1">
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="text-xs font-semibold text-[#FAFAFA]">
+              Waktu (24 Jam)
+            </span>
+          </div>
+          <span className="text-xs font-mono font-semibold text-white bg-white/[0.06] border border-white/[0.08] px-2 py-0.5 rounded-md">
+            {String(selectedHour).padStart(2, '0')}:{String(selectedMinute).padStart(2, '0')} WIB
+          </span>
+        </div>
+
+        {/* Quick Hour Presets for Mobile */}
+        {isMobile && (
+          <div className="mb-3">
+            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold block mb-1.5">
+              Pilihan Jam Cepat:
+            </span>
+            <div className="grid grid-cols-5 gap-1">
+              {QUICK_HOURS.map((t) => {
+                const isActive = selectedHour === t.h && selectedMinute === t.m;
+                return (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => {
+                      setSelectedHour(t.h);
+                      setSelectedMinute(t.m);
+                    }}
+                    className={`py-1 rounded-lg text-[11px] font-medium border text-center transition-all cursor-pointer active:scale-95 ${
+                      isActive
+                        ? 'bg-[var(--theme-accent,#D97706)] text-black font-semibold border-[var(--theme-accent,#D97706)] shadow-sm'
+                        : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08] hover:text-white'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Dual OptionWheel Box (Jam & Menit) */}
+        <div className="flex items-center justify-center gap-2 pt-1">
+          {/* Hour Wheel */}
+          <div className="flex-1 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+              Jam
+            </div>
+            <div className="relative h-32 w-full rounded-xl bg-black border border-white/[0.08] overflow-hidden">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black via-black/80 to-transparent z-10" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black via-black/80 to-transparent z-10" />
+              <OptionWheel
+                items={HOURS}
+                selectedIndex={selectedHour}
+                onChange={(idx) => setSelectedHour(idx)}
+                side="center"
+                fontSize={0.88}
+                spacing={1.8}
+                tilt={10}
+                curve={0.5}
+                fade={0.6}
+                blur={1.2}
+                minOpacity={0.12}
+                smoothing={150}
+              />
+            </div>
+          </div>
+
+          <span className="text-lg font-bold text-zinc-500 mt-5">:</span>
+
+          {/* Minute Wheel */}
+          <div className="flex-1 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
+              Menit
+            </div>
+            <div className="relative h-32 w-full rounded-xl bg-black border border-white/[0.08] overflow-hidden">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black via-black/80 to-transparent z-10" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black via-black/80 to-transparent z-10" />
+              <OptionWheel
+                items={MINUTES}
+                selectedIndex={selectedMinute}
+                onChange={(idx) => setSelectedMinute(idx)}
+                side="center"
+                fontSize={0.88}
+                spacing={1.8}
+                tilt={10}
+                curve={0.5}
+                fade={0.6}
+                blur={1.2}
+                minOpacity={0.12}
+                smoothing={150}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isMobile ? (
+        <div className="pt-2 flex items-center justify-between border-t border-white/[0.06]">
+          <button
+            type="button"
+            onClick={() => setMobileTab('date')}
+            className="inline-flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-white cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Pilih Tanggal</span>
+          </button>
+          <span className="text-[11px] text-zinc-400 font-mono">
+            Scroll roda jam / sentuh angka
+          </span>
+        </div>
+      ) : (
+        <div className="mt-2 text-center text-[11px] text-zinc-400 font-mono py-1 rounded bg-white/[0.02] border border-white/[0.04]">
+          {String(selectedHour).padStart(2, '0')}:
+          {String(selectedMinute).padStart(2, '0')} WIB
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div ref={containerRef} className={`relative ${isOpen ? 'z-30' : 'z-10'} ${className}`}>
       {/* Trigger Button */}
@@ -209,7 +450,7 @@ export default function DateTimePicker({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white/[0.02] border transition-all duration-200 cursor-pointer backdrop-blur-sm flex items-center justify-between gap-2.5 text-left group ${
+        className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white/[0.02] border transition-all duration-200 cursor-pointer backdrop-blur-sm flex items-center justify-between gap-2.5 text-left group active:scale-[0.99] ${
           isOpen
             ? 'border-[#FAFAFA] ring-1 ring-white/20 shadow-[0_0_15px_rgba(255,255,255,0.06)]'
             : 'border-white/[0.08] hover:border-white/[0.18]'
@@ -256,10 +497,10 @@ export default function DateTimePicker({
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="w-6 h-6 rounded-md hover:bg-white/[0.08] flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-lg hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
                 aria-label="Tutup"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -294,7 +535,7 @@ export default function DateTimePicker({
                         onChange?.(presetDate);
                         setIsOpen(false);
                       }}
-                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors text-center border cursor-pointer ${
+                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center border cursor-pointer active:scale-95 ${
                         isCurrent
                           ? 'bg-[var(--theme-accent,#D97706)] text-black border-[var(--theme-accent,#D97706)] font-semibold shadow-sm'
                           : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.1] hover:text-white'
@@ -307,187 +548,49 @@ export default function DateTimePicker({
               </div>
             </div>
 
-            {/* Mobile Native Date-Time Picker Section (sm:hidden) */}
-            <div className="block sm:hidden space-y-2 mb-3">
-              <label className="text-[11px] font-semibold text-zinc-300 block">
-                Atau Tentukan Tanggal & Jam Bebas:
-              </label>
-              <div className="relative">
-                <input
-                  type="datetime-local"
-                  value={toDatetimeLocalString(value)}
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      onChange?.(e.target.value);
-                    }
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.16] text-sm text-white focus:outline-none focus:border-white transition-all cursor-pointer [color-scheme:dark]"
-                />
+            {/* Mobile Segmented Control Tab Switcher (sm:hidden) */}
+            <div className="block sm:hidden mb-3">
+              <div className="flex items-center p-1 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+                <button
+                  type="button"
+                  onClick={() => setMobileTab('date')}
+                  className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-98 ${
+                    mobileTab === 'date'
+                      ? 'bg-white text-black shadow-sm font-bold'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>{selectedDay} {MONTH_SHORT[selectedMonth]} {selectedYear}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileTab('time')}
+                  className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-98 ${
+                    mobileTab === 'time'
+                      ? 'bg-white text-black shadow-sm font-bold'
+                      : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{String(selectedHour).padStart(2, '0')}:{String(selectedMinute).padStart(2, '0')} WIB</span>
+                </button>
               </div>
-              <p className="text-[10px] text-zinc-400">
-                Gunakan scroll roda jam bawaan HP yang 100% mulus mengikuti jari Anda tanpa macet.
-              </p>
             </div>
 
-            {/* Responsive Content: Split View for Desktop (Calendar Left, Dual OptionWheel Right) */}
-            <div className="hidden sm:flex flex-col sm:flex-row gap-4">
-              {/* Left Column: Calendar */}
+            {/* Mobile Tab Content (sm:hidden) */}
+            <div className="block sm:hidden">
+              {mobileTab === 'date' ? renderCalendar(true) : renderTimePicker(true)}
+            </div>
+
+            {/* Desktop Split View (hidden sm:flex) */}
+            <div className="hidden sm:flex flex-row gap-4">
               <div className="flex-1 min-w-[210px]">
-                {/* Month Navigation */}
-                <div className="flex items-center justify-between mb-2.5 px-1">
-                  <span className="text-xs font-semibold text-[#FAFAFA]">
-                    {MONTH_NAMES[viewMonth]} {viewYear}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={handlePrevMonth}
-                      className="w-6 h-6 rounded-md hover:bg-white/[0.08] flex items-center justify-center text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                      aria-label="Bulan sebelumnya"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleNextMonth}
-                      className="w-6 h-6 rounded-md hover:bg-white/[0.08] flex items-center justify-center text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                      aria-label="Bulan berikutnya"
-                    >
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Day Names Header */}
-                <div className="grid grid-cols-7 gap-1 text-center mb-1">
-                  {DAY_NAMES.map((dn, idx) => (
-                    <span
-                      key={dn}
-                      className={`text-[10px] font-semibold tracking-wider ${
-                        idx === 0 ? 'text-red-400/80' : 'text-zinc-400'
-                      }`}
-                    >
-                      {dn}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Days Grid */}
-                <div className="grid grid-cols-7 gap-1 text-center">
-                  {/* Previous Month Padding Days */}
-                  {Array.from({ length: firstDayIndex }).map((_, i) => {
-                    const prevDay = prevMonthDays - firstDayIndex + i + 1;
-                    return (
-                      <span
-                        key={`prev-${prevDay}`}
-                        className="h-7 flex items-center justify-center text-xs text-zinc-600 select-none"
-                      >
-                        {prevDay}
-                      </span>
-                    );
-                  })}
-
-                  {/* Current Month Days */}
-                  {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day = i + 1;
-                    const selected = isCurrentSelection(day);
-                    const todayDay = isToday(day);
-
-                    return (
-                      <button
-                        key={`day-${day}`}
-                        type="button"
-                        onClick={() => handleSelectDay(day)}
-                        className={`h-7 w-full rounded-lg text-xs transition-all duration-150 cursor-pointer flex items-center justify-center select-none ${
-                          selected
-                            ? 'bg-white text-black font-bold shadow-md scale-105'
-                            : todayDay
-                            ? 'border border-white/30 text-white font-semibold hover:bg-white/[0.08]'
-                            : 'text-zinc-300 hover:bg-white/[0.08] hover:text-white'
-                        }`}
-                      >
-                        {day}
-                      </button>
-                    );
-                  })}
-                </div>
+                {renderCalendar(false)}
               </div>
-
-              {/* Center Divider */}
-              <div className="hidden sm:block w-[1px] bg-white/[0.08] self-stretch" />
-              <div className="block sm:hidden h-[1px] w-full bg-white/[0.08]" />
-
-              {/* Right Column: Time Wheel (24 Jam) */}
-              <div className="w-full sm:w-44 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 px-1">
-                    <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                    <span className="text-xs font-semibold text-[#FAFAFA]">
-                      Waktu (24 Jam)
-                    </span>
-                  </div>
-
-                  {/* Dual OptionWheel Box */}
-                  <div className="flex items-center justify-center gap-2 pt-1">
-                    {/* Hour Wheel */}
-                    <div className="flex-1 text-center">
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
-                        Jam
-                      </div>
-                      <div className="relative h-32 w-full rounded-xl bg-black border border-white/[0.08] overflow-hidden">
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black via-black/80 to-transparent z-10" />
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black via-black/80 to-transparent z-10" />
-                        <OptionWheel
-                          items={HOURS}
-                          selectedIndex={selectedHour}
-                          onChange={(idx) => setSelectedHour(idx)}
-                          side="center"
-                          fontSize={0.88}
-                          spacing={1.8}
-                          tilt={10}
-                          curve={0.5}
-                          fade={0.6}
-                          blur={1.2}
-                          minOpacity={0.12}
-                          smoothing={150}
-                        />
-                      </div>
-                    </div>
-
-                    <span className="text-lg font-bold text-zinc-500 mt-5">:</span>
-
-                    {/* Minute Wheel */}
-                    <div className="flex-1 text-center">
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
-                        Menit
-                      </div>
-                      <div className="relative h-32 w-full rounded-xl bg-black border border-white/[0.08] overflow-hidden">
-                        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black via-black/80 to-transparent z-10" />
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black via-black/80 to-transparent z-10" />
-                        <OptionWheel
-                          items={MINUTES}
-                          selectedIndex={selectedMinute}
-                          onChange={(idx) => setSelectedMinute(idx)}
-                          side="center"
-                          fontSize={0.88}
-                          spacing={1.8}
-                          tilt={10}
-                          curve={0.5}
-                          fade={0.6}
-                          blur={1.2}
-                          minOpacity={0.12}
-                          smoothing={150}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Selected Time Preview Note */}
-                <div className="mt-2 text-center text-[11px] text-zinc-400 font-mono py-1 rounded bg-white/[0.02] border border-white/[0.04]">
-                  {String(selectedHour).padStart(2, '0')}:
-                  {String(selectedMinute).padStart(2, '0')} WIB
-                </div>
+              <div className="w-[1px] bg-white/[0.08] self-stretch" />
+              <div className="w-44 flex flex-col justify-between">
+                {renderTimePicker(false)}
               </div>
             </div>
 
@@ -509,14 +612,14 @@ export default function DateTimePicker({
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer active:scale-95"
                 >
                   Batal
                 </button>
                 <button
                   type="button"
                   onClick={handleApply}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-black hover:bg-zinc-200 transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-black hover:bg-zinc-200 transition-colors cursor-pointer shadow-sm flex items-center gap-1.5 active:scale-95"
                 >
                   <Check className="w-3.5 h-3.5 text-black" />
                   Terapkan
@@ -529,4 +632,3 @@ export default function DateTimePicker({
     </div>
   );
 }
-
