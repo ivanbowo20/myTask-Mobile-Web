@@ -213,7 +213,7 @@ export default function EditTaskModal({
         </div>
 
         {/* Sticky Footer Actions (Stays anchored at bottom of screen / adapts above keyboard) */}
-        <div className="sticky bottom-0 z-10 bg-[#0C0A09]/95 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:p-0 lg:pt-4 border-t border-white/10 lg:border-white/[0.08] flex items-center justify-end gap-3 mt-auto -mx-4 lg:-mx-0">
+        <div className="sticky bottom-0 z-10 bg-[var(--theme-nav-bg,#0C0A09)]/95 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:p-0 lg:pt-4 border-t border-white/10 lg:border-white/[0.08] flex items-center justify-end gap-3 mt-auto -mx-4 lg:-mx-0">
           <Button
             type="button"
             variant="secondary"

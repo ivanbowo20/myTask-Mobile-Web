@@ -147,7 +147,7 @@ export default function ThemeModal() {
             className="relative w-full max-w-4xl glass-modal rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-7 z-10 border-t sm:border border-white/[0.12] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)] max-h-[92vh] sm:max-h-[90vh] overflow-y-auto focus:outline-none"
           >
             {/* Mobile Bottom Sheet Grab Handle */}
-            <div className="w-12 h-1 rounded-full bg-white/20 mx-auto mb-4 sm:hidden" aria-hidden="true" />
+            <div className="w-12 h-1 rounded-full bg-white/20 mx-auto mb-4 sm:hidden theme-modal-handle" aria-hidden="true" />
             {/* Header */}
             <div className="flex items-start justify-between pb-5 border-b border-white/[0.08]">
               <div className="flex items-center gap-3">
@@ -209,7 +209,7 @@ export default function ThemeModal() {
                         {t.badge}
                       </span>
                       {isActive ? (
-                        <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)] text-[#0A0A0A] shadow-sm">
+                        <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)] text-white shadow-sm theme-active-badge">
                           <Check className="w-3 h-3 stroke-[3]" />
                           Aktif
                         </span>
@@ -260,7 +260,10 @@ export default function ThemeModal() {
                           className="w-2.5 h-2.5 rounded-full"
                           style={{ backgroundColor: t.accentColor }}
                         />
-                        <span className="text-[10px] font-semibold text-[#FAFAFA] tracking-wide">
+                        <span
+                          className="text-[10px] font-semibold tracking-wide theme-preview-tagline"
+                          style={{ color: '#FAFAFA' }}
+                        >
                           {t.tagline}
                         </span>
                       </div>

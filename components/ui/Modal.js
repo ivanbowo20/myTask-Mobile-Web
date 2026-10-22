@@ -167,15 +167,15 @@ export default function Modal({
             exit={{ opacity: 0, y: 16, transition: { duration: 0.15, ease: "easeIn" } }}
             className={cn(
               // Mobile: Fullscreen Native App Screen (100dvh, adaptif otomatis saat keyboard muncul)
-              "w-full h-[100dvh] flex flex-col bg-[#0C0A09] text-[#FAFAFA] overflow-hidden focus:outline-none rounded-none border-0",
+              "w-full h-[100dvh] flex flex-col glass-modal text-[#FAFAFA] overflow-hidden focus:outline-none rounded-none border-0",
               // Desktop: Centered Rounded Glass Box
-              "lg:h-auto lg:max-h-[90vh] lg:rounded-2xl lg:p-6 lg:my-8 lg:shadow-2xl lg:glass-modal",
+              "lg:h-auto lg:max-h-[90vh] lg:rounded-2xl lg:p-6 lg:my-8 lg:shadow-2xl",
               maxWidth,
               className
             )}
           >
             {/* Header: Safe-area aware di HP */}
-            <div className="shrink-0 flex items-center justify-between px-4 py-3.5 lg:px-0 lg:py-0 lg:pb-3 border-b border-white/[0.08] bg-[#0C0A09]/95 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none pt-[calc(0.85rem+env(safe-area-inset-top,0px))] lg:pt-0">
+            <div className="shrink-0 flex items-center justify-between px-4 py-3.5 lg:px-0 lg:py-0 lg:pb-3 border-b border-white/[0.08] bg-[var(--theme-nav-bg,#0C0A09)]/95 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none pt-[calc(0.85rem+env(safe-area-inset-top,0px))] lg:pt-0">
               <div className="space-y-0.5">
                 {title && (
                   <h2 id="modal-title" className="font-heading text-lg font-bold text-[#FAFAFA] tracking-tight">
