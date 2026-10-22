@@ -177,27 +177,22 @@ export default function SettingsPage() {
           <div className="divide-y divide-white/[0.06] text-xs">
             <div className="py-3 flex items-center justify-between">
               <span className="text-[#A1A1AA]">Nama Aplikasi</span>
-              <span className="font-semibold text-[#FAFAFA]">MyTask v2</span>
+              <span className="font-semibold text-[#FAFAFA]">MyTask</span>
             </div>
             <div className="py-3 flex items-center justify-between">
-              <span className="text-[#A1A1AA]">Versi Sistem</span>
-              <span className="font-mono text-[#FAFAFA]">2.0.0</span>
+              <span className="text-[#A1A1AA]">Versi Aplikasi</span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-semibold text-[#FAFAFA]">v1.2.0</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                  Terbaru
+                </span>
+              </div>
             </div>
-            <div className="py-3 flex items-center justify-between">
-              <span className="text-[#A1A1AA]">Framework</span>
-              <span className="font-semibold text-[#FAFAFA]">Next.js 15 (App Router)</span>
-            </div>
-            <div className="py-3 flex items-center justify-between">
-              <span className="text-[#A1A1AA]">Sistem Styling</span>
-              <span className="font-semibold text-[#FAFAFA]">Tailwind CSS v4</span>
-            </div>
-            <div className="py-3 flex items-center justify-between">
-              <span className="text-[#A1A1AA]">Tema Desain</span>
-              <span className="font-semibold text-[#FAFAFA]">{currentTheme?.name || "Glassmorphism Minimalism"}</span>
-            </div>
-            <div className="py-3 flex items-center justify-between">
-              <span className="text-[#A1A1AA]">Koleksi Ikon</span>
-              <span className="font-semibold text-[#FAFAFA]">Lucide React</span>
+            <div className="py-3 flex items-start sm:items-center justify-between gap-4">
+              <span className="text-[#A1A1AA] shrink-0">Catatan Rilis</span>
+              <span className="font-medium text-[#FAFAFA] text-right">
+                Pembaruan Tema Celestial Sky &amp; Optimalisasi Antarmuka
+              </span>
             </div>
           </div>
         </section>
