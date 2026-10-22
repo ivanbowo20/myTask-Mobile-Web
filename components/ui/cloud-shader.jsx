@@ -284,11 +284,14 @@ export const CloudShader = ({
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
-    // LANGKAH 3.1: Deteksi DPR adaptif (Clamp DPR max 1.0 pada layar mobile < 768px)
+    // LANGKAH 3.1: Deteksi mobile adaptif (0.5x internal resolution scaling di HP untuk memangkas 75% GPU fill-rate)
     const resize = () => {
       const isMobile = window.innerWidth < 768;
+      // Di layar mobile (< 768px seperti Infinix Smart 6), gunakan scale factor 0.5x.
+      // Awan adalah objek gas/lembut sehingga upscaling CSS tetap tampak mulus tanpa mengorbankan estetika.
+      const scaleFactor = isMobile ? 0.5 : 1.0;
       const maxDpr = isMobile ? 1.0 : 1.5;
-      const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
+      const dpr = Math.min(window.devicePixelRatio || 1, maxDpr) * scaleFactor;
 
       const width = canvas.clientWidth || window.innerWidth;
       const height = canvas.clientHeight || window.innerHeight;
@@ -307,19 +310,31 @@ export const CloudShader = ({
     resize();
 
     const start = performance.now();
-    let lastTime = start;
+    let lastDrawTime = 0;
 
     const draw = (now) => {
       if (!running) return;
+
+      const isMobile = window.innerWidth < 768;
+      // Batasi frame rate ke ~30 FPS di mobile (33.3ms) untuk membebaskan GPU & thread input sentuhan
+      const minInterval = isMobile ? 32 : 16;
+      const delta = now - lastDrawTime;
+
+      if (delta < minInterval) {
+        frame = requestAnimationFrame(draw);
+        return;
+      }
+
+      lastDrawTime = now - (delta % minInterval);
+
       const p = paramsRef.current;
       const elapsed = reduceMotion ? 0 : ((now - start) / 1000) * p.speed;
       const cloud = parseHex(p.cloudColor);
       const skyTop = parseHex(p.skyTopColor);
       const skyBottom = parseHex(p.skyBottomColor);
 
-      // On mobile devices, clamp count max to 4 for GPU relief
-      const isMobile = window.innerWidth < 768;
-      const effectiveCount = isMobile ? Math.min(4, p.count) : p.count;
+      // Pada HP low-end, batasi jumlah awan ke 2 agar shader tidak menumpuk komputasi
+      const effectiveCount = isMobile ? Math.min(2, p.count) : p.count;
 
       gl.uniform1f(loc.time, elapsed);
       gl.uniform1f(loc.count, Math.min(6, Math.max(1, effectiveCount)));

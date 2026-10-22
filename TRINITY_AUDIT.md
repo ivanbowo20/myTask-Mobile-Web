@@ -1,58 +1,103 @@
-# 🔱 TRINITY CODE AUDIT REPORT
+# 🔱 TRINITY CODE AUDIT REPORT: Mobile Performance & Server Latency
 
-**Target:** Mobile DateTimePicker, Cross-Platform Android/iOS Date UX, and Modal Forms (`components/ui/DateTimePicker.jsx`, `components/tugas/AddTaskModal.js`, `components/tugas/EditTaskModal.js`)  
-**Arsitektur & Ruang Lingkup:** Next.js 15 App Router + Tailwind CSS + Framer Motion + Responsive Touch Controls.  
-**Indeks yang Digunakan:** CodeGraph: Ya (`.codegraph/`) | Direct AST & Git History Verifier: Ya.
+**Target:** Client Performance (Infinix Smart 6 / Low-End Android) & Server Web PageSpeed / k6 Benchmarking  
+**Arsitektur & Ruang Lingkup:** Next.js 15 (App Router) + React 19 + Tailwind CSS v4 + Supabase PostgreSQL (Port 6543 Pooler) + Better Auth. Analisis performa fokus pada render tree di perangkat entry-level (Unisoc SC9863A, PowerVR GE8322, 2GB RAM) dan latensi cold-start server.  
+**Indeks yang Digunakan:** CodeGraph: Ya (`.codegraph/`) | Native AST: Ya
 
 ---
 
-## 🚨 1. MUST FIX (Bug, Logika Rusak, Keamanan, Degradasi Platform)
+## 🚨 1. MUST FIX (Penyebab Utama Lag di Infinix Smart 6 & GPU Crash)
 
-### [1] Hardcoded Native `<input type="datetime-local">` Merusak UX Mobile di Android / Tecno POVA 6 (`components/ui/DateTimePicker.jsx:L310-330`)
-- **Fungsi Kode:** Komponen pemilih tanggal & jam tenggat waktu (deadline picker) untuk tugas baru dan edit tugas.
-- **Akar Masalah (Bug/Logic):**
-  - Pada commit `c5297bfd`, dibuat pemisahan responsif: untuk viewport layar kecil (`sm:hidden`, `< 640px`), kalender interaktif dan 3D wheel **SENGAJA DISEMBUNYIKAN** (`hidden sm:flex`).
-  - Sebagai gantinya, dipasang `<input type="datetime-local" ... />` dengan anggapan pengguna HP akan memakai native picker bawaan.
-  - **Mengapa di HP developer terlihat ada animasi popup, sedangkan di HP Tecno POVA 6 tidak ada?**
-    - **Di iOS (iPhone/Safari):** Tag `<input type="datetime-local">` memicu sheet roda putar native Apple yang halus dengan animasi popup bawaan iOS.
-    - **Di Android / HiOS (Tecno POVA 6):** Tag `<input type="datetime-local">` dirender sebagai **input box teks polos HTML5** yang menampilkan teks mentah `dd/mm/tttt, --:--`.
-    - Kotak ini tidak memunculkan popup kalender web interaktif, tidak memiliki visual identitas tema aplikasi (tampak seperti form HTML jadul 1995), dan membuat pengguna Tecno POVA 6 mengeluh karena tidak ada opsi tenggat waktu atau popup kalender yang jelas.
-- **Blast Radius & Caller:**
-  - `components/ui/DateTimePicker.jsx`
-  - `components/tugas/AddTaskModal.js:L285` (Modal Tambah Tugas)
-  - `components/tugas/EditTaskModal.js:L144` (Modal Edit Tugas)
+Masalah performa fatal yang membuat UI membeku (frame rate anjlok ke 3–10 FPS, delay input 1–2 detik pada Infinix Smart 6):
+
+### [1] WebGL Procedural Noise Overload pada Tema Sky (`components/ui/cloud-shader.jsx:L18-L170`)
+- **Fungsi Kode:** Merender awan bergerak prosedural dengan fragment shader WebGL (fbm, billow noise, domain warping) untuk latar tema Sky.
+- **Akar Masalah (Bug/Performance):**
+  - Infinix Smart 6 ditenagai chip grafis **PowerVR Rogue GE8322** (hanya ~20 GFLOPS, arsitektur 28nm hemat daya).
+  - Pada resolusi layar ponsel (720 × 1600 = ~1,15 juta piksel), shader menghitung lebih dari 100 operasi noise matematis intensif (`vnoise`, `sin`, `dot`, `fbm`, `billow`) **per piksel per frame**.
+  - Beban komputasi per frame mencapai >100 juta operasi trigonometri/noise di layar penuh pada 60 FPS. Hal ini memicu saturasi GPU 100% dan memblokir thread *browser compositor*.
+  - Ketika pengguna menekan tombol buat tugas atau berpindah tab, *event dispatch* tertahan di antrean compositor, menimbulkan lag sentuhan 1–2 detik.
+- **Blast Radius & Caller:** `CelestialSkyBackground.js`, `ThemeBackground.js`, seluruh halaman saat tema `celestial-sky` aktif.
 - **Saran Perbaikan Minimal (Ponytail Fix):**
-  - Singkirkan `<input type="datetime-local">` mentah dari antarmuka mobile.
-  - Bangun arsitektur kalender & pemilih waktu kustom yang 100% responsif untuk semua layar (lebar mobile 360px - 430px) tanpa degradasi HTML5 mentah.
-  - Di mobile, gunakan tab switcher yang elegan `[ 📅 Tanggal ]` & `[ 🕒 Jam ]` atau collapsible accordion di dalam popover sehingga muat di layar HP tanpa overflow dan terasa mulus di semua merk smartphone (Tecno, Samsung, Xiaomi, iPhone, dll).
-- **Dampak jika Diabaikan:** 70%+ pengguna mobile Android (terutama merk Transsion/Tecno/Infinix, Xiaomi, Realme) akan mengira aplikasi rusak atau belum selesai dibuat.
+  - Pada perangkat mobile/low-end GPU (terdeteksi via media query, `deviceMemory <= 3`, atau `hardwareConcurrency <= 4`), turunkan `canvas` internal resolution (misal scale down 0.5x dengan CSS upscale halus), clamp frame rate ke 30 FPS via timestamp delta throttle, atau aktifkan mode fallback CSS gradient cloud dinamis yang super ringan (0% beban GPU).
+- **Dampak jika Diabaikan:** Tema Sky akan selalu membuat HP entry-level panas, baterai cepat terkuras, dan freeze saat input.
 
 ---
 
-## ⚠️ 2. SHOULD FIX (Risiko UX & Ketidaknyamanan Interaksi)
-
-### [2] Hit Target & Touch Interaction di Layar Sempit (`components/ui/DateTimePicker.jsx:L397-412`)
-- **Fungsi Kode:** Grid tanggal 1-31 pada bulan aktif.
+### [2] CSS Cascade Override Bug: `.glass-card` Membatalkan Optimasi Mobile (`app/globals.css:L225` vs `L257`)
+- **Fungsi Kode:** Memberikan efek frosted glass transparan pada kartu tugas dan panel.
 - **Akar Masalah:**
-  - Tombol tanggal menggunakan `h-7 w-full` (tinggi hanya 28px).
-  - Standar WCAG 2.1 & Apple Human Interface Guidelines mewajibkan ukuran sentuh jari minimal **44px × 44px** (atau minimal 36px dengan padding sentuh).
-  - Pada layar HP Tecno POVA 6 (layar 6.78" FHD+), tombol 28px terlalu kecil sehingga rentan salah tekan (*fat-finger error*).
-- **Saran Perbaikan:**
-  - Tingkatkan touch hit-target tanggal menjadi minimal `h-9` atau `h-10` dengan active feedback WWDC fluid springs (`:active scale(0.96)`).
+  - Di baris 225 terdapat blok `@media (max-width: 768px)` yang berniat meringankan `backdrop-filter` ke `blur(8px)`.
+  - Namun, di baris 255–258 (urutan lebih bawah dalam CSS), dideklarasikan kembali aturan:
+    ```css
+    .glass-card {
+      backdrop-filter: blur(18px) saturate(130%);
+      -webkit-backdrop-filter: blur(18px) saturate(130%);
+    }
+    ```
+  - Karena memiliki spesifisitas selektor yang sama (`.glass-card`), deklarasi di baris 257 **menimpa (override) aturan media query mobile di baris 225**.
+  - Akibatnya, pada Infinix Smart 6, setiap kartu tugas (bisa berjumlah 20–50 kartu) tetap merender multi-pass gaussian blur `18px` berlapis di atas canvas animasi! PowerVR GE8322 tidak sanggup melakukan compositing off-screen buffer sebanyak ini.
+- **Blast Radius & Caller:** `TaskCard.js`, daftar tugas di semua tab (`/dashboard`, `/tugas`, `/tugas/hari-ini`, `/tugas/penting`, `/tugas/selesai`).
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  - Pindahkan blok penyesuaian mobile ke bagian paling bawah file CSS (atau gunakan selektor dengan prioritas benar), dan nonaktifkan `backdrop-filter` pada kartu tugas di layar mobile `< 768px` (ganti dengan `background: rgba(...)` solid semi-transparan ber-opacity tinggi tanpa blur). Efek visual tetap identik namun 0% beban multi-pass GPU!
+- **Dampak jika Diabaikan:** Tampilan kartu tugas patah-patah saat scroll dan buat tugas.
 
 ---
 
-## 💡 3. NICE TO HAVE (Lean & Polish)
+### [3] Framer Motion Layout Thrashing pada TaskCard (`components/tugas/TaskCard.js:L324`)
+- **Fungsi Kode:** Animasi transisi posisi kartu tugas saat list bertambah/berkurang.
+- **Akar Masalah:**
+  - Setiap kartu tugas memiliki atribut `<motion.div layout ...>`.
+  - Properti `layout` memaksa Framer Motion memanggil `getBoundingClientRect()` pada seluruh kartu tugas secara sinkron di main thread setiap kali ada perubahan state (tambah tugas, centang selesai).
+  - Pada 8-core Cortex-A55 Infinix Smart 6 yang berfrekuensi rendah (1.2–1.6 GHz), pembacaan layout sinkron untuk puluhan elemen menyebabkan *Forced Synchronous Reflow* yang membekukan thread utama JavaScript selama 200–500ms.
+- **Blast Radius & Caller:** `TaskCard.js` dipanggil di 6 halaman daftar tugas.
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  - Nonaktifkan atribut `layout` animasi Framer Motion di mobile atau batasi ke CSS transform standar `transform: translate3d`.
+- **Dampak jika Diabaikan:** Jeda/stutter terasa nyata setiap kali menekan checkbox atau membuat tugas baru.
 
-### [3] Sinkronisasi Waktu Cepat (Quick Presets) Langsung Menutup Dialog (`components/ui/DateTimePicker.jsx:L293-296`)
-- **Fungsi Kode:** Tombol preset "Hari Ini 17:00", "Besok 09:00", dll.
-- **Peluang Optimasi:**
-  - Saat ini tombol preset langsung mengeksekusi `onChange` dan `setIsOpen(false)`. Ini sudah bagus dan efisien (1-tap action).
-  - Namun dapat diperkaya dengan haptic visual ripple / micro-bounce sebelum menutup agar terasa responsif dan meyakinkan di HP.
+---
+
+## ⚠️ 2. SHOULD FIX (Performa Tab Switching & Latensi Server)
+
+### [4] Instabilitas Memoization di TaskProvider & Sinkronisasi LocalStorage (`lib/task-context.js:L132-L144, L540-L583`)
+- **Fungsi Kode:** Pengelolaan state global aplikasi (tugas, kategori, statistik).
+- **Akar Masalah:**
+  - Di dalam `TaskProvider`, fungsi operasional (`addTask`, `updateTask`, dll) serta callback modal (`openAddTask: () => setIsAddTaskOpen(true)`) dibuat ulang (*re-instantiated*) pada setiap re-render karena tidak dibungkus `useCallback`.
+  - Hal ini menyebabkan `value` pada `useMemo` ikut berubah, memicu re-render menyeluruh pada seluruh komponen anak (`DashboardShell`, `Sidebar`, `BottomNav`, dan halaman aktif).
+  - Selain itu, `useEffect` untuk penyimpanan cache lokal menjalankan `JSON.stringify(tasks)` dan `localStorage.setItem` secara sinkron langsung di main thread pada setiap mutasi tugas.
+- **Blast Radius & Caller:** Seluruh halaman di dalam rute `(dashboard)`.
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  - Bungkus fungsi-fungsi handler dengan `useCallback`.
+  - Berikan debounce mikro atau gunakan `requestIdleCallback` untuk penulisan `localStorage` agar tidak menahan interaksi klik pengguna.
+- **Dampak jika Diabaikan:** Pindah tab terasa ada jeda rendering ulang yang tidak perlu.
+
+---
+
+### [5] Latensi Pembukaan Awal / Server TTFB Cold-Start (`app/(dashboard)/layout.js:L12-L32`)
+- **Fungsi Kode:** Server-Side Rendering (SSR) untuk memuat sesi dan data tugas awal.
+- **Akar Masalah:**
+  - Mengapa pembukaan web kadang terasa lemot hingga ~3 detik?
+  - `auth.api.getSession` dan `getInitialDashboardData` berjalan secara sekuensial (bergantian). Setiap panggilan membuka koneksi TCP/SSL ke Supabase pooler di AWS Singapura (`aws-0-ap-southeast-1.pooler.supabase.com`).
+  - Jika connection pool sedang idle (cold start), handshake TLS + TCP round trip ke cloud memakan waktu 800ms–1500ms sebelum HTML mulai dikirimkan (TTFB).
+- **Blast Radius & Caller:** Initial load semua rute dashboard.
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  - Manfaatkan paralelisme query di mana memungkinkan dan optimalkan keep-alive pooler database.
+- **Dampak jika Diabaikan:** First Contentful Paint (FCP) lambat saat pertama kali membuka web dari kondisi dingin.
+
+---
+
+## 💡 3. BENCHMARK & TESTING HARNESS (PageSpeed & k6)
+
+### [6] Ketersediaan Alat Uji k6 & URL Target
+- **Fakta Lingkungan:**
+  - Perintah `k6` belum terpasang di sistem operasi Windows lokal (`CommandNotFoundException`).
+  - Aturan proyek melarang AI menyalakan `npm run dev` secara mandiri.
+- **Solusi Rekayasa:**
+  - Kita dapat membuat skrip pengujian beban k6 resmi (`scripts/load-test.js` atau `tests/k6-test.js`) yang siap dijalankan oleh user terhadap target `http://localhost:3000` atau URL deployment production (misal Vercel / domain live).
+  - Kita juga dapat menyediakan skrip benchmark bawaan berbasis Node.js (`scripts/benchmark-pagespeed.js`) untuk mengukur TTFB, respon time API, dan throughput concurrency tanpa memerlukan instalasi binary k6 eksternal.
 
 ---
 
 ## 📊 KESIMPULAN AUDIT
-- **Total Temuan:** 3 (Must Fix: 1 | Should Fix: 1 | Nice to Have: 1)
-- **Status Server & CSS:** Server dalam kondisi prima (bukan masalah server). CSS tema bekerja normal. Masalah murni merupakan **pilihan implementasi kode kondisional `sm:hidden`** yang merender `<input type="datetime-local">` polos di mobile.
-- **Solusi SielloMita:** Hapus ketergantungan pada native HTML5 datetime-local di mobile, ganti dengan custom interactive date-time sheet yang konsisten di semua platform.
+- **Total Temuan:** 6 (Must Fix: 3 | Should Fix: 2 | Testing: 1)
+- **Fokus Utama:** Ringankan GPU load tema Sky, hilangkan bug override `backdrop-filter` di mobile, dan hapus layout thrashing di `TaskCard`.

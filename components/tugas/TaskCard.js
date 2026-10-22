@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import {
   Calendar,
   Check,
@@ -12,7 +12,7 @@ import {
 import { formatTanggal, hitungSisaWaktu, hitungStatusDeadline, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function TaskCard({
+const TaskCard = memo(function TaskCard({
   task,
   kategori,
   onToggleSelesai,
@@ -37,9 +37,10 @@ export default function TaskCard({
 
   return (
     <motion.div
-      layout
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      whileHover={{ y: -2, transition: { duration: 0.15 } }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
       className={cn(
         "group relative rounded-xl glass-card transition-colors duration-200",
         containerStyles
@@ -428,4 +429,6 @@ export default function TaskCard({
       </div>
     </motion.div>
   );
-}
+});
+
+export default TaskCard;

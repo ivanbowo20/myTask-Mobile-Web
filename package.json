@@ -11,7 +11,9 @@
     "lint": "next lint",
     "test": "node scripts/verify-task-4c.js",
     "ping:supabase": "node scripts/ping-supabase.js",
-    "migrate:supabase": "node scripts/migrate-supabase.js"
+    "migrate:supabase": "node scripts/migrate-supabase.js",
+    "benchmark": "node scripts/benchmark-pagespeed.js",
+    "test:load": "k6 run tests/k6-load-test.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
