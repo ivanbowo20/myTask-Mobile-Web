@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight, Check, X, Clock, ArrowRight, ArrowLeft, ChevronUp, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Check, X, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
 
 const MONTH_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -16,15 +16,12 @@ const MONTH_SHORT = [
 
 const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-const QUICK_HOURS = [
-  { label: '09:00', h: 9, m: 0 },
-  { label: '12:00', h: 12, m: 0 },
-  { label: '15:00', h: 15, m: 0 },
-  { label: '17:00', h: 17, m: 0 },
-  { label: '20:00', h: 20, m: 0 },
+const QUICK_TIMES = [
+  { label: '09:00', desc: 'Pagi', h: 9, m: 0 },
+  { label: '12:00', desc: 'Siang', h: 12, m: 0 },
+  { label: '17:00', desc: 'Sore', h: 17, m: 0 },
+  { label: '20:00', desc: 'Malam', h: 20, m: 0 },
 ];
-
-const QUICK_MINUTES = [0, 15, 30, 45];
 
 function getPresetDate(type) {
   const now = new Date();
@@ -81,6 +78,7 @@ export default function DateTimePicker({
   const [isOpen, setIsOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState('date'); // 'date' | 'time'
   const containerRef = useRef(null);
+  const timeInputRef = useRef(null);
 
   // Selected state when opening
   const initialDate = useMemo(() => {
@@ -179,20 +177,33 @@ export default function DateTimePicker({
     setSelectedYear(viewYear);
   }
 
-  function incrementHour() {
-    setSelectedHour((prev) => (prev + 1) % 24);
+  function handleNativeTimeChange(e) {
+    const val = e.target.value;
+    if (val) {
+      const parts = val.split(':');
+      if (parts.length >= 2) {
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        if (!isNaN(h) && !isNaN(m)) {
+          setSelectedHour(h);
+          setSelectedMinute(m);
+        }
+      }
+    }
   }
 
-  function decrementHour() {
-    setSelectedHour((prev) => (prev - 1 + 24) % 24);
-  }
-
-  function incrementMinute() {
-    setSelectedMinute((prev) => (prev + 1) % 60);
-  }
-
-  function decrementMinute() {
-    setSelectedMinute((prev) => (prev - 1 + 60) % 60);
+  function handleTimeCardClick() {
+    if (timeInputRef.current) {
+      try {
+        if (typeof timeInputRef.current.showPicker === 'function') {
+          timeInputRef.current.showPicker();
+        } else {
+          timeInputRef.current.focus();
+        }
+      } catch {
+        timeInputRef.current.focus();
+      }
+    }
   }
 
   function handleApply() {
@@ -223,20 +234,21 @@ export default function DateTimePicker({
     selectedYear === viewYear;
 
   const displayString = formatDisplayDate(value);
+  const timeValueString = `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
 
   // Reusable Calendar Content
   const renderCalendar = (isMobile = false) => (
     <div className="w-full">
       {/* Month Navigation */}
       <div className="flex items-center justify-between mb-2.5 px-1">
-        <span className="text-xs font-semibold text-[#FAFAFA] tracking-wide">
+        <span className="text-xs font-bold text-zinc-900 dark:text-[#FAFAFA] tracking-wide">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </span>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="w-7 h-7 rounded-lg hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
+            className="w-7 h-7 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all cursor-pointer"
             aria-label="Bulan sebelumnya"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -244,7 +256,7 @@ export default function DateTimePicker({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="w-7 h-7 rounded-lg hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
+            className="w-7 h-7 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all cursor-pointer"
             aria-label="Bulan berikutnya"
           >
             <ChevronRight className="w-4 h-4" />
@@ -258,7 +270,7 @@ export default function DateTimePicker({
           <span
             key={dn}
             className={`text-[10px] font-semibold tracking-wider ${
-              idx === 0 ? 'text-red-400/90' : 'text-zinc-400'
+              idx === 0 ? 'text-red-500 dark:text-red-400' : 'text-zinc-500 dark:text-zinc-400'
             }`}
           >
             {dn}
@@ -276,7 +288,7 @@ export default function DateTimePicker({
               key={`prev-${prevDay}`}
               className={`${
                 isMobile ? 'h-9 text-xs' : 'h-7 text-xs'
-              } flex items-center justify-center text-zinc-600 select-none`}
+              } flex items-center justify-center text-zinc-400 dark:text-zinc-600 select-none`}
             >
               {prevDay}
             </span>
@@ -298,10 +310,10 @@ export default function DateTimePicker({
                 isMobile ? 'h-9 text-xs' : 'h-7 text-xs'
               } w-full rounded-lg transition-all duration-150 cursor-pointer flex items-center justify-center select-none active:scale-95 ${
                 selected
-                  ? 'bg-white text-black font-bold shadow-md scale-105 ring-2 ring-white/20'
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-black font-bold shadow-md scale-105 ring-2 ring-zinc-400 dark:ring-white/20'
                   : todayDay
-                  ? 'border border-white/40 text-white font-semibold hover:bg-white/[0.08]'
-                  : 'text-zinc-300 hover:bg-white/[0.08] hover:text-white'
+                  ? 'border border-[var(--theme-accent,#0284C7)] text-[var(--theme-accent,#0284C7)] font-bold hover:bg-zinc-100 dark:hover:bg-white/[0.08]'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-white'
               }`}
             >
               {day}
@@ -312,14 +324,14 @@ export default function DateTimePicker({
 
       {/* Mobile Footnote / Quick Switch to Time */}
       {isMobile && (
-        <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
-          <span className="text-[11px] text-zinc-400">
-            Terpilih: <strong className="text-white">{selectedDay} {MONTH_SHORT[selectedMonth]} {selectedYear}</strong>
+        <div className="mt-3 pt-2.5 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between">
+          <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
+            Terpilih: <strong className="text-zinc-900 dark:text-white">{selectedDay} {MONTH_SHORT[selectedMonth]} {selectedYear}</strong>
           </span>
           <button
             type="button"
             onClick={() => setMobileTab('time')}
-            className="inline-flex items-center gap-1 text-xs font-medium text-[var(--theme-accent,#D97706)] hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--theme-accent,#0284C7)] hover:underline cursor-pointer"
           >
             <span>Atur Jam</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -329,29 +341,55 @@ export default function DateTimePicker({
     </div>
   );
 
-  // Reusable Time Picker Content (Zero-Lag Stepper & Direct Tap)
+  // Reusable Time Picker Content (Clean Native Clock & 4 Quick Presets)
   const renderTimePicker = (isMobile = false) => (
-    <div className={`w-full ${isMobile ? 'space-y-3' : 'flex flex-col justify-between'}`}>
+    <div className={`w-full ${isMobile ? 'space-y-4' : 'flex flex-col justify-between'}`}>
       <div>
-        <div className="flex items-center justify-between mb-2 px-1">
+        <div className="flex items-center justify-between mb-2.5 px-1">
           <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="text-xs font-semibold text-[#FAFAFA]">
-              Waktu (24 Jam)
+            <Clock className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)]" />
+            <span className="text-xs font-semibold text-zinc-800 dark:text-[#FAFAFA]">
+              Atur Jam Tenggat
             </span>
           </div>
-          <span className="text-xs font-mono font-semibold text-white bg-white/[0.06] border border-white/[0.08] px-2 py-0.5 rounded-md">
-            {String(selectedHour).padStart(2, '0')}:{String(selectedMinute).padStart(2, '0')} WIB
+          <span className="text-xs font-mono font-bold text-zinc-700 dark:text-white bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08] px-2 py-0.5 rounded-md">
+            {timeValueString} WIB
           </span>
         </div>
 
-        {/* Quick Hour Presets */}
-        <div className="mb-3">
-          <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold block mb-1.5">
+        {/* Big Clean Interactive Time Card (Opens Native OS Clock Picker on Mobile & Desktop) */}
+        <div
+          onClick={handleTimeCardClick}
+          className="relative flex flex-col items-center justify-center py-6 px-4 rounded-2xl bg-zinc-100/90 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.1] hover:border-[var(--theme-accent,#0284C7)] hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]"
+        >
+          <div className="text-4xl sm:text-5xl font-extrabold font-mono text-zinc-900 dark:text-white tracking-tight group-hover:text-[var(--theme-accent,#0284C7)] transition-colors flex items-baseline gap-2">
+            <span>{timeValueString}</span>
+            <span className="text-xs font-semibold font-sans text-zinc-500 dark:text-zinc-400">WIB</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-white/[0.08] border border-zinc-200/90 dark:border-white/[0.1] text-xs font-medium text-zinc-700 dark:text-zinc-200 shadow-xs mt-3 group-hover:bg-[var(--theme-accent,#0284C7)] group-hover:text-white transition-all">
+            <Clock className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)] group-hover:text-white" />
+            <span>Sentuh untuk ganti jam</span>
+          </div>
+
+          {/* Invisible Native Input Overlaid on the Card for Instant Tap Detection */}
+          <input
+            ref={timeInputRef}
+            type="time"
+            value={timeValueString}
+            onChange={handleNativeTimeChange}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            aria-label="Pilih Jam dan Menit"
+          />
+        </div>
+
+        {/* 4 Clean Quick Presets (1-Tap Selection) */}
+        <div className="mt-4">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400 block mb-1.5 px-0.5">
             Pilihan Jam Cepat:
           </span>
-          <div className="grid grid-cols-5 gap-1">
-            {QUICK_HOURS.map((t) => {
+          <div className="grid grid-cols-4 gap-2">
+            {QUICK_TIMES.map((t) => {
               const isActive = selectedHour === t.h && selectedMinute === t.m;
               return (
                 <button
@@ -361,145 +399,16 @@ export default function DateTimePicker({
                     setSelectedHour(t.h);
                     setSelectedMinute(t.m);
                   }}
-                  className={`py-1 rounded-lg text-[11px] font-medium border text-center transition-all cursor-pointer active:scale-95 ${
+                  className={`py-2 px-1 rounded-xl text-center border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center ${
                     isActive
-                      ? 'bg-[var(--theme-accent,#D97706)] text-black font-semibold border-[var(--theme-accent,#D97706)] shadow-sm'
-                      : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08] hover:text-white'
+                      ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-bold shadow-md shadow-[var(--theme-glow,rgba(2,132,199,0.3))]'
+                      : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.08]'
                   }`}
                 >
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Dual Stepper Input Box (Jam & Menit) */}
-        <div className="flex items-center justify-center gap-3 py-1">
-          {/* Jam Stepper Box */}
-          <div className="flex flex-col items-center">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
-              Jam
-            </span>
-            <div className="flex flex-col items-center bg-black/60 border border-white/[0.1] rounded-2xl p-1 shadow-inner">
-              <button
-                type="button"
-                onClick={incrementHour}
-                className="w-14 h-8 sm:w-16 sm:h-8 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-90 active:bg-white/[0.18] flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
-                aria-label="Tambah 1 Jam"
-              >
-                <ChevronUp className="w-4 h-4" />
-              </button>
-
-              <div className="my-0.5">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={2}
-                  value={String(selectedHour).padStart(2, '0')}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/\D/g, '');
-                    if (raw === '') {
-                      setSelectedHour(0);
-                      return;
-                    }
-                    const num = parseInt(raw, 10);
-                    if (!isNaN(num)) {
-                      setSelectedHour(Math.min(23, Math.max(0, num)));
-                    }
-                  }}
-                  onFocus={(e) => e.target.select()}
-                  className="w-14 sm:w-16 h-11 text-center text-2xl font-bold font-mono text-white bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-white/30 rounded-lg selection:bg-white/20"
-                  aria-label="Input Jam"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={decrementHour}
-                className="w-14 h-8 sm:w-16 sm:h-8 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-90 active:bg-white/[0.18] flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
-                aria-label="Kurang 1 Jam"
-              >
-                <ChevronDown className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <span className="text-xl font-bold text-zinc-500 font-mono select-none pt-4">:</span>
-
-          {/* Menit Stepper Box */}
-          <div className="flex flex-col items-center">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1">
-              Menit
-            </span>
-            <div className="flex flex-col items-center bg-black/60 border border-white/[0.1] rounded-2xl p-1 shadow-inner">
-              <button
-                type="button"
-                onClick={incrementMinute}
-                className="w-14 h-8 sm:w-16 sm:h-8 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-90 active:bg-white/[0.18] flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
-                aria-label="Tambah 1 Menit"
-              >
-                <ChevronUp className="w-4 h-4" />
-              </button>
-
-              <div className="my-0.5">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={2}
-                  value={String(selectedMinute).padStart(2, '0')}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/\D/g, '');
-                    if (raw === '') {
-                      setSelectedMinute(0);
-                      return;
-                    }
-                    const num = parseInt(raw, 10);
-                    if (!isNaN(num)) {
-                      setSelectedMinute(Math.min(59, Math.max(0, num)));
-                    }
-                  }}
-                  onFocus={(e) => e.target.select()}
-                  className="w-14 sm:w-16 h-11 text-center text-2xl font-bold font-mono text-white bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-white/30 rounded-lg selection:bg-white/20"
-                  aria-label="Input Menit"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={decrementMinute}
-                className="w-14 h-8 sm:w-16 sm:h-8 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] active:scale-90 active:bg-white/[0.18] flex items-center justify-center text-zinc-300 hover:text-white transition-all cursor-pointer"
-                aria-label="Kurang 1 Menit"
-              >
-                <ChevronDown className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Minute Chips (:00, :15, :30, :45) */}
-        <div className="mt-2.5">
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-            <span>Menit Cepat:</span>
-            <span className="text-[10px] text-zinc-400 font-normal lowercase">atau tap +/-</span>
-          </div>
-          <div className="grid grid-cols-4 gap-1">
-            {QUICK_MINUTES.map((min) => {
-              const isMinuteActive = selectedMinute === min;
-              return (
-                <button
-                  key={min}
-                  type="button"
-                  onClick={() => setSelectedMinute(min)}
-                  className={`py-1 rounded-lg text-xs font-mono font-medium border text-center transition-all cursor-pointer active:scale-95 ${
-                    isMinuteActive
-                      ? 'bg-white text-black font-bold border-white shadow-sm'
-                      : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08] hover:text-white'
-                  }`}
-                >
-                  :{String(min).padStart(2, '0')}
+                  <span className="text-xs font-mono font-bold leading-tight">{t.label}</span>
+                  <span className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-white/90' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                    {t.desc}
+                  </span>
                 </button>
               );
             })}
@@ -508,23 +417,22 @@ export default function DateTimePicker({
       </div>
 
       {isMobile ? (
-        <div className="pt-2 flex items-center justify-between border-t border-white/[0.06]">
+        <div className="pt-3 flex items-center justify-between border-t border-zinc-200/80 dark:border-white/[0.06]">
           <button
             type="button"
             onClick={() => setMobileTab('date')}
-            className="inline-flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-white cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Pilih Tanggal</span>
           </button>
-          <span className="text-[11px] text-zinc-400 font-mono">
-            Tap +/- atau ketik angka
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+            Jam bawaan HP Android
           </span>
         </div>
       ) : (
-        <div className="mt-2 text-center text-[11px] text-zinc-400 font-mono py-1 rounded bg-white/[0.02] border border-white/[0.04]">
-          {String(selectedHour).padStart(2, '0')}:
-          {String(selectedMinute).padStart(2, '0')} WIB
+        <div className="mt-3 text-center text-[11px] text-zinc-500 dark:text-zinc-400 font-mono py-1 rounded bg-zinc-100/80 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.04]">
+          {timeValueString} WIB
         </div>
       )}
     </div>
@@ -541,17 +449,17 @@ export default function DateTimePicker({
         aria-expanded={isOpen}
         className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white/[0.02] border transition-all duration-200 cursor-pointer backdrop-blur-sm flex items-center justify-between gap-2.5 text-left group active:scale-[0.99] ${
           isOpen
-            ? 'border-[#FAFAFA] ring-1 ring-white/20 shadow-[0_0_15px_rgba(255,255,255,0.06)]'
-            : 'border-white/[0.08] hover:border-white/[0.18]'
+            ? 'border-[var(--theme-accent,#0284C7)] ring-1 ring-[var(--theme-accent,#0284C7)]'
+            : 'border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.18]'
         }`}
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-6 h-6 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-zinc-400 group-hover:text-zinc-200 transition-colors shrink-0">
+          <div className="w-6 h-6 rounded-lg bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors shrink-0">
             <Calendar className="w-3.5 h-3.5" />
           </div>
           <span
             className={`text-base sm:text-sm truncate ${
-              displayString ? 'font-medium text-[#FAFAFA]' : 'text-zinc-400'
+              displayString ? 'font-medium text-zinc-900 dark:text-[#FAFAFA]' : 'text-zinc-500 dark:text-zinc-400'
             }`}
           >
             {displayString || placeholder}
@@ -560,7 +468,7 @@ export default function DateTimePicker({
 
         <Clock
           className={`w-4 h-4 text-zinc-400 transition-colors shrink-0 ${
-            isOpen ? 'text-white' : 'group-hover:text-zinc-200'
+            isOpen ? 'text-[var(--theme-accent,#0284C7)]' : 'group-hover:text-zinc-600 dark:group-hover:text-zinc-200'
           }`}
         />
       </button>
@@ -576,17 +484,17 @@ export default function DateTimePicker({
             className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[490px] max-w-[calc(100vw-2rem)] rounded-2xl glass-dropdown p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl overscroll-contain"
           >
             {/* Header Dialog */}
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.08]">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-200 dark:border-white/[0.08]">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-zinc-300" />
-                <span className="text-xs font-semibold text-[#FAFAFA] tracking-wide">
+                <Calendar className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                <span className="text-xs font-semibold text-zinc-900 dark:text-[#FAFAFA] tracking-wide">
                   Atur Tenggat Waktu
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="w-7 h-7 rounded-lg hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -594,14 +502,14 @@ export default function DateTimePicker({
             </div>
 
             {/* Quick Preset Shortcuts (1-Tap Selection) */}
-            <div className="mb-3 pb-3 border-b border-white/[0.08]">
-              <div className="text-[11px] font-semibold text-zinc-400 mb-1.5 flex items-center justify-between">
+            <div className="mb-3 pb-3 border-b border-zinc-200 dark:border-white/[0.08]">
+              <div className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5 flex items-center justify-between">
                 <span>Pilihan Cepat (1-Tap):</span>
                 {value && (
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="text-[11px] text-red-400 hover:text-red-300 hover:underline cursor-pointer"
+                    className="text-[11px] text-red-500 dark:text-red-400 hover:underline cursor-pointer"
                   >
                     Hapus Tenggat
                   </button>
@@ -626,8 +534,8 @@ export default function DateTimePicker({
                       }}
                       className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center border cursor-pointer active:scale-95 ${
                         isCurrent
-                          ? 'bg-[var(--theme-accent,#D97706)] text-black border-[var(--theme-accent,#D97706)] font-semibold shadow-sm'
-                          : 'bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.1] hover:text-white'
+                          ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-semibold shadow-sm'
+                          : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.1] hover:text-zinc-900 dark:hover:text-white'
                       }`}
                     >
                       {preset.label}
@@ -639,14 +547,14 @@ export default function DateTimePicker({
 
             {/* Mobile Segmented Control Tab Switcher (sm:hidden) */}
             <div className="block sm:hidden mb-3">
-              <div className="flex items-center p-1 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+              <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08]">
                 <button
                   type="button"
                   onClick={() => setMobileTab('date')}
                   className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-98 ${
                     mobileTab === 'date'
-                      ? 'bg-white text-black shadow-sm font-bold'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-white text-zinc-900 dark:text-black shadow-sm font-bold'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
                   }`}
                 >
                   <Calendar className="w-3.5 h-3.5" />
@@ -657,8 +565,8 @@ export default function DateTimePicker({
                   onClick={() => setMobileTab('time')}
                   className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-98 ${
                     mobileTab === 'time'
-                      ? 'bg-white text-black shadow-sm font-bold'
-                      : 'text-zinc-400 hover:text-zinc-200'
+                      ? 'bg-white text-zinc-900 dark:text-black shadow-sm font-bold'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
                   }`}
                 >
                   <Clock className="w-3.5 h-3.5" />
@@ -677,20 +585,20 @@ export default function DateTimePicker({
               <div className="flex-1 min-w-[210px]">
                 {renderCalendar(false)}
               </div>
-              <div className="w-[1px] bg-white/[0.08] self-stretch" />
+              <div className="w-[1px] bg-zinc-200 dark:bg-white/[0.08] self-stretch" />
               <div className="w-48 flex flex-col justify-between">
                 {renderTimePicker(false)}
               </div>
             </div>
 
             {/* Bottom Actions Footer */}
-            <div className="pt-3 mt-3 border-t border-white/[0.08] flex items-center justify-between gap-2">
+            <div className="pt-3 mt-3 border-t border-zinc-200 dark:border-white/[0.08] flex items-center justify-between gap-2">
               <div>
                 {value && (
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="text-xs text-red-400 hover:text-red-300 hover:underline transition-colors cursor-pointer font-medium"
+                    className="text-xs text-red-500 dark:text-red-400 hover:underline transition-colors cursor-pointer font-medium"
                   >
                     Hapus Tenggat
                   </button>
@@ -701,16 +609,16 @@ export default function DateTimePicker({
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer active:scale-95"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer active:scale-95"
                 >
                   Batal
                 </button>
                 <button
                   type="button"
                   onClick={handleApply}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-black hover:bg-zinc-200 transition-colors cursor-pointer shadow-sm flex items-center gap-1.5 active:scale-95"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition-colors cursor-pointer shadow-sm flex items-center gap-1.5 active:scale-95"
                 >
-                  <Check className="w-3.5 h-3.5 text-black" />
+                  <Check className="w-3.5 h-3.5" />
                   Terapkan
                 </button>
               </div>
