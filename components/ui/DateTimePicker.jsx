@@ -79,6 +79,7 @@ export default function DateTimePicker({
   const [mobileTab, setMobileTab] = useState('date'); // 'date' | 'time'
   const containerRef = useRef(null);
   const timeInputRef = useRef(null);
+  const dateInputRef = useRef(null);
 
   // Selected state when opening
   const initialDate = useMemo(() => {
@@ -177,6 +178,39 @@ export default function DateTimePicker({
     setSelectedYear(viewYear);
   }
 
+  function handleNativeDateChange(e) {
+    const val = e.target.value;
+    if (val) {
+      const parts = val.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+          setSelectedYear(y);
+          setSelectedMonth(m);
+          setSelectedDay(d);
+          setViewYear(y);
+          setViewMonth(m);
+        }
+      }
+    }
+  }
+
+  function handleDateCardClick() {
+    if (dateInputRef.current) {
+      try {
+        if (typeof dateInputRef.current.showPicker === 'function') {
+          dateInputRef.current.showPicker();
+        } else {
+          dateInputRef.current.focus();
+        }
+      } catch {
+        dateInputRef.current.focus();
+      }
+    }
+  }
+
   function handleNativeTimeChange(e) {
     const val = e.target.value;
     if (val) {
@@ -235,6 +269,7 @@ export default function DateTimePicker({
 
   const displayString = formatDisplayDate(value);
   const timeValueString = `${String(selectedHour).padStart(2, '0')}:${String(selectedMinute).padStart(2, '0')}`;
+  const dateValueString = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
 
   // Reusable Calendar Content
   const renderCalendar = (isMobile = false) => (
@@ -310,7 +345,7 @@ export default function DateTimePicker({
                 isMobile ? 'h-9 text-xs' : 'h-7 text-xs'
               } w-full rounded-lg transition-all duration-150 cursor-pointer flex items-center justify-center select-none active:scale-95 ${
                 selected
-                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-black font-bold shadow-md scale-105 ring-2 ring-zinc-400 dark:ring-white/20'
+                  ? 'bg-[var(--theme-accent,#0284C7)] text-white font-bold shadow-md scale-105 ring-2 ring-[var(--theme-glow,rgba(2,132,199,0.3))]'
                   : todayDay
                   ? 'border border-[var(--theme-accent,#0284C7)] text-[var(--theme-accent,#0284C7)] font-bold hover:bg-zinc-100 dark:hover:bg-white/[0.08]'
                   : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-white'
@@ -338,6 +373,109 @@ export default function DateTimePicker({
           </button>
         </div>
       )}
+    </div>
+  );
+
+  // Mobile Native Android Date Picker Card
+  const renderMobileDatePicker = () => (
+    <div className="w-full space-y-4">
+      <div>
+        <div className="flex items-center justify-between mb-2.5 px-1">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)]" />
+            <span className="text-xs font-semibold text-zinc-800 dark:text-[#FAFAFA]">
+              Tanggal Tenggat
+            </span>
+          </div>
+          <span className="text-xs font-mono font-bold text-zinc-700 dark:text-white bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08] px-2 py-0.5 rounded-md">
+            {selectedDay} {MONTH_SHORT[selectedMonth]} {selectedYear}
+          </span>
+        </div>
+
+        {/* Big Clean Interactive Date Card (Opens Native OS Date Picker on Mobile) */}
+        <div
+          onClick={handleDateCardClick}
+          className="relative flex flex-col items-center justify-center py-6 px-4 rounded-2xl bg-zinc-100/90 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.1] hover:border-[var(--theme-accent,#0284C7)] hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]"
+        >
+          <div className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight group-hover:text-[var(--theme-accent,#0284C7)] transition-colors flex items-baseline gap-2 text-center">
+            <span>{selectedDay} {MONTH_NAMES[selectedMonth]} {selectedYear}</span>
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-white/[0.08] border border-zinc-200/90 dark:border-white/[0.1] text-xs font-medium text-zinc-700 dark:text-zinc-200 shadow-xs mt-3 group-hover:bg-[var(--theme-accent,#0284C7)] group-hover:text-white transition-all">
+            <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)] group-hover:text-white" />
+            <span>Sentuh untuk buka kalender Android</span>
+          </div>
+
+          {/* Invisible Native Input Overlaid on the Card for Instant Tap Detection */}
+          <input
+            ref={dateInputRef}
+            type="date"
+            value={dateValueString}
+            onChange={handleNativeDateChange}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            aria-label="Pilih Tanggal"
+          />
+        </div>
+
+        {/* Quick Date Presets */}
+        <div className="mt-4">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400 block mb-1.5 px-0.5">
+            Pilihan Hari Cepat:
+          </span>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: 'Hari Ini', offset: 0 },
+              { label: 'Besok', offset: 1 },
+              { label: 'Lusa', offset: 2 },
+            ].map((p) => {
+              const target = new Date();
+              target.setDate(target.getDate() + p.offset);
+              const isSelectedDay =
+                selectedDay === target.getDate() &&
+                selectedMonth === target.getMonth() &&
+                selectedYear === target.getFullYear();
+
+              return (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => {
+                    setSelectedDay(target.getDate());
+                    setSelectedMonth(target.getMonth());
+                    setSelectedYear(target.getFullYear());
+                    setViewMonth(target.getMonth());
+                    setViewYear(target.getFullYear());
+                  }}
+                  className={`py-2 px-1 rounded-xl text-center border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center ${
+                    isSelectedDay
+                      ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-bold shadow-md shadow-[var(--theme-glow,rgba(2,132,199,0.3))]'
+                      : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.08]'
+                  }`}
+                >
+                  <span className="text-xs font-bold leading-tight">{p.label}</span>
+                  <span className={`text-[10px] mt-0.5 leading-tight ${isSelectedDay ? 'text-white/90' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                    {target.getDate()} {MONTH_SHORT[target.getMonth()]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-3 flex items-center justify-between border-t border-zinc-200/80 dark:border-white/[0.06]">
+        <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+          Kalender bawaan HP Android
+        </span>
+        <button
+          type="button"
+          onClick={() => setMobileTab('time')}
+          className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--theme-accent,#0284C7)] hover:underline cursor-pointer"
+        >
+          <span>Atur Jam</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </div>
   );
 
@@ -577,7 +715,7 @@ export default function DateTimePicker({
 
             {/* Mobile Tab Content (sm:hidden) */}
             <div className="block sm:hidden">
-              {mobileTab === 'date' ? renderCalendar(true) : renderTimePicker(true)}
+              {mobileTab === 'date' ? renderMobileDatePicker() : renderTimePicker(true)}
             </div>
 
             {/* Desktop Split View (hidden sm:flex) */}
