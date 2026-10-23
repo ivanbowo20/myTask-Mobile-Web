@@ -59,66 +59,74 @@ export async function handleDispatch() {
     let totalSent = 0;
     const processedTaskIds = [];
 
-    // 2. Loop setiap tugas yang perlu dikirimi pengingat
-    for (const task of tasks) {
-      // Ambil seluruh push subscriptions aktif milik user pemilik tugas
-      const subsResult = await query(
-        `SELECT id, endpoint, p256dh, auth 
-         FROM public.push_subscriptions 
-         WHERE user_id = $1;`,
-        [task.user_id]
-      );
-
-      const formattedDeadline = formatTanggal(task.deadline);
-      const payload = JSON.stringify({
-        title: `⏰ Pengingat: ${task.judul}`,
-        body: `Tenggat waktu: ${formattedDeadline}. Jangan lupa selesaikan tugas Anda!`,
-        url: "/dashboard",
-        icon: "/favicon.ico",
-        tag: `task-reminder-${task.id}`,
-      });
-
-      // Kirim web-push ke seluruh perangkat terdaftar
-      for (const sub of subsResult.rows) {
-        const pushSubscription = {
-          endpoint: sub.endpoint,
-          keys: {
-            p256dh: sub.p256dh,
-            auth: sub.auth,
-          },
-        };
-
+    // 2. Kirim notifikasi secara paralel (High-Concurrency Promise.allSettled)
+    await Promise.allSettled(
+      tasks.map(async (task) => {
         try {
-          await webpush.sendNotification(pushSubscription, payload);
-          totalSent++;
-        } catch (pushErr) {
-          console.error(`[DISPATCH] Gagal kirim web-push ke sub ${sub.id}:`, pushErr.message);
+          // Ambil seluruh push subscriptions aktif milik user pemilik tugas
+          const subsResult = await query(
+            `SELECT id, endpoint, p256dh, auth 
+             FROM public.push_subscriptions 
+             WHERE user_id = $1;`,
+            [task.user_id]
+          );
 
-          // Bersihkan subscription jika perangkat sudah kadaluarsa atau direset di browser (404 / 410)
-          if (pushErr.statusCode === 404 || pushErr.statusCode === 410) {
-            await query(`DELETE FROM public.push_subscriptions WHERE id = $1;`, [sub.id]).catch(() => {});
+          const formattedDeadline = formatTanggal(task.deadline);
+          const payload = JSON.stringify({
+            title: `⏰ Pengingat: ${task.judul}`,
+            body: `Tenggat waktu: ${formattedDeadline}. Jangan lupa selesaikan tugas Anda!`,
+            url: "/dashboard",
+            icon: "/favicon.ico",
+            tag: `task-reminder-${task.id}`,
+          });
+
+          // Kirim web-push serentak ke seluruh perangkat terdaftar milik user
+          await Promise.allSettled(
+            subsResult.rows.map(async (sub) => {
+              const pushSubscription = {
+                endpoint: sub.endpoint,
+                keys: {
+                  p256dh: sub.p256dh,
+                  auth: sub.auth,
+                },
+              };
+
+              try {
+                await webpush.sendNotification(pushSubscription, payload);
+                totalSent++;
+              } catch (pushErr) {
+                console.error(`[DISPATCH] Gagal kirim web-push ke sub ${sub.id}:`, pushErr.message);
+
+                // Bersihkan subscription jika perangkat sudah kadaluarsa atau direset di browser (404 / 410)
+                if (pushErr.statusCode === 404 || pushErr.statusCode === 410) {
+                  await query(`DELETE FROM public.push_subscriptions WHERE id = $1;`, [sub.id]).catch(() => {});
+                }
+              }
+            })
+          );
+
+          // Catat juga entri ke tabel public.notifications agar tersinkronisasi di in-app notification center
+          try {
+            await query(
+              `INSERT INTO public.notifications (user_id, task_id, tipe, judul, pesan, dibuat_pada)
+               VALUES ($1, $2, 'reminder', $3, $4, NOW());`,
+              [
+                task.user_id,
+                task.id,
+                `Pengingat: ${task.judul}`,
+                `Tenggat waktu tugas pada ${formattedDeadline}`,
+              ]
+            );
+          } catch (notifErr) {
+            console.warn(`[DISPATCH] Gagal insert log notifications:`, notifErr.message);
           }
+
+          processedTaskIds.push(task.id);
+        } catch (taskErr) {
+          console.error(`[DISPATCH] Error saat memproses task ${task?.id}:`, taskErr);
         }
-      }
-
-      // Catat juga entri ke tabel public.notifications agar tersinkronisasi di in-app notification center
-      try {
-        await query(
-          `INSERT INTO public.notifications (user_id, task_id, tipe, judul, pesan, dibuat_pada)
-           VALUES ($1, $2, 'reminder', $3, $4, NOW());`,
-          [
-            task.user_id,
-            task.id,
-            `Pengingat: ${task.judul}`,
-            `Tenggat waktu tugas pada ${formattedDeadline}`,
-          ]
-        );
-      } catch (notifErr) {
-        console.warn(`[DISPATCH] Gagal insert log notifications:`, notifErr.message);
-      }
-
-      processedTaskIds.push(task.id);
-    }
+      })
+    );
 
     return NextResponse.json({
       success: true,
