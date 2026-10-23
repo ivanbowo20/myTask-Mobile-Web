@@ -42,9 +42,11 @@ export default function AddTaskModal({
   }, [isOpen]);
 
   // Real-time deadline validation
-  const isDeadlinePast =
+  const isDeadlinePast = Boolean(
     deadline &&
-    new Date(deadline).getTime() <= Date.now();
+    !isNaN(new Date(deadline).getTime()) &&
+    new Date(deadline).getTime() <= Date.now()
+  );
 
   const selectedCategory = categories?.find((c) => String(c.id) === String(kategoriId));
   const reminderLabel = REMINDER_OPTIONS?.find((r) => r.value === reminder)?.label || reminder;

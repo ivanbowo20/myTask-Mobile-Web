@@ -56,10 +56,12 @@ export default function EditTaskModal({
   // Perbaikan Bug #2: Hanya validasi jika due_date BERUBAH!
   const originalDateStr = toLocalInputDate(task?.deadline);
   const isDeadlineChanged = deadline !== originalDateStr;
-  const isDeadlinePast =
+  const isDeadlinePast = Boolean(
     isDeadlineChanged &&
     deadline &&
-    new Date(deadline).getTime() <= Date.now();
+    !isNaN(new Date(deadline).getTime()) &&
+    new Date(deadline).getTime() <= Date.now()
+  );
 
   function handleSubmit(e) {
     e.preventDefault();

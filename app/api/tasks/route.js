@@ -167,6 +167,18 @@ export async function POST(request) {
       );
     }
 
+    // Validasi tenggat waktu tidak boleh berada di masa lalu (buffer 2 menit toleransi latency)
+    if (parsedDeadline.value) {
+      const deadlineTimestamp = new Date(parsedDeadline.value).getTime();
+      const minimumAllowedTime = Date.now() - 120000;
+      if (deadlineTimestamp < minimumAllowedTime) {
+        return NextResponse.json(
+          { error: "Tenggat waktu tidak boleh berada di masa lalu" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validasi reminder
     let cleanReminder = null;
     if (reminder) {
@@ -334,6 +346,29 @@ export async function PUT(request) {
         { error: "Format tanggal tenggat waktu tidak valid" },
         { status: 400 }
       );
+    }
+
+    // Validasi perubahan tenggat waktu: tolak jika deadline BERUBAH dan berada di masa lalu
+    if (parsedDeadline.value) {
+      const currentTaskRes = await query(
+        `SELECT deadline FROM public.tasks WHERE id = $1 AND user_id = $2;`,
+        [parsedId, session.user.id]
+      );
+      if (currentTaskRes.rows.length > 0) {
+        const existingDeadlineIso = currentTaskRes.rows[0].deadline
+          ? new Date(currentTaskRes.rows[0].deadline).toISOString()
+          : null;
+        if (parsedDeadline.value !== existingDeadlineIso) {
+          const deadlineTimestamp = new Date(parsedDeadline.value).getTime();
+          const minimumAllowedTime = Date.now() - 120000;
+          if (deadlineTimestamp < minimumAllowedTime) {
+            return NextResponse.json(
+              { error: "Perubahan tenggat waktu tidak boleh berada di masa lalu" },
+              { status: 400 }
+            );
+          }
+        }
+      }
     }
 
     // Validasi reminder

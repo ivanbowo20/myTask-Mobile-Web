@@ -1,50 +1,58 @@
 # 🔱 TRINITY CODE AUDIT REPORT
 
-**Target:** Arsitektur Notifikasi PWA, Web Push, & Serverless Scheduling  
-**Ruang Lingkup:** [`app/api/notifications/dispatch/route.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/notifications/dispatch/route.js), [`lib/utils.js`](file:///c:/MY%20project%20Website/todowebb%20V2/lib/utils.js), [`public/sw.js`](file:///c:/MY%20project%20Website/todowebb%20V2/public/sw.js), [`scripts/setup-supabase-cron.js`](file:///c:/MY%20project%20Website/todowebb%20V2/scripts/setup-supabase-cron.js), [`scripts/create-partial-index.js`](file:///c:/MY%20project%20Website/todowebb%20V2/scripts/create-partial-index.js), Supabase PostgreSQL  
+**Target:** Sistem Kalender, Validasi Tenggat Waktu (Deadline), & Proteksi Mutasi Tugas  
+**Ruang Lingkup:** [`components/ui/DateTimePicker.jsx`](file:///c:/MY%20project%20Website/todowebb%20V2/components/ui/DateTimePicker.jsx), [`components/tugas/AddTaskModal.js`](file:///c:/MY%20project%20Website/todowebb%20V2/components/tugas/AddTaskModal.js), [`components/tugas/EditTaskModal.js`](file:///c:/MY%20project%20Website/todowebb%20V2/components/tugas/EditTaskModal.js), [`app/api/tasks/route.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/tasks/route.js)  
 **Indeks yang Digunakan:** Native AST & Call Hierarchy Tracing  
-**Status Perbaikan:** ✅ **Must Fix & High-Concurrency Scaling Hardening SELESAI & Lolos Build Production**
 
 ---
 
 ## 🧭 EKSEKUTIF RINGKASAN
 
-### 1. Solusi Arsitektur Tanpa Pihak Ketiga (Zero External Cron Service)
-Jadwal cron pengingat notifikasi dikelola langsung oleh PostgreSQL di cloud Supabase:
-1. **100% Ekosistem Internal Supabase:** Menjalankan `pg_cron` dan `pg_net` secara native.
-2. **Proteksi Kuota Vercel (Smart Zero-Call Execution):**
-   - Fungsi `public.check_and_dispatch_task_reminders()` berjalan di PostgreSQL setiap menit.
-   - Jika tidak ada tugas mendekati deadline (`task_count == 0`), database **tidak memanggil Vercel sama sekali (0 request)**.
-   - Hanya saat ada tugas yang jatuh tempo, notifikasi ditembakkan ke Vercel.
+Audit mendalam terhadap alur pembuatan dan pembaruan tugas menemukan celah di mana pengguna dapat memilih dan menyimpan tenggat waktu (deadline) di masa lalu / tanggal kemarin. Masalah ini bersumber dari ketiadaan pembatasan (`minDate`) di komponen UI Kalender (`DateTimePicker.jsx`) serta ketiadaan validasi waktu lampau di endpoint backend API (`/api/tasks`).
 
 ---
 
-## 🚨 STATUS TEMUAN & PERBAIKAN BEDAH
+## 🚨 1. MUST FIX (Bug, Logika Kalender, & Validasi API)
 
-### [1] Timezone Drift UTC vs WIB pada Formatting Payload Web Push — [SELESAI ✅]
-- **Berkas yang Diperbaiki:** [`lib/utils.js`](file:///c:/MY%20project%20Website/todowebb%20V2/lib/utils.js)
-- **Tindakan:** `formatTanggal` dikalibrasi ke zona waktu `Asia/Jakarta` (WIB).
+### [1] Ketiadaan Pembatasan Tanggal Masa Lalu di UI Kalender (`components/ui/DateTimePicker.jsx`)
+- **Fungsi Kode:** Komponen pemilih tanggal & waktu interaktif untuk modal tambah dan ubah tugas.
+- **Akar Masalah (Bug/Logic):**
+  1. Pada tampilan kalender desktop/tablet (`renderCalendar`), tombol tanggal sebelum hari ini (`day < today`) tetap aktif, dapat diklik, dan memiliki styling interaktif normal.
+  2. Tombol navigasi bulan lalu (`ChevronLeft`) dapat ditekan terus-menerus mundur ke bulan atau tahun lampau tanpa batas.
+  3. Pada tampilan mobile Android (`renderMobileDatePicker`), tag `<input type="date">` tidak memiliki atribut `min={todayStr}`, sehingga dialog kalender bawaan OS Android mengizinkan pemilihan tanggal lampau.
+  4. Pilihan cepat 1-tap "Hari Ini 17:00" tetap aktif meski waktu saat ini sudah lewat jam 17:00 WIB.
+  5. Tombol "Terapkan" tetap mengeksekusi `onChange` meskipun kombinasi tanggal dan jam yang dipilih berada di masa lalu.
+- **Blast Radius & Caller:** [`AddTaskModal.js`](file:///c:/MY%20project%20Website/todowebb%20V2/components/tugas/AddTaskModal.js), [`EditTaskModal.js`](file:///c:/MY%20project%20Website/todowebb%20V2/components/tugas/EditTaskModal.js).
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  - Hitung batas `today` secara reaktif.
+  - Disable hari sebelum hari ini (`disabled`, `opacity-30`, `cursor-not-allowed`, `pointer-events-none`).
+  - Kunci tombol `ChevronLeft` jika tampilan berada di bulan & tahun berjalan.
+  - Pasang `min={minDateString}` pada native date input.
+  - Cek apakah kombinasi tanggal + jam yang dipilih berada di masa lalu; jika ya, kunci tombol "Terapkan" dengan indikator visual.
 
-### [2] Otomasi Background Scheduler via Supabase pg_cron — [SELESAI ✅]
-- **Tindakan:** Mengaktifkan ekstensi `pg_net` & `pg_cron`, mendaftarkan job `dispatch-task-reminders` (`* * * * *`).
-
-### [3] High-Concurrency Scaling: Database Partial Index — [SELESAI ✅]
-- **Target:** PostgreSQL Supabase `public.tasks`
-- **Tindakan:** Menambahkan indeks parsial:
-  ```sql
-  CREATE INDEX IF NOT EXISTS idx_tasks_pending_reminders 
-  ON public.tasks (deadline) 
-  WHERE (selesai = false AND reminder_sent = false AND deadline IS NOT NULL);
-  ```
-- **Hasil:** Pengecekan reminder di database tetap instan (< 0.5 ms) meskipun ada jutaan baris tugas lama.
-
-### [4] High-Concurrency Scaling: Paralelisme Non-Blocking di Vercel — [SELESAI ✅]
-- **Berkas yang Diperbaiki:** [`app/api/notifications/dispatch/route.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/notifications/dispatch/route.js)
-- **Tindakan:** Mengganti loop sekuensial dengan `Promise.allSettled` untuk pengiriman tugas dan perangkat secara simultan.
-- **Hasil:** Memproses 50 tugas dan ratusan perangkat hanya dalam ~500 milidetik, mencegah risiko Vercel timeout 504.
+### [2] Ketiadaan Validasi Server-Side Deadline Lampau di Backend API (`app/api/tasks/route.js`)
+- **Fungsi Kode:** Handler POST dan PUT untuk mutasi data tugas di PostgreSQL Supabase.
+- **Akar Masalah (Bug/Logic):**
+  - POST `/api/tasks` hanya memvalidasi format string tanggal (`parseSafeIsoDate`), tetapi tidak memvalidasi apakah tanggal tersebut sudah lewat dari `Date.now()`. Akibatnya, request langsung via API atau bypass client dapat menyimpan tugas dengan deadline masa lalu.
+  - PUT `/api/tasks` tidak memvalidasi perubahan deadline ke masa lalu.
+- **Blast Radius & Caller:** Seluruh alur pembuatan dan pembaruan tugas di aplikasi.
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  - Pada POST: jika `parsedDeadline.value` ada, pastikan tidak lebih kecil dari `Date.now() - 120000` (toleransi clock drift 2 menit). Jika lewat, kembalikan HTTP 400 Bad Request.
+  - Pada PUT: jika deadline diubah ke tanggal lampau, kembalikan HTTP 400 Bad Request (namun tetap izinkan tugas yang sudah overdue untuk diedit properti lainnya tanpa error).
 
 ---
 
-## 📊 HASIL VALIDASI TERAKHIR
-- **Database Partial Index:** Terverifikasi aktif di Supabase (`idx_tasks_pending_reminders`).
-- **Production Build:** `npm run build` lolos 100% tanpa error (`Exit code: 0`).
+## ⚠️ 2. SHOULD FIX (UX Sinkronisasi & Feedback Input)
+
+### [3] Pencegahan Submit via Tombol Enter pada Form Modal Tambah Tugas
+- **Fungsi Kode:** Form submit pada `AddTaskModal.js` dan `EditTaskModal.js`.
+- **Akar Masalah:** Jika pengguna menekan tombol Enter pada input judul saat deadline bernilai masa lalu, form tetap berpotensi ter-submit jika state validasi tidak sinkron.
+- **Saran Perbaikan:** Pastikan pengecekan `isDeadlinePast` memblokir submit form secara tegas dengan pesan peringatan yang jelas.
+
+---
+
+## 📊 RENCANA EKSEKUSI BERTAHAP (DISIPLIN AI)
+- [x] **Langkah 1:** Refaktor dan perkuat komponen `DateTimePicker.jsx` dengan validasi tanggal masa lalu (desktop grid, tombol navigasi bulan, input mobile Android, preset jam, dan tombol Terapkan).
+- [x] **Langkah 2:** Tambahkan validasi server-side deadline masa lalu di `app/api/tasks/route.js` (POST & PUT).
+- [x] **Langkah 3:** Sinkronkan guard di `AddTaskModal.js` dan `EditTaskModal.js` agar konsisten.
+- [x] **Langkah 4:** Verifikasi integritas melalui `npm run build` dan `npm run lint` (Lolos 100%, Exit Code: 0).

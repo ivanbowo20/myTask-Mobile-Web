@@ -155,6 +155,7 @@ export default function DateTimePicker({
   const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
 
   function handlePrevMonth() {
+    if (isPrevMonthDisabled) return;
     if (viewMonth === 0) {
       setViewMonth(11);
       setViewYear((y) => y - 1);
@@ -173,9 +174,19 @@ export default function DateTimePicker({
   }
 
   function handleSelectDay(day) {
+    if (isDayInPast(day)) return;
     setSelectedDay(day);
     setSelectedMonth(viewMonth);
     setSelectedYear(viewYear);
+
+    // Jika memilih hari ini dan waktu terpilih saat ini sudah lewat, geser otomatis ke jam berikutnya
+    if (viewYear === currentYear && viewMonth === currentMonth && day === currentDate) {
+      if (selectedHour < currentHour || (selectedHour === currentHour && selectedMinute <= currentMinute)) {
+        const nextHour = Math.min(23, currentHour + 1);
+        setSelectedHour(nextHour);
+        setSelectedMinute(0);
+      }
+    }
   }
 
   function handleNativeDateChange(e) {
@@ -187,11 +198,22 @@ export default function DateTimePicker({
         const m = parseInt(parts[1], 10) - 1;
         const d = parseInt(parts[2], 10);
         if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+          if (isDayInPast(d, m, y)) {
+            return;
+          }
           setSelectedYear(y);
           setSelectedMonth(m);
           setSelectedDay(d);
           setViewYear(y);
           setViewMonth(m);
+
+          if (y === currentYear && m === currentMonth && d === currentDate) {
+            if (selectedHour < currentHour || (selectedHour === currentHour && selectedMinute <= currentMinute)) {
+              const nextHour = Math.min(23, currentHour + 1);
+              setSelectedHour(nextHour);
+              setSelectedMinute(0);
+            }
+          }
         }
       }
     }
@@ -241,6 +263,7 @@ export default function DateTimePicker({
   }
 
   function handleApply() {
+    if (isSelectedTimePast) return;
     const y = selectedYear;
     const m = String(selectedMonth + 1).padStart(2, '0');
     const d = String(selectedDay).padStart(2, '0');
@@ -256,11 +279,48 @@ export default function DateTimePicker({
     setIsOpen(false);
   }
 
-  const today = new Date();
+  const today = useMemo(() => new Date(), [isOpen]);
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+  const currentDate = today.getDate();
+  const currentHour = today.getHours();
+  const currentMinute = today.getMinutes();
+  const minDateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(currentDate).padStart(2, '0')}`;
+
+  const isPrevMonthDisabled =
+    viewYear < currentYear ||
+    (viewYear === currentYear && viewMonth <= currentMonth);
+
+  function isDayInPast(day, m = viewMonth, y = viewYear) {
+    if (y < currentYear) return true;
+    if (y === currentYear && m < currentMonth) return true;
+    if (y === currentYear && m === currentMonth && day < currentDate) return true;
+    return false;
+  }
+
+  const isSelectedTimePast = useMemo(() => {
+    if (
+      selectedYear < currentYear ||
+      (selectedYear === currentYear && selectedMonth < currentMonth) ||
+      (selectedYear === currentYear && selectedMonth === currentMonth && selectedDay < currentDate)
+    ) {
+      return true;
+    }
+    if (
+      selectedYear === currentYear &&
+      selectedMonth === currentMonth &&
+      selectedDay === currentDate
+    ) {
+      if (selectedHour < currentHour) return true;
+      if (selectedHour === currentHour && selectedMinute <= currentMinute) return true;
+    }
+    return false;
+  }, [selectedYear, selectedMonth, selectedDay, selectedHour, selectedMinute, currentYear, currentMonth, currentDate, currentHour, currentMinute]);
+
   const isToday = (day) =>
-    today.getDate() === day &&
-    today.getMonth() === viewMonth &&
-    today.getFullYear() === viewYear;
+    currentDate === day &&
+    currentMonth === viewMonth &&
+    currentYear === viewYear;
 
   const isCurrentSelection = (day) =>
     selectedDay === day &&
@@ -283,7 +343,12 @@ export default function DateTimePicker({
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="w-7 h-7 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all cursor-pointer"
+            disabled={isPrevMonthDisabled}
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+              isPrevMonthDisabled
+                ? 'opacity-30 cursor-not-allowed text-zinc-400 dark:text-zinc-600 pointer-events-none'
+                : 'hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white cursor-pointer'
+            }`}
             aria-label="Bulan sebelumnya"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -335,20 +400,24 @@ export default function DateTimePicker({
           const day = i + 1;
           const selected = isCurrentSelection(day);
           const todayDay = isToday(day);
+          const isPast = isDayInPast(day);
 
           return (
             <button
               key={`day-${day}`}
               type="button"
-              onClick={() => handleSelectDay(day)}
+              disabled={isPast}
+              onClick={() => !isPast && handleSelectDay(day)}
               className={`${
                 isMobile ? 'h-9 text-xs' : 'h-7 text-xs'
-              } w-full rounded-lg transition-all duration-150 cursor-pointer flex items-center justify-center select-none active:scale-95 ${
-                selected
-                  ? 'bg-[var(--theme-accent,#0284C7)] text-white font-bold shadow-md scale-105 ring-2 ring-[var(--theme-glow,rgba(2,132,199,0.3))]'
+              } w-full rounded-lg transition-all duration-150 flex items-center justify-center select-none ${
+                isPast
+                  ? 'opacity-25 text-zinc-400 dark:text-zinc-600 cursor-not-allowed pointer-events-none'
+                  : selected
+                  ? 'bg-[var(--theme-accent,#0284C7)] text-white font-bold shadow-md scale-105 ring-2 ring-[var(--theme-glow,rgba(2,132,199,0.3))] active:scale-95 cursor-pointer'
                   : todayDay
-                  ? 'border border-[var(--theme-accent,#0284C7)] text-[var(--theme-accent,#0284C7)] font-bold hover:bg-zinc-100 dark:hover:bg-white/[0.08]'
-                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-white'
+                  ? 'border border-[var(--theme-accent,#0284C7)] text-[var(--theme-accent,#0284C7)] font-bold hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 cursor-pointer'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-white active:scale-95 cursor-pointer'
               }`}
             >
               {day}
@@ -410,6 +479,7 @@ export default function DateTimePicker({
           <input
             ref={dateInputRef}
             type="date"
+            min={minDateString}
             value={dateValueString}
             onChange={handleNativeDateChange}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -440,11 +510,22 @@ export default function DateTimePicker({
                   key={p.label}
                   type="button"
                   onClick={() => {
-                    setSelectedDay(target.getDate());
-                    setSelectedMonth(target.getMonth());
-                    setSelectedYear(target.getFullYear());
-                    setViewMonth(target.getMonth());
-                    setViewYear(target.getFullYear());
+                    const tDay = target.getDate();
+                    const tMonth = target.getMonth();
+                    const tYear = target.getFullYear();
+                    setSelectedDay(tDay);
+                    setSelectedMonth(tMonth);
+                    setSelectedYear(tYear);
+                    setViewMonth(tMonth);
+                    setViewYear(tYear);
+
+                    if (tYear === currentYear && tMonth === currentMonth && tDay === currentDate) {
+                      if (selectedHour < currentHour || (selectedHour === currentHour && selectedMinute <= currentMinute)) {
+                        const nextHour = Math.min(23, currentHour + 1);
+                        setSelectedHour(nextHour);
+                        setSelectedMinute(0);
+                      }
+                    }
                   }}
                   className={`py-2 px-1 rounded-xl text-center border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center ${
                     isSelectedDay
@@ -529,19 +610,30 @@ export default function DateTimePicker({
           <div className="grid grid-cols-4 gap-2">
             {QUICK_TIMES.map((t) => {
               const isActive = selectedHour === t.h && selectedMinute === t.m;
+              const isTimePast =
+                selectedYear === currentYear &&
+                selectedMonth === currentMonth &&
+                selectedDay === currentDate &&
+                (t.h < currentHour || (t.h === currentHour && t.m <= currentMinute));
+
               return (
                 <button
                   key={t.label}
                   type="button"
+                  disabled={isTimePast}
                   onClick={() => {
+                    if (isTimePast) return;
                     setSelectedHour(t.h);
                     setSelectedMinute(t.m);
                   }}
-                  className={`py-2 px-1 rounded-xl text-center border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center ${
-                    isActive
-                      ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-bold shadow-md shadow-[var(--theme-glow,rgba(2,132,199,0.3))]'
-                      : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.08]'
+                  className={`py-2 px-1 rounded-xl text-center border transition-all flex flex-col items-center justify-center ${
+                    isTimePast
+                      ? 'opacity-30 cursor-not-allowed bg-zinc-100/50 dark:bg-white/[0.02] text-zinc-400 dark:text-zinc-600 border-zinc-200/50 dark:border-white/[0.04] pointer-events-none'
+                      : isActive
+                      ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-bold shadow-md shadow-[var(--theme-glow,rgba(2,132,199,0.3))] active:scale-95 cursor-pointer'
+                      : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.08] active:scale-95 cursor-pointer'
                   }`}
+                  title={isTimePast ? 'Waktu sudah lewat hari ini' : undefined}
                 >
                   <span className="text-xs font-mono font-bold leading-tight">{t.label}</span>
                   <span className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-white/90' : 'text-zinc-500 dark:text-zinc-400'}`}>
@@ -662,19 +754,25 @@ export default function DateTimePicker({
                 ].map((preset) => {
                   const presetDate = getPresetDate(preset.id);
                   const isCurrent = value && toDatetimeLocalString(value) === presetDate;
+                  const isPassed = preset.id === 'today-17' && currentHour >= 17;
                   return (
                     <button
                       key={preset.id}
                       type="button"
+                      disabled={isPassed}
                       onClick={() => {
+                        if (isPassed) return;
                         onChange?.(presetDate);
                         setIsOpen(false);
                       }}
-                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center border cursor-pointer active:scale-95 ${
-                        isCurrent
-                          ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-semibold shadow-sm'
-                          : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.1] hover:text-zinc-900 dark:hover:text-white'
+                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center border ${
+                        isPassed
+                          ? 'opacity-30 cursor-not-allowed bg-zinc-100/50 dark:bg-white/[0.02] text-zinc-400 dark:text-zinc-600 border-zinc-200/50 dark:border-white/[0.04] pointer-events-none'
+                          : isCurrent
+                          ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-semibold shadow-sm active:scale-95 cursor-pointer'
+                          : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.1] hover:text-zinc-900 dark:hover:text-white active:scale-95 cursor-pointer'
                       }`}
+                      title={isPassed ? 'Sudah lewat jam 17:00 hari ini' : undefined}
                     >
                       {preset.label}
                     </button>
@@ -729,6 +827,16 @@ export default function DateTimePicker({
               </div>
             </div>
 
+            {/* Warning notice when selected time is in past */}
+            {isSelectedTimePast && (
+              <div className="pt-2 px-1">
+                <span className="text-[11px] text-amber-500 dark:text-amber-400 font-medium flex items-center gap-1.5">
+                  <span>⚠️</span>
+                  <span>Waktu tenggat yang dipilih sudah terlewat dari saat ini.</span>
+                </span>
+              </div>
+            )}
+
             {/* Bottom Actions Footer */}
             <div className="pt-3 mt-3 border-t border-zinc-200 dark:border-white/[0.08] flex items-center justify-between gap-2">
               <div>
@@ -754,7 +862,12 @@ export default function DateTimePicker({
                 <button
                   type="button"
                   onClick={handleApply}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition-colors cursor-pointer shadow-sm flex items-center gap-1.5 active:scale-95"
+                  disabled={isSelectedTimePast}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-colors ${
+                    isSelectedTimePast
+                      ? 'opacity-40 cursor-not-allowed bg-zinc-400 text-white dark:bg-zinc-800 dark:text-zinc-500 pointer-events-none'
+                      : 'bg-zinc-900 text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 cursor-pointer'
+                  }`}
                 >
                   <Check className="w-3.5 h-3.5" />
                   Terapkan
