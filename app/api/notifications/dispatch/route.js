@@ -140,24 +140,39 @@ function validateCronAuth(request) {
       return false;
     }
 
+    // 1. Cek Header Authorization: Bearer <CRON_SECRET>
     const authHeader = request.headers.get("authorization") || "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return false;
+    if (authHeader.startsWith("Bearer ")) {
+      const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
+      const providedSecret = authHeader;
+      const isLengthMatch = expectedSecret.length === providedSecret.length;
+
+      if (
+        isLengthMatch &&
+        crypto.timingSafeEqual(
+          Buffer.from(expectedSecret),
+          Buffer.from(providedSecret)
+        )
+      ) {
+        return true;
+      }
     }
 
-    const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
-    const providedSecret = authHeader;
+    // 2. Fallback: Dukung query string ?key=<CRON_SECRET> atau ?secret=<CRON_SECRET> untuk scheduler fleksibel (cron-job.org / curl)
+    const url = new URL(request.url);
+    const queryKey = url.searchParams.get("key") || url.searchParams.get("secret") || "";
+    if (queryKey && queryKey.length === process.env.CRON_SECRET.length) {
+      if (
+        crypto.timingSafeEqual(
+          Buffer.from(process.env.CRON_SECRET),
+          Buffer.from(queryKey)
+        )
+      ) {
+        return true;
+      }
+    }
 
-    // Pastikan panjang string sama sebelum compare (wajib untuk timingSafeEqual)
-    const isLengthMatch = expectedSecret.length === providedSecret.length;
-
-    return (
-      isLengthMatch &&
-      crypto.timingSafeEqual(
-        Buffer.from(expectedSecret),
-        Buffer.from(providedSecret)
-      )
-    );
+    return false;
   } catch (err) {
     return false;
   }
