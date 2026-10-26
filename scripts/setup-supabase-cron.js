@@ -78,10 +78,10 @@ async function setupSupabaseCron() {
     `, [appUrl, cronSecret]);
     console.log('[SUCCESS] Konfigurasi endpoint & secret tersimpan di database!');
 
-    // 4. Buat fungsi pintar pengecek tugas
+    // 4. Buat fungsi pintar pengecek tugas dua tahap (Reminder Pra-Tenggat & Deadline Habis)
     // PENTING: Hanya panggil net.http_post JIKA ada tugas yang perlu dikirimi notifikasi.
     // Jika tidak ada tugas, 0 panggilan ke Vercel (hemat kuota Vercel 100%).
-    console.log('[INFO] Membuat fungsi public.check_and_dispatch_task_reminders()...');
+    console.log('[INFO] Memperbarui fungsi public.check_and_dispatch_task_reminders()...');
     await client.query(`
       CREATE OR REPLACE FUNCTION public.check_and_dispatch_task_reminders()
       RETURNS void
@@ -99,27 +99,38 @@ async function setupSupabaseCron() {
           RETURN;
         END IF;
 
-        -- 2. Cek apakah ada tugas yang sudah jatuh tempo pengingat
+        -- 2. Cek apakah ada tugas yang sudah jatuh tempo pengingat pra-tenggat ATAU jatuh tempo tenggat waktu habis
         SELECT count(*) INTO task_count
         FROM public.tasks t
         WHERE t.selesai = false
-          AND t.reminder_sent = false
           AND t.deadline IS NOT NULL
+          AND t.deadline >= NOW() - INTERVAL '3 days'
           AND (
-            CASE t.reminder
-              WHEN '15m' THEN t.deadline - INTERVAL '15 minutes'
-              WHEN '30m' THEN t.deadline - INTERVAL '30 minutes'
-              WHEN '1h'  THEN t.deadline - INTERVAL '1 hour'
-              WHEN '3h'  THEN t.deadline - INTERVAL '3 hours'
-              WHEN '6h'  THEN t.deadline - INTERVAL '6 hours'
-              WHEN '1d'  THEN t.deadline - INTERVAL '1 day'
-              ELSE t.deadline - INTERVAL '15 minutes'
-            END
-          ) <= NOW()
-          AND t.deadline >= NOW() - INTERVAL '3 days';
+            -- Kondisi 1: Reminder Pra-Tenggat belum dikirim & waktu reminder telah tiba (sebelum deadline)
+            (
+              t.reminder_sent = false
+              AND (
+                CASE t.reminder
+                  WHEN '15m' THEN t.deadline - INTERVAL '15 minutes'
+                  WHEN '30m' THEN t.deadline - INTERVAL '30 minutes'
+                  WHEN '1h'  THEN t.deadline - INTERVAL '1 hour'
+                  WHEN '3h'  THEN t.deadline - INTERVAL '3 hours'
+                  WHEN '6h'  THEN t.deadline - INTERVAL '6 hours'
+                  WHEN '1d'  THEN t.deadline - INTERVAL '1 day'
+                  ELSE t.deadline - INTERVAL '15 minutes'
+                END
+              ) <= NOW()
+              AND t.deadline > NOW()
+            )
+            OR
+            -- Kondisi 2: Notifikasi Deadline Habis belum dikirim & batas waktu deadline sudah tiba
+            (
+              t.deadline_sent = false
+              AND t.deadline <= NOW()
+            )
+          );
 
         -- 3. HANYA bila ada tugas (task_count > 0), tembak panggilan HTTP via pg_net ke Vercel!
-        -- Proteksi Kuota: Jika task_count == 0, tidak ada satupun request yang dikirim ke Vercel!
         IF task_count > 0 THEN
           target_endpoint := rtrim(cfg.app_url, '/') || '/api/notifications/dispatch?key=' || cfg.cron_secret;
           PERFORM net.http_post(

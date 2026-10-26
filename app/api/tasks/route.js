@@ -259,11 +259,11 @@ export async function POST(request) {
       });
     }
 
-    // Instant Dispatch jika deadline <= threshold reminder saat tugas dibuat
+    // Instant Dispatch jika deadline <= threshold reminder saat tugas dibuat ATAU deadline <= sekarang
     if (parsedDeadline.value && !Boolean(selesai)) {
       const deadlineTime = new Date(parsedDeadline.value).getTime();
       const reminderOffset = getReminderOffsetMs(cleanReminder);
-      if (deadlineTime - reminderOffset <= Date.now()) {
+      if (deadlineTime - reminderOffset <= Date.now() || deadlineTime <= Date.now()) {
         handleDispatch().catch((err) => {
           console.error("[TASK_POST] Instant dispatch error:", err);
         });
@@ -424,6 +424,10 @@ export async function PUT(request) {
            reminder_sent = CASE 
              WHEN (deadline IS DISTINCT FROM $3) OR (reminder IS DISTINCT FROM $4) THEN false 
              ELSE reminder_sent 
+           END,
+           deadline_sent = CASE 
+             WHEN (deadline IS DISTINCT FROM $3) THEN false 
+             ELSE deadline_sent 
            END
        WHERE id = $9 AND user_id = $10
        RETURNING *;`,
@@ -447,11 +451,11 @@ export async function PUT(request) {
 
     const task = mapRowToTask(result.rows[0]);
 
-    // Instant Dispatch jika deadline <= threshold reminder saat tugas di-update
+    // Instant Dispatch jika deadline <= threshold reminder saat tugas di-update ATAU deadline <= sekarang
     if (parsedDeadline.value && !Boolean(selesai)) {
       const deadlineTime = new Date(parsedDeadline.value).getTime();
       const reminderOffset = getReminderOffsetMs(cleanReminder);
-      if (deadlineTime - reminderOffset <= Date.now()) {
+      if (deadlineTime - reminderOffset <= Date.now() || deadlineTime <= Date.now()) {
         handleDispatch().catch((err) => {
           console.error("[TASK_PUT] Instant dispatch error:", err);
         });

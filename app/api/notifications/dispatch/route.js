@@ -22,35 +22,64 @@ export async function handleDispatch() {
     const subject = "mailto:admin@mytask.local";
     webpush.setVapidDetails(subject, publicKey, privateKey);
 
-    // 1. Kunci dan tandai tugas secara atomik (Anti-Race Condition)
+    // 1. Kunci dan tandai tugas secara atomik (Two-Phase Notification: Reminder & Deadline Habis)
     const reserveTasksSql = `
-      WITH target_tasks AS (
-        SELECT t.id
+      WITH eligible_tasks AS (
+        SELECT 
+          t.id,
+          t.user_id,
+          t.judul,
+          t.deskripsi,
+          t.deadline,
+          t.reminder,
+          CASE 
+            WHEN t.deadline <= NOW() AND t.deadline_sent = false THEN 'deadline'
+            WHEN t.deadline > NOW() AND t.reminder_sent = false THEN 'reminder'
+            ELSE NULL
+          END AS notif_type
         FROM public.tasks t
         WHERE t.selesai = false
-          AND t.reminder_sent = false
           AND t.deadline IS NOT NULL
-          AND (
-            CASE t.reminder
-              WHEN '15m' THEN t.deadline - INTERVAL '15 minutes'
-              WHEN '30m' THEN t.deadline - INTERVAL '30 minutes'
-              WHEN '1h'  THEN t.deadline - INTERVAL '1 hour'
-              WHEN '3h'  THEN t.deadline - INTERVAL '3 hours'
-              WHEN '6h'  THEN t.deadline - INTERVAL '6 hours'
-              WHEN '1d'  THEN t.deadline - INTERVAL '1 day'
-              ELSE t.deadline - INTERVAL '15 minutes'
-            END
-          ) <= NOW()
           AND t.deadline >= NOW() - INTERVAL '3 days'
+          AND (
+            -- Kondisi 1: Deadline Habis belum dikirim
+            (t.deadline_sent = false AND t.deadline <= NOW())
+            OR
+            -- Kondisi 2: Reminder Pra-Tenggat belum dikirim
+            (
+              t.reminder_sent = false
+              AND (
+                CASE t.reminder
+                  WHEN '15m' THEN t.deadline - INTERVAL '15 minutes'
+                  WHEN '30m' THEN t.deadline - INTERVAL '30 minutes'
+                  WHEN '1h'  THEN t.deadline - INTERVAL '1 hour'
+                  WHEN '3h'  THEN t.deadline - INTERVAL '3 hours'
+                  WHEN '6h'  THEN t.deadline - INTERVAL '6 hours'
+                  WHEN '1d'  THEN t.deadline - INTERVAL '1 day'
+                  ELSE t.deadline - INTERVAL '15 minutes'
+                END
+              ) <= NOW()
+              AND t.deadline > NOW()
+            )
+          )
         ORDER BY t.deadline ASC
         LIMIT 50
         FOR UPDATE SKIP LOCKED
       )
-      UPDATE public.tasks
-      SET reminder_sent = true
-      FROM target_tasks
-      WHERE public.tasks.id = target_tasks.id
-      RETURNING public.tasks.id, public.tasks.user_id, public.tasks.judul, public.tasks.deskripsi, public.tasks.deadline, public.tasks.reminder;
+      UPDATE public.tasks t
+      SET 
+        reminder_sent = CASE 
+          WHEN et.notif_type = 'reminder' THEN true 
+          WHEN et.notif_type = 'deadline' THEN true 
+          ELSE t.reminder_sent 
+        END,
+        deadline_sent = CASE 
+          WHEN et.notif_type = 'deadline' THEN true 
+          ELSE t.deadline_sent 
+        END
+      FROM eligible_tasks et
+      WHERE t.id = et.id
+      RETURNING t.id, t.user_id, t.judul, t.deskripsi, t.deadline, t.reminder, et.notif_type;
     `;
 
     const tasksResult = await query(reserveTasksSql);
@@ -72,12 +101,26 @@ export async function handleDispatch() {
           );
 
           const formattedDeadline = formatTanggal(task.deadline);
+          const isDeadline = task.notif_type === "deadline";
+
+          const title = isDeadline
+            ? `🚨 Waktu Habis: ${task.judul}`
+            : `⏰ Pengingat: ${task.judul}`;
+
+          const body = isDeadline
+            ? `Tenggat waktu (${formattedDeadline}) telah tiba sekarang! Segera kerjakan dan selesaikan tugas ini.`
+            : `Tenggat waktu: ${formattedDeadline}. Jangan lupa selesaikan tugas Anda!`;
+
+          const tag = isDeadline
+            ? `task-deadline-${task.id}`
+            : `task-reminder-${task.id}`;
+
           const payload = JSON.stringify({
-            title: `⏰ Pengingat: ${task.judul}`,
-            body: `Tenggat waktu: ${formattedDeadline}. Jangan lupa selesaikan tugas Anda!`,
+            title,
+            body,
             url: "/dashboard",
             icon: "/favicon.ico",
-            tag: `task-reminder-${task.id}`,
+            tag,
           });
 
           // Kirim web-push serentak ke seluruh perangkat terdaftar milik user
@@ -109,12 +152,13 @@ export async function handleDispatch() {
           try {
             await query(
               `INSERT INTO public.notifications (user_id, task_id, tipe, judul, pesan, dibuat_pada)
-               VALUES ($1, $2, 'reminder', $3, $4, NOW());`,
+               VALUES ($1, $2, $3, $4, $5, NOW());`,
               [
                 task.user_id,
                 task.id,
-                `Pengingat: ${task.judul}`,
-                `Tenggat waktu tugas pada ${formattedDeadline}`,
+                isDeadline ? "deadline" : "reminder",
+                title,
+                body,
               ]
             );
           } catch (notifErr) {
