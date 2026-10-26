@@ -61,9 +61,14 @@ const AnimatedContent = forwardRef(function AnimatedContent(
 ) {
   const internalRef = useRef(null);
   const [scrollContainer, setScrollContainer] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const scrollContainerRef = useRef(null);
   const isMobile = useSyncExternalStore(subscribeMobile, getMobileSnapshot, getServerSnapshot);
   const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Container auto-detection: find nearest scrollable parent if autoDetectContainer is requested
   useEffect(() => {
@@ -135,9 +140,10 @@ const AnimatedContent = forwardRef(function AnimatedContent(
   }
 
   // Determine if CSS filter blur is needed.
-  // CRITICAL: On mobile or when reduced motion is on, hasBlur is false.
-  // Omitting 'filter' completely avoids GPU filter layer promotion and guarantees 60 FPS.
-  const hasBlur = !shouldReduceMotion && Boolean(activeBlur) && activeBlur > 0;
+  // CRITICAL:
+  // 1. On SSR (before mounted), blur is disabled to prevent hydration mismatch and stuck blur.
+  // 2. On mobile (< 640px) or when reduced motion is on, hasBlur is false for 60 FPS.
+  const hasBlur = mounted && !shouldReduceMotion && Boolean(activeBlur) && activeBlur > 0;
 
   // Animation variants
   const variants = {
@@ -158,7 +164,9 @@ const AnimatedContent = forwardRef(function AnimatedContent(
             filter: 'blur(0px)',
             transitionEnd: { filter: 'none' },
           }
-        : {}),
+        : {
+            filter: 'none',
+          }),
       transition: {
         duration: shouldReduceMotion ? 0.05 : activeDuration,
         delay: shouldReduceMotion ? 0 : delay,

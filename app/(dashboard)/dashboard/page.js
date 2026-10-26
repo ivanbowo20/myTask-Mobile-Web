@@ -246,7 +246,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Header Greeting Dinamis Anti-Slop */}
-      <AnimatedContent delay={0}>
+      <AnimatedContent delay={0} blur={0}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.08] pb-5">
           <div className="space-y-1">
             <motion.h1
