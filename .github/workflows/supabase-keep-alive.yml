@@ -82,7 +82,7 @@ jobs:
             if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
               echo "✅ [SUCCESS] Supabase Keep-Alive Ping berhasil! PostgreSQL aktif dan auto-pause 7 hari terhindar."
               if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-                echo "💡 Tips: Tambahkan SUPABASE_SERVICE_ROLE_KEY di GitHub Secrets jika ingin mengaktifkan auto-purge tugas lama >14 hari secara otomatis."
+                echo "💡 Tips: Tambahkan SUPABASE_SERVICE_ROLE_KEY di GitHub Secrets jika ingin mengaktifkan auto-purge tugas lama >3 hari secara otomatis."
               fi
               PING_SUCCESS=true
             else

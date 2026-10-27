@@ -492,6 +492,21 @@ export async function DELETE(request) {
     }
 
     const { searchParams } = new URL(request.url);
+    const scope = searchParams.get("scope");
+
+    // Bulk delete seluruh tugas selesai milik user saat ini
+    if (scope === "completed") {
+      const delResult = await query(
+        `DELETE FROM public.tasks WHERE user_id = $1 AND selesai = true;`,
+        [session.user.id]
+      );
+      return NextResponse.json({
+        success: true,
+        count: delResult.rowCount || 0,
+        message: `${delResult.rowCount || 0} tugas selesai berhasil dihapus.`,
+      });
+    }
+
     const id = searchParams.get("id");
     const parsedId = Number(id);
 

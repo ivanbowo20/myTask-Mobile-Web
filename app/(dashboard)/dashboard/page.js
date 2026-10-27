@@ -12,6 +12,7 @@ import {
   Star,
   ArrowRight,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -95,6 +96,7 @@ export default function DashboardPage() {
     toggleImportant,
     openEditTask,
     deleteTask,
+    clearCompletedTasks,
     openAddTask,
   } = useTasks();
 
@@ -102,6 +104,7 @@ export default function DashboardPage() {
   const currentUser = session?.user || contextUser;
 
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [isClearCompletedOpen, setIsClearCompletedOpen] = useState(false);
   const [seed, setSeed] = useState(0);
 
   // Variasi sapaan baru yang tenang setiap refresh / sesi dibuka
@@ -356,14 +359,26 @@ export default function DashboardPage() {
                 ({mobileAgendaTasks.length})
               </span>
             </div>
-            <Link
-              href="/tugas"
-              prefetch={true}
-              className="text-xs font-semibold text-zinc-400 hover:text-[#FAFAFA] inline-flex items-center gap-1 transition-colors"
-            >
-              Semua
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            {mobileFilter === "selesai" && mobileAgendaTasks.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setIsClearCompletedOpen(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-400 dark:text-rose-400 [html[data-theme='celestial-sky']_&]:text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 [html[data-theme='celestial-sky']_&]:bg-rose-50 [html[data-theme='celestial-sky']_&]:hover:bg-rose-100 border border-rose-500/20 hover:border-rose-500/30 [html[data-theme='celestial-sky']_&]:border-rose-200 transition-all duration-200 cursor-pointer select-none active:scale-[0.97]"
+                aria-label="Hapus semua tugas selesai"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Hapus Semua ({mobileAgendaTasks.length})</span>
+              </button>
+            ) : (
+              <Link
+                href="/tugas"
+                prefetch={true}
+                className="text-xs font-semibold text-zinc-400 hover:text-[#FAFAFA] inline-flex items-center gap-1 transition-colors"
+              >
+                Semua
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
           </div>
 
           {mobileAgendaTasks.length === 0 ? (
@@ -686,6 +701,19 @@ export default function DashboardPage() {
         }}
         title="Hapus Tugas"
         message={`Apakah Anda yakin ingin menghapus tugas "${taskToDelete?.judul}"? Tindakan ini tidak dapat dibatalkan.`}
+      />
+
+      {/* Bulk Delete Completed Tasks Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isClearCompletedOpen}
+        onClose={() => setIsClearCompletedOpen(false)}
+        onConfirm={async () => {
+          setIsClearCompletedOpen(false);
+          await clearCompletedTasks();
+        }}
+        title="Hapus Semua Tugas Selesai"
+        message={`Apakah Anda yakin ingin menghapus seluruh (${mobileAgendaTasks.length}) tugas yang telah selesai? Data riwayat ini akan dihapus permanen dari cloud database dan tidak dapat dikembalikan.`}
+        confirmLabel="Ya, Hapus Semua"
       />
     </div>
   );

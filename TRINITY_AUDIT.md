@@ -1,107 +1,84 @@
-# 🔱 TRINITY CODE AUDIT REPORT — SISTEM NOTIFIKASI DUA TAHAP (REMINDER & DEADLINE)
+# 🔱 TRINITY CODE AUDIT REPORT
 
-**Target:** Arsitektur Web Push Notification, Background Cron Scheduler, Database State, & Dispatcher API  
-**Ruang Lingkup:** 
-- [`app/api/notifications/dispatch/route.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/notifications/dispatch/route.js)
-- [`scripts/setup-supabase-cron.js`](file:///c:/MY%20project%20Website/todowebb%20V2/scripts/setup-supabase-cron.js)
-- [`supabase/schema.sql`](file:///c:/MY%20project%20Website/todowebb%20V2/supabase/schema.sql)
-- [`app/api/tasks/route.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/tasks/route.js)
-- [`public/sw.js`](file:///c:/MY%20project%20Website/todowebb%20V2/public/sw.js)  
-**Indeks yang Digunakan:** CodeGraph AST Exploration, Call Hierarchy Tracing, & PostgreSQL Schema Analysis  
+**Target:** Siklus Retensi Tugas Selesai, Supabase Free Tier Optimizer, & Fitur Pembersihan Massal (Bulk Delete)  
+**Ruang Lingkup:** Optimasi Kuota Supabase Free Tier (500 MB limit), Auto-Purge Database Interval, API Endpoint Bulk Deletion, & UI Ergonomics  
+**Indeks yang Digunakan:** CodeGraph: Ya (`.codegraph/`) | AST Tracing: Ya | Ponytail Audit: Ya  
+**Status Eksekusi:** FASE 2 — PERBAIKAN SELESAI & TERVERIFIKASI (`npm run build` BERHASIL 100%)
 
 ---
 
-## 🧭 EKSEKUTIF RINGKASAN & CARA KERJA SISTEM SAAT INI
+## 🚨 1. MUST FIX (Optimasi Kuota Database & Ketiadaan Fitur Bulk Delete)
 
-### 1. Bagaimana Notifikasi Bekerja Walau Tab Tidak Dibuka?
-Sistem notifikasi TaskFlow v2 bekerja secara *serverless background push* berkat kombinasi 4 pilar arsitektur:
-1. **PWA Service Worker (`public/sw.js`):** Berjalan di background OS browser (Chrome/Edge/Android) dan mendengarkan event push tanpa bergantung pada tab aktif.
-2. **Web Push Subscription (`public.push_subscriptions`):** Endpoint unik per perangkat pengguna disimpan di PostgreSQL Supabase dengan enkripsi VAPID key.
-3. **Database Cron Scheduler (`pg_cron` + `pg_net`):** Supabase menjalankan fungsi `public.check_and_dispatch_task_reminders()` otomatis setiap 1 menit (`* * * * *`). Jika ada tugas yang memenuhi kriteria, Supabase menembakkan webhook HTTP via `pg_net` ke endpoint Vercel `/api/notifications/dispatch?key=CRON_SECRET`.
-4. **Dispatcher Backend (`/api/notifications/dispatch`):** Vercel menerima webhook, mengunci baris tugas secara atomik (`FOR UPDATE SKIP LOCKED`), mengirim paket Web Push ke semua perangkat terdaftar via modul `web-push`, dan mencatat riwayat ke tabel `public.notifications`.
-
-### 2. Mengapa Notifikasi Tepat Jam 5 (Tenggat Waktu) Tidak Muncul?
-Saat Anda mengatur deadline jam 17:00 dengan reminder 30 menit:
-- **Pukul 16:30 (Reminder):** Cron mendeteksi `(deadline - 30 minutes) <= NOW()`. Dispatcher mengirim notifikasi ke perangkat Anda dan **langsung mengeksekusi:**
+### [1] Retensi Auto-Purge Database 14 Hari Terlalu Panjang untuk Free Tier
+- **Lokasi Berkas:** [`supabase/schema.sql:L182-L198`](file:///c:/MY%20project%20Website/todowebb%20V2/supabase/schema.sql#L182-L198) dan [`.github/workflows/supabase-keep-alive.yml:L3-L92`](file:///c:/MY%20project%20Website/todowebb%20V2/.github/workflows/supabase-keep-alive.yml#L3-L92)
+- **Fungsi Kode:** Fungsi PostgreSQL `purge_old_completed_tasks()` yang bertugas membersihkan tugas selesai usang untuk menjaga batas kuota penyimpanan Supabase Free Tier (500 MB).
+- **Akar Masalah:**
+  Sebelumnya, fungsi SQL menggunakan filter `selesai_pada < (now() - interval '14 days')`. Meskipun GitHub Actions cron berjalan setiap 3 hari sekali (`0 5 */3 * *`), tugas selesai yang berumur di bawah 14 hari tetap tersimpan di database. Hal ini menyebabkan penumpukan riwayat tugas selesai dan menghabiskan baris database serta kuota bandwidth egress.
+- **Blast Radius & Caller:**
+  - PostgreSQL DB Supabase via RPC `/rest/v1/rpc/purge_old_completed_tasks`.
+  - GitHub Actions Workflow keep-alive.
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  Ubah interval retensi di fungsi SQL dari `14 days` menjadi `3 days`:
   ```sql
-  UPDATE public.tasks SET reminder_sent = true WHERE id = target_tasks.id;
+  delete from public.tasks
+  where selesai = true
+    and selesai_pada is not null
+    and selesai_pada < (now() - interval '3 days');
   ```
-- **Pukul 17:00 (Tenggat Waktu / Deadline):** Cron dan Dispatcher hanya mencari tugas dengan filter:
-  ```sql
-  WHERE t.selesai = false AND t.reminder_sent = false
-  ```
-  Karena tugas tersebut sudah bernilai `reminder_sent = true`, maka tugas tersebut **dilewati dan dianggap sudah selesai dikirimi notifikasi**.
-- **Kesimpulan:** Arsitektur saat ini bersifat **Single-Shot (1 kali kirim)**. Belum ada kolom penanda kedua (seperti `deadline_sent`) dan belum ada logika evaluasi untuk tugas yang mencapai batas `deadline <= NOW()`.
+- **Dampak jika Diabaikan:** Kapasitas database cepat penuh saat pengguna aktif bertambah banyak, berpotensi memicu penguncian database menjadi *Read-Only* oleh Supabase.
 
 ---
 
-## 🚨 1. MUST FIX (Logika Dispatcher & Database State)
-
-### [1] Ketiadaan Kolom Pelacak Notifikasi Tenggat (`deadline_sent`)
-- **File:** [`supabase/schema.sql`](file:///c:/MY%20project%20Website/todowebb%20V2/supabase/schema.sql), tabel `public.tasks`
-- **Akar Masalah:** Tabel `public.tasks` hanya memiliki `reminder_sent boolean default false`. Ketika reminder terkirim, flag ini bernilai `true` sehingga task terkunci dari pengiriman selanjutnya.
-- **Saran Perbaikan (Ponytail Fix):**
-  Tambahkan kolom baru `deadline_sent boolean not null default false` ke tabel `public.tasks`.
-  ```sql
-  ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS deadline_sent boolean NOT NULL DEFAULT false;
-  ```
-
-### [2] Ketiadaan Cabang Evaluasi Notifikasi Tepat Tenggat di Dispatcher Backend
-- **File:** [`app/api/notifications/dispatch/route.js:L26-L54`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/notifications/dispatch/route.js#L26-L54)
-- **Akar Masalah:** Query atomik hanya memproses `reminder_sent = false` dengan kalkulasi selisih interval reminder. Tidak ada batch processing atau status discriminator untuk membedakan:
-  - **Kasus A (Pengingat Pra-Tenggat):** Waktu saat ini berada di antara `deadline - interval` hingga `deadline`, dan `reminder_sent = false`.
-  - **Kasus B (Tenggat Waktu Habis / Jatuh Tempo Sekarang):** Waktu saat ini sudah mencapai `deadline <= NOW()`, dan `deadline_sent = false`.
-- **Saran Perbaikan (Ponytail Fix):**
-  Pisahkan atau perluas CTE Dispatcher menjadi dua fase evaluasi yang atomik (`dispatch_phase: 'reminder' | 'deadline'`). Masing-masing mengupdate flag yang bersesuaian (`reminder_sent = true` atau `deadline_sent = true`) dan menghasilkan teks payload yang berbeda.
-
-### [3] Pembaruan Fungsi Pemeriksa di Supabase Cron (`check_and_dispatch_task_reminders`)
-- **File:** [`scripts/setup-supabase-cron.js:L103-L120`](file:///c:/MY%20project%20Website/todowebb%20V2/scripts/setup-supabase-cron.js#L103-L120)
-- **Akar Masalah:** Fungsi PL/pgSQL di Supabase yang berjalan tiap menit hanya menghitung `task_count` berdasarkan `t.reminder_sent = false`. Akibatnya, pada jam 17:00, `task_count` bernilai 0 sehingga cron tidak memicu HTTP POST ke Vercel sama sekali.
-- **Saran Perbaikan (Ponytail Fix):**
-  Perbarui query `SELECT count(*) INTO task_count` di fungsi database agar menghitung:
-  ```sql
-  WHERE t.selesai = false 
-    AND (
-      (t.reminder_sent = false AND (t.deadline - reminder_interval) <= NOW() AND t.deadline > NOW())
-      OR
-      (t.deadline_sent = false AND t.deadline <= NOW())
-    )
-  ```
+### [2] Ketiadaan Endpoint & Aksi Bulk Deletion Tugas Selesai
+- **Lokasi Berkas:** [`app/api/tasks/route.js:L475-L515`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/tasks/route.js#L475-L515) dan [`lib/task-context.js:L244-L315`](file:///c:/MY%20project%20Website/todowebb%20V2/lib/task-context.js#L244-L315)
+- **Fungsi Kode:** Mutasi penghapusan data tugas melalui API dan React Context.
+- **Akar Masalah:**
+  Endpoint `DELETE /api/tasks` sebelumnya hanya menerima single `id` (`DELETE /api/tasks?id=123`). User harus menekan tombol hapus satu per satu yang melelahkan dan menghasilkan puluhan HTTP request terpisah.
+- **Blast Radius & Caller:**
+  - `DELETE /api/tasks`
+  - `TaskProvider` (`lib/task-context.js`)
+  - Seluruh halaman pengguna (`DashboardPage`, `CompletedTasksPage`, `AllTasksPage`).
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  1. Tambahkan handler `scope=completed` di `DELETE /api/tasks` dengan parameterized query `$1` (`session.user.id`) guna menjamin keamanan IDOR & SQL Injection.
+  2. Tambahkan fungsi `clearCompletedTasks()` di `lib/task-context.js` dengan pola Optimistic UI + Rollback otomatis jika jaringan gagal + sinkronisasi `localStorage` offline-first.
 
 ---
 
-## ⚠️ 2. SHOULD FIX (Copywriting, Service Worker Tag, & Sinkronisasi Mutasi)
-
-### [4] Pembedaan Web Push `tag` agar Tidak Saling Timpa di Tray OS
-- **File:** [`app/api/notifications/dispatch/route.js:L80`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/notifications/dispatch/route.js#L80) & [`public/sw.js`](file:///c:/MY%20project%20Website/todowebb%20V2/public/sw.js)
-- **Akar Masalah:** Payload saat ini menggunakan tag statis `tag: task-reminder-${task.id}`. Jika browser menerima notifikasi deadline dengan tag yang sama persis, beberapa OS/browser akan menimpa (menggantikan) notifikasi sebelumnya daripada memunculkan pemberitahuan baru yang jelas.
-- **Saran Perbaikan:**
-  Gunakan tag spesifik per tahap:
-  - Tahap Reminder: `tag: task-reminder-${task.id}`
-  - Tahap Deadline Habis: `tag: task-deadline-${task.id}`
-
-### [5] Reset Status Dua Flag saat Pengguna Mengubah Deadline di Modal Edit
-- **File:** [`app/api/tasks/route.js:L424-L427`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/tasks/route.js#L424-L427)
-- **Akar Masalah:** Saat deadline atau jam diubah di modal edit, saat ini hanya `reminder_sent` yang di-reset ke `false`. Kolom baru `deadline_sent` juga harus di-reset ke `false` agar tugas yang diundur batas waktunya dapat menerima kedua notifikasi kembali secara utuh.
-- **Saran Perbaikan:**
-  ```sql
-  reminder_sent = CASE WHEN (deadline IS DISTINCT FROM $3) OR (reminder IS DISTINCT FROM $4) THEN false ELSE reminder_sent END,
-  deadline_sent = CASE WHEN (deadline IS DISTINCT FROM $3) THEN false ELSE deadline_sent END
-  ```
+### [3] Runtime ReferenceError `isClearCompletedOpen is not defined` pada Halaman Tugas
+- **Lokasi Berkas:** [`app/(dashboard)/tugas/page.js:L44`](file:///c:/MY%20project%20Website/todowebb%20V2/app/(dashboard)/tugas/page.js#L44) dan [`app/(dashboard)/tugas/selesai/page.js:L24`](file:///c:/MY%20project%20Website/todowebb%20V2/app/(dashboard)/tugas/selesai/page.js#L24)
+- **Fungsi Kode:** State modal konfirmasi pembersihan tugas massal `<ConfirmDialog isOpen={isClearCompletedOpen} ... />`.
+- **Akar Masalah (Root Cause):**
+  Saat komponen dialog disisipkan ke JSX, deklarasi `const [isClearCompletedOpen, setIsClearCompletedOpen] = useState(false)` dan destrukturisasi `clearCompletedTasks` dari `useTasks()` terlewat di blok pembuka fungsi `AllTasksContent` dan `CompletedTasksPage`. Karena proyek ini adalah JavaScript murni tanpa compiler TypeScript di waktu build (`npm run build` mengompilasi bundler tanpa mengevaluasi runtime client component tree), error baru muncul saat user membuka rute `/tugas` di browser.
+- **Blast Radius:**
+  - `app/(dashboard)/tugas/page.js`
+  - `app/(dashboard)/tugas/selesai/page.js`
+- **Surgical Fix:**
+  1. Tambahkan `clearCompletedTasks` ke pemanggilan `useTasks()` di kedua berkas.
+  2. Deklarasikan state `const [isClearCompletedOpen, setIsClearCompletedOpen] = useState(false)` di kedua komponen.
+  3. Lakukan verifikasi statis komprehensif (`deep-verify.js`) dan uji build terminal (`npm run build`).
 
 ---
 
-## 💡 3. NICE TO HAVE (Edge Cases & Fallback)
+## ⚠️ 2. SHOULD FIX (UI/UX Ergonomi & Adaptabilitas Multi-Tema)
 
-### [6] Penanganan Tugas Tanpa Pengingat Awal (`reminder: null`)
-- Jika user membuat tugas dengan memilih "Tanpa Pengingat", apakah notifikasi tenggat waktu tepat jam 5 tetap harus dikirim?
-- **Rekomendasi:** YA, notifikasi tenggat waktu tepat jam 5 tetap harus dikirim sebagai safety net agar pengguna tidak melewatkan batas waktu tugas.
+### [4] Penempatan Tombol Pembersihan & Konsistensi Tema
+- **Lokasi Berkas:**
+  - [`app/(dashboard)/dashboard/page.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/(dashboard)/dashboard/page.js)
+  - [`app/(dashboard)/tugas/selesai/page.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/(dashboard)/tugas/selesai/page.js)
+  - [`app/(dashboard)/tugas/page.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/(dashboard)/tugas/page.js)
+- **Fungsi Antarmuka:** Menampilkan tombol aksi pembersihan massal yang nyaman diakses pada tab/filter "Selesai".
+- **Akar Masalah:**
+  Tombol harus berada di area jangkauan jempol (*natural thumb zone*) saat user sedang melihat tugas selesai, tanpa menabrak FAB (+) atau mengotori tab lain. Warna tombol juga tidak boleh menyolok/norak di tema gelap (`dark-chocolate`, `soft-aurora`, `abyssal-teal`) maupun tema terang (`celestial-sky`).
+- **Saran Perbaikan Minimal:**
+  1. Munculkan tombol `Hapus Semua (N)` secara kondisional saat tab/filter "Selesai" aktif dan jumlah tugas selesai > 0.
+  2. Gunakan styling *Ghost Danger* yang lembut:
+     - Dark mode: `text-rose-400 bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30`
+     - Light mode (`celestial-sky`): `[html[data-theme='celestial-sky']_&]:text-rose-600 [html[data-theme='celestial-sky']_&]:bg-rose-50 [html[data-theme='celestial-sky']_&]:border-rose-200`
+  3. Lengkapi dengan `ConfirmDialog` untuk mencegah klik tak sengaja.
 
 ---
 
-## 📊 RENCANA EKSEKUSI BERTAHAP (DISIPLIN AI)
-- [x] **Langkah 1 (Database DDL):** Kolom `deadline_sent` telah ditambahkan ke tabel `public.tasks` di Supabase dan terverifikasi via `scripts/add-deadline-sent-column.js`.
-- [x] **Langkah 2 (Supabase Cron Update):** Fungsi `check_and_dispatch_task_reminders()` di PostgreSQL Supabase telah diperbarui dan terdaftar 100% aktif via `scripts/setup-supabase-cron.js`.
-- [x] **Langkah 3 (Dispatcher Engine):** Refaktor `handleDispatch()` di `app/api/notifications/dispatch/route.js` selesai dengan query atomik CTE `eligible_tasks` (`reminder` vs `deadline`).
-- [x] **Langkah 4 (Task Mutation Logic):** `app/api/tasks/route.js` (POST & PUT) telah diperbarui dengan instant dispatch dan reset `reminder_sent` & `deadline_sent`.
-- [x] **Langkah 5 (Verifikasi Bukti Terminal):** Database query test via `scripts/verify-two-phase-notification.js` lolos 100%, dan Next.js production build (`npm run build`) sukses tanpa error (Exit code: 0).
+## 📊 KESIMPULAN AUDIT & STATUS VERIFIKASI
+- **Total Temuan:** 4 (Must Fix: 3 | Should Fix: 1 | Nice to Have: 0)
+- **Status Kode:** FASE 2 SELESAI DIEKSEKUSI & DIVERIFIKASI.
+- **Verifikasi Terminal:** `npm run build` berjalan sukses 100% (12.3s).

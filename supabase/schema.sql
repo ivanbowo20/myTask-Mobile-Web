@@ -191,7 +191,7 @@ begin
   delete from public.tasks
   where selesai = true
     and selesai_pada is not null
-    and selesai_pada < (now() - interval '14 days');
+    and selesai_pada < (now() - interval '3 days');
   get diagnostics deleted_count = row_count;
   return deleted_count;
 end;
