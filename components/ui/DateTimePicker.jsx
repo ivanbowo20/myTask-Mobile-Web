@@ -336,7 +336,7 @@ export default function DateTimePicker({
     <div className="w-full">
       {/* Month Navigation */}
       <div className="flex items-center justify-between mb-2.5 px-1">
-        <span className="text-xs font-bold text-zinc-900 dark:text-[#FAFAFA] tracking-wide">
+        <span className="text-xs font-bold text-[var(--text-primary,#FAFAFA)] tracking-wide">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </span>
         <div className="flex items-center gap-1">
@@ -346,8 +346,8 @@ export default function DateTimePicker({
             disabled={isPrevMonthDisabled}
             className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
               isPrevMonthDisabled
-                ? 'opacity-30 cursor-not-allowed text-zinc-400 dark:text-zinc-600 pointer-events-none'
-                : 'hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white cursor-pointer'
+                ? 'opacity-30 cursor-not-allowed text-[var(--text-muted,#71717A)] pointer-events-none'
+                : 'hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 text-[var(--text-secondary,#A1A1AA)] hover:text-[var(--text-primary,#FAFAFA)] cursor-pointer'
             }`}
             aria-label="Bulan sebelumnya"
           >
@@ -356,7 +356,7 @@ export default function DateTimePicker({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="w-7 h-7 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-all cursor-pointer"
+            className="w-7 h-7 rounded-lg hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-[var(--text-secondary,#A1A1AA)] hover:text-[var(--text-primary,#FAFAFA)] transition-all cursor-pointer"
             aria-label="Bulan berikutnya"
           >
             <ChevronRight className="w-4 h-4" />
@@ -370,7 +370,7 @@ export default function DateTimePicker({
           <span
             key={dn}
             className={`text-[10px] font-semibold tracking-wider ${
-              idx === 0 ? 'text-red-500 dark:text-red-400' : 'text-zinc-500 dark:text-zinc-400'
+              idx === 0 ? 'text-red-500 dark:text-red-400' : 'text-[var(--text-muted,#71717A)]'
             }`}
           >
             {dn}
@@ -388,7 +388,7 @@ export default function DateTimePicker({
               key={`prev-${prevDay}`}
               className={`${
                 isMobile ? 'h-9 text-xs' : 'h-7 text-xs'
-              } flex items-center justify-center text-zinc-400 dark:text-zinc-600 select-none`}
+              } flex items-center justify-center text-[var(--text-muted,#71717A)]/40 select-none`}
             >
               {prevDay}
             </span>
@@ -412,12 +412,12 @@ export default function DateTimePicker({
                 isMobile ? 'h-9 text-xs' : 'h-7 text-xs'
               } w-full rounded-lg transition-all duration-150 flex items-center justify-center select-none ${
                 isPast
-                  ? 'opacity-25 text-zinc-400 dark:text-zinc-600 cursor-not-allowed pointer-events-none'
+                  ? 'opacity-25 text-[var(--text-muted,#71717A)] cursor-not-allowed pointer-events-none'
                   : selected
                   ? 'bg-[var(--theme-accent,#0284C7)] text-white font-bold shadow-md scale-105 ring-2 ring-[var(--theme-glow,rgba(2,132,199,0.3))] active:scale-95 cursor-pointer'
                   : todayDay
-                  ? 'border border-[var(--theme-accent,#0284C7)] text-[var(--theme-accent,#0284C7)] font-bold hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 cursor-pointer'
-                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-900 dark:hover:text-white active:scale-95 cursor-pointer'
+                  ? 'border border-[var(--theme-accent,#0284C7)] text-[var(--theme-accent,#0284C7)] font-bold hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 cursor-pointer'
+                  : 'text-[var(--text-primary,#FAFAFA)] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 cursor-pointer'
               }`}
             >
               {day}
@@ -428,9 +428,9 @@ export default function DateTimePicker({
 
       {/* Mobile Footnote / Quick Switch to Time */}
       {isMobile && (
-        <div className="mt-3 pt-2.5 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between">
-          <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
-            Terpilih: <strong className="text-zinc-900 dark:text-white">{selectedDay} {MONTH_SHORT[selectedMonth]} {selectedYear}</strong>
+        <div className="mt-3 pt-2.5 border-t border-black/[0.08] dark:border-white/[0.06] flex items-center justify-between">
+          <span className="text-[11px] text-[var(--text-secondary,#A1A1AA)]">
+            Terpilih: <strong className="text-[var(--text-primary,#FAFAFA)]">{selectedDay} {MONTH_SHORT[selectedMonth]} {selectedYear}</strong>
           </span>
           <button
             type="button"
@@ -452,11 +452,11 @@ export default function DateTimePicker({
         <div className="flex items-center justify-between mb-2.5 px-1">
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)]" />
-            <span className="text-xs font-semibold text-zinc-800 dark:text-[#FAFAFA]">
+            <span className="text-xs font-semibold text-[var(--text-primary,#FAFAFA)]">
               Tanggal Tenggat
             </span>
           </div>
-          <span className="text-xs font-mono font-bold text-zinc-700 dark:text-white bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08] px-2 py-0.5 rounded-md">
+          <span className="text-xs font-mono font-bold text-[var(--text-primary,#FAFAFA)] bg-black/[0.04] dark:bg-white/[0.08] border border-black/[0.08] dark:border-white/[0.08] px-2 py-0.5 rounded-md">
             {selectedDay} {MONTH_SHORT[selectedMonth]} {selectedYear}
           </span>
         </div>
@@ -464,13 +464,13 @@ export default function DateTimePicker({
         {/* Big Clean Interactive Date Card (Opens Native OS Date Picker on Mobile) */}
         <div
           onClick={handleDateCardClick}
-          className="relative flex flex-col items-center justify-center py-6 px-4 rounded-2xl bg-zinc-100/90 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.1] hover:border-[var(--theme-accent,#0284C7)] hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]"
+          className="relative flex flex-col items-center justify-center py-6 px-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] hover:border-[var(--theme-accent,#0284C7)] hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]"
         >
-          <div className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight group-hover:text-[var(--theme-accent,#0284C7)] transition-colors flex items-baseline gap-2 text-center">
+          <div className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary,#FAFAFA)] tracking-tight group-hover:text-[var(--theme-accent,#0284C7)] transition-colors flex items-baseline gap-2 text-center">
             <span>{selectedDay} {MONTH_NAMES[selectedMonth]} {selectedYear}</span>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-white/[0.08] border border-zinc-200/90 dark:border-white/[0.1] text-xs font-medium text-zinc-700 dark:text-zinc-200 shadow-xs mt-3 group-hover:bg-[var(--theme-accent,#0284C7)] group-hover:text-white transition-all">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] border border-black/[0.08] dark:border-white/[0.1] text-xs font-medium text-[var(--text-secondary,#A1A1AA)] shadow-xs mt-3 group-hover:bg-[var(--theme-accent,#0284C7)] group-hover:text-white group-hover:border-transparent transition-all">
             <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)] group-hover:text-white" />
             <span>Sentuh untuk buka kalender Android</span>
           </div>
@@ -489,7 +489,7 @@ export default function DateTimePicker({
 
         {/* Quick Date Presets */}
         <div className="mt-4">
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400 block mb-1.5 px-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-muted,#71717A)] block mb-1.5 px-0.5">
             Pilihan Hari Cepat:
           </span>
           <div className="grid grid-cols-3 gap-2">
@@ -530,11 +530,11 @@ export default function DateTimePicker({
                   className={`py-2 px-1 rounded-xl text-center border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center ${
                     isSelectedDay
                       ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-bold shadow-md shadow-[var(--theme-glow,rgba(2,132,199,0.3))]'
-                      : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.08]'
+                      : 'bg-black/[0.03] dark:bg-white/[0.04] text-[var(--text-primary,#FAFAFA)] border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
                   }`}
                 >
                   <span className="text-xs font-bold leading-tight">{p.label}</span>
-                  <span className={`text-[10px] mt-0.5 leading-tight ${isSelectedDay ? 'text-white/90' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                  <span className={`text-[10px] mt-0.5 leading-tight ${isSelectedDay ? 'text-white/90' : 'text-[var(--text-muted,#71717A)]'}`}>
                     {target.getDate()} {MONTH_SHORT[target.getMonth()]}
                   </span>
                 </button>
@@ -544,8 +544,8 @@ export default function DateTimePicker({
         </div>
       </div>
 
-      <div className="pt-3 flex items-center justify-between border-t border-zinc-200/80 dark:border-white/[0.06]">
-        <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+      <div className="pt-3 flex items-center justify-between border-t border-black/[0.08] dark:border-white/[0.06]">
+        <span className="text-[11px] text-[var(--text-muted,#71717A)] font-mono">
           Kalender bawaan HP Android
         </span>
         <button
@@ -567,11 +567,11 @@ export default function DateTimePicker({
         <div className="flex items-center justify-between mb-2.5 px-1">
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)]" />
-            <span className="text-xs font-semibold text-zinc-800 dark:text-[#FAFAFA]">
+            <span className="text-xs font-semibold text-[var(--text-primary,#FAFAFA)]">
               Atur Jam Tenggat
             </span>
           </div>
-          <span className="text-xs font-mono font-bold text-zinc-700 dark:text-white bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08] px-2 py-0.5 rounded-md">
+          <span className="text-xs font-mono font-bold text-[var(--text-primary,#FAFAFA)] bg-black/[0.04] dark:bg-white/[0.08] border border-black/[0.08] dark:border-white/[0.08] px-2 py-0.5 rounded-md">
             {timeValueString} WIB
           </span>
         </div>
@@ -579,14 +579,14 @@ export default function DateTimePicker({
         {/* Big Clean Interactive Time Card (Opens Native OS Clock Picker on Mobile & Desktop) */}
         <div
           onClick={handleTimeCardClick}
-          className="relative flex flex-col items-center justify-center py-6 px-4 rounded-2xl bg-zinc-100/90 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.1] hover:border-[var(--theme-accent,#0284C7)] hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]"
+          className="relative flex flex-col items-center justify-center py-6 px-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] hover:border-[var(--theme-accent,#0284C7)] hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]"
         >
-          <div className="text-4xl sm:text-5xl font-extrabold font-mono text-zinc-900 dark:text-white tracking-tight group-hover:text-[var(--theme-accent,#0284C7)] transition-colors flex items-baseline gap-2">
+          <div className="text-4xl sm:text-5xl font-extrabold font-mono text-[var(--text-primary,#FAFAFA)] tracking-tight group-hover:text-[var(--theme-accent,#0284C7)] transition-colors flex items-baseline gap-2">
             <span>{timeValueString}</span>
-            <span className="text-xs font-semibold font-sans text-zinc-500 dark:text-zinc-400">WIB</span>
+            <span className="text-xs font-semibold font-sans text-[var(--text-muted,#71717A)]">WIB</span>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-white/[0.08] border border-zinc-200/90 dark:border-white/[0.1] text-xs font-medium text-zinc-700 dark:text-zinc-200 shadow-xs mt-3 group-hover:bg-[var(--theme-accent,#0284C7)] group-hover:text-white transition-all">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] border border-black/[0.08] dark:border-white/[0.1] text-xs font-medium text-[var(--text-secondary,#A1A1AA)] shadow-xs mt-3 group-hover:bg-[var(--theme-accent,#0284C7)] group-hover:text-white group-hover:border-transparent transition-all">
             <Clock className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)] group-hover:text-white" />
             <span>Sentuh untuk ganti jam</span>
           </div>
@@ -604,7 +604,7 @@ export default function DateTimePicker({
 
         {/* 4 Clean Quick Presets (1-Tap Selection) */}
         <div className="mt-4">
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400 block mb-1.5 px-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-muted,#71717A)] block mb-1.5 px-0.5">
             Pilihan Jam Cepat:
           </span>
           <div className="grid grid-cols-4 gap-2">
@@ -628,15 +628,15 @@ export default function DateTimePicker({
                   }}
                   className={`py-2 px-1 rounded-xl text-center border transition-all flex flex-col items-center justify-center ${
                     isTimePast
-                      ? 'opacity-30 cursor-not-allowed bg-zinc-100/50 dark:bg-white/[0.02] text-zinc-400 dark:text-zinc-600 border-zinc-200/50 dark:border-white/[0.04] pointer-events-none'
+                      ? 'opacity-30 cursor-not-allowed bg-black/[0.02] dark:bg-white/[0.02] text-[var(--text-muted,#71717A)] border-black/[0.04] dark:border-white/[0.04] pointer-events-none'
                       : isActive
                       ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-bold shadow-md shadow-[var(--theme-glow,rgba(2,132,199,0.3))] active:scale-95 cursor-pointer'
-                      : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200/90 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.08] active:scale-95 cursor-pointer'
+                      : 'bg-black/[0.03] dark:bg-white/[0.04] text-[var(--text-primary,#FAFAFA)] border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] active:scale-95 cursor-pointer'
                   }`}
                   title={isTimePast ? 'Waktu sudah lewat hari ini' : undefined}
                 >
                   <span className="text-xs font-mono font-bold leading-tight">{t.label}</span>
-                  <span className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-white/90' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                  <span className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-white/90' : 'text-[var(--text-muted,#71717A)]'}`}>
                     {t.desc}
                   </span>
                 </button>
@@ -647,21 +647,21 @@ export default function DateTimePicker({
       </div>
 
       {isMobile ? (
-        <div className="pt-3 flex items-center justify-between border-t border-zinc-200/80 dark:border-white/[0.06]">
+        <div className="pt-3 flex items-center justify-between border-t border-black/[0.08] dark:border-white/[0.06]">
           <button
             type="button"
             onClick={() => setMobileTab('date')}
-            className="inline-flex items-center gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-[var(--text-secondary,#A1A1AA)] hover:text-[var(--text-primary,#FAFAFA)] cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Pilih Tanggal</span>
           </button>
-          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
+          <span className="text-[11px] text-[var(--text-muted,#71717A)] font-mono">
             Jam bawaan HP Android
           </span>
         </div>
       ) : (
-        <div className="mt-3 text-center text-[11px] text-zinc-500 dark:text-zinc-400 font-mono py-1 rounded bg-zinc-100/80 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.04]">
+        <div className="mt-3 text-center text-[11px] text-[var(--text-secondary,#A1A1AA)] font-mono py-1 rounded bg-black/[0.03] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.04]">
           {timeValueString} WIB
         </div>
       )}
@@ -677,19 +677,19 @@ export default function DateTimePicker({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-white/[0.02] border transition-all duration-200 cursor-pointer backdrop-blur-sm flex items-center justify-between gap-2.5 text-left group active:scale-[0.99] ${
+        className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border transition-all duration-200 cursor-pointer backdrop-blur-sm flex items-center justify-between gap-2.5 text-left group active:scale-[0.99] ${
           isOpen
             ? 'border-[var(--theme-accent,#0284C7)] ring-1 ring-[var(--theme-accent,#0284C7)]'
-            : 'border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.18]'
+            : 'border-black/[0.08] dark:border-white/[0.08] hover:border-black/[0.16] dark:hover:border-white/[0.18]'
         }`}
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-6 h-6 rounded-lg bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] flex items-center justify-center text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors shrink-0">
+          <div className="w-6 h-6 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] flex items-center justify-center text-[var(--text-muted,#71717A)] group-hover:text-[var(--text-primary,#FAFAFA)] transition-colors shrink-0">
             <Calendar className="w-3.5 h-3.5" />
           </div>
           <span
             className={`text-base sm:text-sm truncate ${
-              displayString ? 'font-medium text-zinc-900 dark:text-[#FAFAFA]' : 'text-zinc-500 dark:text-zinc-400'
+              displayString ? 'font-medium text-[var(--text-primary,#FAFAFA)]' : 'text-[var(--text-muted,#71717A)]'
             }`}
           >
             {displayString || placeholder}
@@ -697,8 +697,8 @@ export default function DateTimePicker({
         </div>
 
         <Clock
-          className={`w-4 h-4 text-zinc-400 transition-colors shrink-0 ${
-            isOpen ? 'text-[var(--theme-accent,#0284C7)]' : 'group-hover:text-zinc-600 dark:group-hover:text-zinc-200'
+          className={`w-4 h-4 text-[var(--text-muted,#71717A)] transition-colors shrink-0 ${
+            isOpen ? 'text-[var(--theme-accent,#0284C7)]' : 'group-hover:text-[var(--text-primary,#FAFAFA)]'
           }`}
         />
       </button>
@@ -714,17 +714,17 @@ export default function DateTimePicker({
             className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[490px] max-w-[calc(100vw-2rem)] rounded-2xl glass-dropdown p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl overscroll-contain"
           >
             {/* Header Dialog */}
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-200 dark:border-white/[0.08]">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-black/[0.08] dark:border-white/[0.08]">
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
-                <span className="text-xs font-semibold text-zinc-900 dark:text-[#FAFAFA] tracking-wide">
+                <Calendar className="w-4 h-4 text-[var(--text-secondary,#A1A1AA)]" />
+                <span className="text-xs font-semibold text-[var(--text-primary,#FAFAFA)] tracking-wide">
                   Atur Tenggat Waktu
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="w-7 h-7 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-lg hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-[var(--text-muted,#71717A)] hover:text-[var(--text-primary,#FAFAFA)] transition-colors cursor-pointer"
                 aria-label="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -732,8 +732,8 @@ export default function DateTimePicker({
             </div>
 
             {/* Quick Preset Shortcuts (1-Tap Selection) */}
-            <div className="mb-3 pb-3 border-b border-zinc-200 dark:border-white/[0.08]">
-              <div className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5 flex items-center justify-between">
+            <div className="mb-3 pb-3 border-b border-black/[0.08] dark:border-white/[0.08]">
+              <div className="text-[11px] font-semibold text-[var(--text-secondary,#A1A1AA)] mb-1.5 flex items-center justify-between">
                 <span>Pilihan Cepat (1-Tap):</span>
                 {value && (
                   <button
@@ -767,10 +767,10 @@ export default function DateTimePicker({
                       }}
                       className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all text-center border ${
                         isPassed
-                          ? 'opacity-30 cursor-not-allowed bg-zinc-100/50 dark:bg-white/[0.02] text-zinc-400 dark:text-zinc-600 border-zinc-200/50 dark:border-white/[0.04] pointer-events-none'
+                          ? 'opacity-30 cursor-not-allowed bg-black/[0.02] dark:bg-white/[0.02] text-[var(--text-muted,#71717A)] border-black/[0.04] dark:border-white/[0.04] pointer-events-none'
                           : isCurrent
                           ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-semibold shadow-sm active:scale-95 cursor-pointer'
-                          : 'bg-zinc-100/90 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 dark:hover:bg-white/[0.1] hover:text-zinc-900 dark:hover:text-white active:scale-95 cursor-pointer'
+                          : 'bg-black/[0.03] dark:bg-white/[0.04] text-[var(--text-primary,#FAFAFA)] border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.06] dark:hover:bg-white/[0.1] active:scale-95 cursor-pointer'
                       }`}
                       title={isPassed ? 'Sudah lewat jam 17:00 hari ini' : undefined}
                     >
@@ -783,14 +783,14 @@ export default function DateTimePicker({
 
             {/* Mobile Segmented Control Tab Switcher (sm:hidden) */}
             <div className="block sm:hidden mb-3">
-              <div className="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08]">
+              <div className="flex items-center p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08]">
                 <button
                   type="button"
                   onClick={() => setMobileTab('date')}
                   className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-98 ${
                     mobileTab === 'date'
-                      ? 'bg-white text-zinc-900 dark:text-black shadow-sm font-bold'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                      ? 'bg-[var(--theme-accent,#0284C7)] text-white shadow-md shadow-[var(--theme-glow-subtle)] font-bold'
+                      : 'text-[var(--text-secondary,#A1A1AA)] hover:text-[var(--text-primary,#FAFAFA)]'
                   }`}
                 >
                   <Calendar className="w-3.5 h-3.5" />
@@ -801,8 +801,8 @@ export default function DateTimePicker({
                   onClick={() => setMobileTab('time')}
                   className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-98 ${
                     mobileTab === 'time'
-                      ? 'bg-white text-zinc-900 dark:text-black shadow-sm font-bold'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                      ? 'bg-[var(--theme-accent,#0284C7)] text-white shadow-md shadow-[var(--theme-glow-subtle)] font-bold'
+                      : 'text-[var(--text-secondary,#A1A1AA)] hover:text-[var(--text-primary,#FAFAFA)]'
                   }`}
                 >
                   <Clock className="w-3.5 h-3.5" />
@@ -821,7 +821,7 @@ export default function DateTimePicker({
               <div className="flex-1 min-w-[210px]">
                 {renderCalendar(false)}
               </div>
-              <div className="w-[1px] bg-zinc-200 dark:bg-white/[0.08] self-stretch" />
+              <div className="w-[1px] bg-black/[0.08] dark:bg-white/[0.08] self-stretch" />
               <div className="w-48 flex flex-col justify-between">
                 {renderTimePicker(false)}
               </div>
@@ -838,7 +838,7 @@ export default function DateTimePicker({
             )}
 
             {/* Bottom Actions Footer */}
-            <div className="pt-3 mt-3 border-t border-zinc-200 dark:border-white/[0.08] flex items-center justify-between gap-2">
+            <div className="pt-3 mt-3 border-t border-black/[0.08] dark:border-white/[0.08] flex items-center justify-between gap-2">
               <div>
                 {value && (
                   <button
@@ -855,7 +855,7 @@ export default function DateTimePicker({
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer active:scale-95"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-secondary,#A1A1AA)] hover:text-[var(--text-primary,#FAFAFA)] hover:bg-black/[0.05] dark:hover:bg-white/[0.06] transition-colors cursor-pointer active:scale-95"
                 >
                   Batal
                 </button>
@@ -866,7 +866,7 @@ export default function DateTimePicker({
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm flex items-center gap-1.5 transition-colors ${
                     isSelectedTimePast
                       ? 'opacity-40 cursor-not-allowed bg-zinc-400 text-white dark:bg-zinc-800 dark:text-zinc-500 pointer-events-none'
-                      : 'bg-zinc-900 text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 cursor-pointer'
+                      : 'bg-[var(--theme-accent,#0284C7)] text-white hover:opacity-90 active:scale-95 cursor-pointer shadow-md shadow-[var(--theme-glow-subtle)]'
                   }`}
                 >
                   <Check className="w-3.5 h-3.5" />
