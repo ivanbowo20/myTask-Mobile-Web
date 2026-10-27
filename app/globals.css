@@ -633,35 +633,11 @@ html[data-theme="celestial-sky"] input::placeholder {
   opacity: 1 !important;
 }
 
-/* Sidebar links and section labels */
-html[data-theme="celestial-sky"] aside p.text-\[\#71717A\] {
-  color: #64748B !important;
-  font-weight: 700 !important;
+/* Sidebar clean minimalist styling (harmonized across all themes) */
+html[data-theme="celestial-sky"] aside {
+  border-right-color: rgba(226, 232, 240, 0.8) !important;
 }
 
-html[data-theme="celestial-sky"] aside a {
-  color: #334155 !important;
-}
-
-html[data-theme="celestial-sky"] aside a:hover {
-  color: #0F172A !important;
-  background-color: rgba(224, 242, 254, 0.6) !important;
-}
-
-html[data-theme="celestial-sky"] aside a div[class*="border-l-\[var\(--theme-accent"] {
-  background-color: rgba(224, 242, 254, 0.85) !important;
-  border-left-color: #0284C7 !important;
-  border-top-color: rgba(186, 230, 253, 0.7) !important;
-  border-right-color: rgba(186, 230, 253, 0.7) !important;
-  border-bottom-color: rgba(186, 230, 253, 0.7) !important;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08) !important;
-}
-
-html[data-theme="celestial-sky"] aside a div[class*="border-l-\[var\(--theme-accent"] + div span,
-html[data-theme="celestial-sky"] aside a div[class*="border-l-\[var\(--theme-accent"] + div svg {
-  color: #0284C7 !important;
-  font-weight: 700 !important;
-}
 
 .glass-modal {
   background: var(--theme-nav-bg, rgba(22, 17, 14, 0.92));
