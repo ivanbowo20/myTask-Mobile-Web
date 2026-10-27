@@ -41,6 +41,18 @@ Untuk pembuatan dan perbaikan kode:
    - **Systematic Debugging**: Lacak pesan error asli dan jalur data flow; dilarang menebak-nebak penyebab bug (*no shotgun debugging*).
    - **Evidence Before Assertions**: Dilarang mengklaim selesai tanpa bukti terminal (`npm run build`, `npm run lint`, atau `npm test`).
 
+## 🚨 PROTOKOL KETAT: JAVASCRIPT VERIFICATION & SINGLE-FILE PATCH
+1. **Halusinasi `npm run build` pada JavaScript Murni:**
+   - AI DILARANG mengklaim kode selesai HANYA karena `npm run build` lolos (exit code 0). 
+   - Pada project `.js` (tanpa TypeScript), `npm run build` TIDAK memvalidasi scope variabel/import.
+   - AI WAJIB menggunakan pengecekan AST (Abstract Syntax Tree) statis atau memastikan tidak ada variabel JSX/state yang "undefined" sebelum melapor.
+2. **Larangan Multi-File Patching (Borongan):**
+   - Jika satu fitur menyentuh lebih dari 1 file, AI DILARANG menggunakan skrip *string-replace* otomatis ke semua file sekaligus.
+   - AI WAJIB mengerjakannya **satu file per satu file** (Edit File A -> Verifikasi Import -> Lanjut File B).
+3. **Pemeriksaan Diff Sebelum Lapor:**
+   - Sebelum memberi laporan "COMPLETED", AI WAJIB menjalankan `git diff <nama_file>` untuk membaca ulang baris yang berubah.
+   - Pastikan setiap komponen baru di JSX benar-benar ada di bagian `import` atas file.
+
 ## INTERVIEW & INTENT EXTRACTION (GRILL-ME)
 Sebelum coding ketika fitur masih abstrak atau ambigu:
 1. Jalankan `/grill-me` (peleburan Gstack YC Office Hours + interview-me).
