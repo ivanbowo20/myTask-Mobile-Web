@@ -238,117 +238,129 @@ export const CloudShader = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext("webgl", {
-      alpha: false,
-      antialias: false,
-      premultipliedAlpha: false,
-      powerPreference: "low-power",
-    });
-    if (!gl) return;
-
-    const vert = compile(gl, gl.VERTEX_SHADER, VERT);
-    const frag = compile(gl, gl.FRAGMENT_SHADER, FRAG);
-    if (!vert || !frag) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vert);
-    gl.attachShader(program, frag);
-    gl.bindAttribLocation(program, 0, "a_pos");
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    gl.useProgram(program);
-
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1, 3, -1, -1, 3]),
-      gl.STATIC_DRAW,
-    );
-    gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-
-    const loc = {
-      res: gl.getUniformLocation(program, "u_res"),
-      time: gl.getUniformLocation(program, "u_time"),
-      count: gl.getUniformLocation(program, "u_count"),
-      cloud: gl.getUniformLocation(program, "u_cloud"),
-      skyTop: gl.getUniformLocation(program, "u_skyTop"),
-      skyBottom: gl.getUniformLocation(program, "u_skyBottom"),
-    };
-
     let frame = 0;
     let running = true;
+    let gl = null;
+    let program = null;
+    let vert = null;
+    let frag = null;
+    let buffer = null;
+    let observer = null;
+    let drawFn = null;
+
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
-    // LANGKAH 3.1: Deteksi mobile adaptif (0.5x internal resolution scaling di HP untuk memangkas 75% GPU fill-rate)
-    const resize = () => {
-      const isMobile = window.innerWidth < 768;
-      // Di layar mobile (< 768px seperti Infinix Smart 6), gunakan scale factor 0.5x.
-      // Awan adalah objek gas/lembut sehingga upscaling CSS tetap tampak mulus tanpa mengorbankan estetika.
-      const scaleFactor = isMobile ? 0.5 : 1.0;
-      const maxDpr = isMobile ? 1.0 : 1.5;
-      const dpr = Math.min(window.devicePixelRatio || 1, maxDpr) * scaleFactor;
+    // LANGKAH OPTIMASI COLD-START:
+    // Tunda inisialisasi WebGL shader compilation sebesar 60ms agar hidrasi awal React & first paint
+    // selesai 100% mulus tanpa memblokir Main Thread di HP low-end (Infinix Smart 6)
+    const initTimer = setTimeout(() => {
+      if (!running || !canvas) return;
 
-      const width = canvas.clientWidth || window.innerWidth;
-      const height = canvas.clientHeight || window.innerHeight;
-      const w = Math.max(1, Math.floor(width * dpr));
-      const h = Math.max(1, Math.floor(height * dpr));
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-      }
-      gl.viewport(0, 0, w, h);
-      gl.uniform2f(loc.res, w, h);
-    };
+      gl = canvas.getContext("webgl", {
+        alpha: false,
+        antialias: false,
+        premultipliedAlpha: false,
+        powerPreference: "low-power",
+      });
+      if (!gl) return;
 
-    const observer = new ResizeObserver(resize);
-    observer.observe(canvas);
-    resize();
+      vert = compile(gl, gl.VERTEX_SHADER, VERT);
+      frag = compile(gl, gl.FRAGMENT_SHADER, FRAG);
+      if (!vert || !frag) return;
 
-    const start = performance.now();
-    let lastDrawTime = 0;
+      program = gl.createProgram();
+      if (!program) return;
+      gl.attachShader(program, vert);
+      gl.attachShader(program, frag);
+      gl.bindAttribLocation(program, 0, "a_pos");
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+      gl.useProgram(program);
 
-    const draw = (now) => {
-      if (!running) return;
+      buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([-1, -1, 3, -1, -1, 3]),
+        gl.STATIC_DRAW,
+      );
+      gl.enableVertexAttribArray(0);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-      const isMobile = window.innerWidth < 768;
-      // Batasi frame rate ke ~30 FPS di mobile (33.3ms) untuk membebaskan GPU & thread input sentuhan
-      const minInterval = isMobile ? 32 : 16;
-      const delta = now - lastDrawTime;
+      const loc = {
+        res: gl.getUniformLocation(program, "u_res"),
+        time: gl.getUniformLocation(program, "u_time"),
+        count: gl.getUniformLocation(program, "u_count"),
+        cloud: gl.getUniformLocation(program, "u_cloud"),
+        skyTop: gl.getUniformLocation(program, "u_skyTop"),
+        skyBottom: gl.getUniformLocation(program, "u_skyBottom"),
+      };
 
-      if (delta < minInterval) {
+      const resize = () => {
+        if (!gl || !canvas) return;
+        const isMobile = window.innerWidth < 768;
+        const scaleFactor = isMobile ? 0.5 : 1.0;
+        const maxDpr = isMobile ? 1.0 : 1.5;
+        const dpr = Math.min(window.devicePixelRatio || 1, maxDpr) * scaleFactor;
+
+        const width = canvas.clientWidth || window.innerWidth;
+        const height = canvas.clientHeight || window.innerHeight;
+        const w = Math.max(1, Math.floor(width * dpr));
+        const h = Math.max(1, Math.floor(height * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+        gl.viewport(0, 0, w, h);
+        gl.uniform2f(loc.res, w, h);
+      };
+
+      observer = new ResizeObserver(resize);
+      observer.observe(canvas);
+      resize();
+
+      const start = performance.now();
+      let lastDrawTime = 0;
+
+      const draw = (now) => {
+        if (!running || !gl) return;
+
+        const isMobile = window.innerWidth < 768;
+        const minInterval = isMobile ? 32 : 16;
+        const delta = now - lastDrawTime;
+
+        if (delta < minInterval) {
+          frame = requestAnimationFrame(draw);
+          return;
+        }
+
+        lastDrawTime = now - (delta % minInterval);
+
+        const p = paramsRef.current;
+        const elapsed = reduceMotion ? 0 : ((now - start) / 1000) * p.speed;
+        const cloud = parseHex(p.cloudColor);
+        const skyTop = parseHex(p.skyTopColor);
+        const skyBottom = parseHex(p.skyBottomColor);
+
+        const effectiveCount = isMobile ? Math.min(2, p.count) : p.count;
+
+        gl.uniform1f(loc.time, elapsed);
+        gl.uniform1f(loc.count, Math.min(6, Math.max(1, effectiveCount)));
+        gl.uniform3f(loc.cloud, cloud[0], cloud[1], cloud[2]);
+        gl.uniform3f(loc.skyTop, skyTop[0], skyTop[1], skyTop[2]);
+        gl.uniform3f(loc.skyBottom, skyBottom[0], skyBottom[1], skyBottom[2]);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
         frame = requestAnimationFrame(draw);
-        return;
-      }
+      };
 
-      lastDrawTime = now - (delta % minInterval);
-
-      const p = paramsRef.current;
-      const elapsed = reduceMotion ? 0 : ((now - start) / 1000) * p.speed;
-      const cloud = parseHex(p.cloudColor);
-      const skyTop = parseHex(p.skyTopColor);
-      const skyBottom = parseHex(p.skyBottomColor);
-
-      // Pada HP low-end, batasi jumlah awan ke 2 agar shader tidak menumpuk komputasi
-      const effectiveCount = isMobile ? Math.min(2, p.count) : p.count;
-
-      gl.uniform1f(loc.time, elapsed);
-      gl.uniform1f(loc.count, Math.min(6, Math.max(1, effectiveCount)));
-      gl.uniform3f(loc.cloud, cloud[0], cloud[1], cloud[2]);
-      gl.uniform3f(loc.skyTop, skyTop[0], skyTop[1], skyTop[2]);
-      gl.uniform3f(loc.skyBottom, skyBottom[0], skyBottom[1], skyBottom[2]);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-
+      drawFn = draw;
       frame = requestAnimationFrame(draw);
-    };
+    }, 60);
 
-    frame = requestAnimationFrame(draw);
-
-    // LANGKAH 3.2: Listener visibilitychange untuk auto-pause saat tab/layar HP tidak aktif
+    // Listener visibilitychange untuk auto-pause saat tab/layar HP tidak aktif
     const handleVisibilityChange = () => {
       if (document.hidden) {
         if (frame) {
@@ -356,8 +368,8 @@ export const CloudShader = ({
           frame = 0;
         }
       } else {
-        if (running && !frame && !reduceMotion) {
-          frame = requestAnimationFrame(draw);
+        if (running && !frame && !reduceMotion && drawFn) {
+          frame = requestAnimationFrame(drawFn);
         }
       }
     };
@@ -366,13 +378,16 @@ export const CloudShader = ({
 
     return () => {
       running = false;
+      clearTimeout(initTimer);
       if (frame) cancelAnimationFrame(frame);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      observer.disconnect();
-      gl.deleteBuffer(buffer);
-      gl.deleteProgram(program);
-      gl.deleteShader(vert);
-      gl.deleteShader(frag);
+      if (observer) observer.disconnect();
+      if (gl) {
+        if (buffer) gl.deleteBuffer(buffer);
+        if (program) gl.deleteProgram(program);
+        if (vert) gl.deleteShader(vert);
+        if (frag) gl.deleteShader(frag);
+      }
     };
   }, []);
 

@@ -58,7 +58,11 @@ function AnimatedCounter({ value }) {
     const startVal = prevRef.current;
     prevRef.current = target;
 
-    if (shouldReduceMotion || target === startVal) {
+    // Di layar mobile (< 768px), langsung tampilkan angka target untuk mengeliminasi 200+
+    // React state updates saat cold-start, membebaskan CPU Infinix Smart 6 sepenuhnya
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    if (shouldReduceMotion || isMobile || target === startVal) {
       setCount(target);
       return;
     }
