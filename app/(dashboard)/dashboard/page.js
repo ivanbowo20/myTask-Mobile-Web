@@ -248,17 +248,17 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header Greeting Dinamis Anti-Slop */}
+      {/* Header Greeting Dinamis — SielloMita Frosted Hero Surface */}
       <AnimatedContent delay={0} blur={0}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.08] pb-5">
-          <div className="space-y-1">
+        <div className="glass-card p-5 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 z-10">
             <motion.h1
               suppressHydrationWarning={true}
               key={greeting.headline}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="font-heading text-2xl sm:text-3xl font-bold text-[#FAFAFA] tracking-tight"
+              className="font-heading text-2xl sm:text-3xl font-bold text-[var(--text-primary,#FAFAFA)] tracking-tight"
             >
               {greeting.headline}
             </motion.h1>
@@ -268,14 +268,14 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 2 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.04, ease: "easeOut" }}
-              className="text-xs sm:text-sm text-zinc-300"
+              className="text-xs sm:text-sm text-[var(--text-secondary,#A1A1AA)] leading-relaxed"
             >
               {greeting.subtext}
             </motion.p>
           </div>
           <div
             suppressHydrationWarning={true}
-            className="flex items-center gap-2 text-xs font-medium text-zinc-300 bg-white/[0.04] border border-white/[0.08] backdrop-blur-md px-3.5 py-2 rounded-xl self-start sm:self-auto"
+            className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary,#A1A1AA)] bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] px-3.5 py-2 rounded-xl shrink-0 self-start sm:self-auto z-10"
           >
             <Calendar className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
             <span suppressHydrationWarning={true}>
