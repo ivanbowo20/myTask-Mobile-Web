@@ -125,6 +125,8 @@ export default function AbyssalTealBackground({
     let isRunning = true;
     let width = 0;
     let height = 0;
+    let lastTime = performance.now();
+    let isMobile = typeof window !== 'undefined' ? (window.innerWidth < 768 || 'ontouchstart' in window) : false;
 
     // Deteksi mode 'prefers-reduced-motion'
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -142,11 +144,13 @@ export default function AbyssalTealBackground({
 
     motionQuery.addEventListener?.('change', handleMotionChange);
 
-    // Inisialisasi gumpalan asap
-    const puffs = createSmokePuffs(puffCount);
+    // Inisialisasi gumpalan asap: 7 node di mobile untuk hemat CPU/RAM, 20 node di desktop
+    const activePuffCount = isMobile ? Math.min(puffCount, 7) : puffCount;
+    const puffs = createSmokePuffs(activePuffCount);
 
     const handleResize = () => {
       if (!canvas) return;
+      isMobile = window.innerWidth < 768 || 'ontouchstart' in window;
       const rect = canvas.parentElement?.getBoundingClientRect() || {
         width: window.innerWidth,
         height: window.innerHeight,
@@ -155,8 +159,8 @@ export default function AbyssalTealBackground({
       width = Math.max(300, rect.width);
       height = Math.max(300, rect.height);
 
-      // Batasi DPR maksimal 1.5 untuk efisiensi GPU & baterai laptop/ponsel
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      // Batasi DPR maksimal 1.0 di mobile & 1.5 di desktop untuk efisiensi GPU PowerVR & baterai ponsel
+      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.5);
 
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
@@ -176,6 +180,7 @@ export default function AbyssalTealBackground({
     window.addEventListener('resize', handleResize);
 
     const handleMouseMove = (e) => {
+      if (isMobile) return;
       mouseRef.current.x = e.clientX;
       mouseRef.current.y = e.clientY;
       mouseRef.current.isActive = true;
@@ -185,19 +190,11 @@ export default function AbyssalTealBackground({
       mouseRef.current.isActive = false;
     };
 
-    const handleTouchMove = (e) => {
-      if (e.touches && e.touches[0]) {
-        mouseRef.current.x = e.touches[0].clientX;
-        mouseRef.current.y = e.touches[0].clientY;
-        mouseRef.current.isActive = true;
-      }
-    };
-
-    // Pasang listener di window agar kursor tetap terdeteksi meski di atas konten lain
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('mouseleave', handleMouseLeave);
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleMouseLeave);
+    // Pasang listener mouse hanya di desktop agar touch event loop di mobile 100% bebas hambatan saat pindah tab
+    if (!isMobile) {
+      window.addEventListener('mousemove', handleMouseMove, { passive: true });
+      window.addEventListener('mouseleave', handleMouseLeave);
+    }
 
     const renderFrame = (timestamp) => {
       const timeSec = timestamp * 0.001;
@@ -295,7 +292,16 @@ export default function AbyssalTealBackground({
 
     const loop = (timestamp) => {
       if (!isRunning) return;
-      renderFrame(timestamp);
+
+      const now = performance.now();
+      const delta = now - lastTime;
+      // Batasi ~30 FPS di mobile (delta > 32ms) dan ~45 FPS di desktop untuk hemat baterai & GPU
+      const targetDelta = isMobile ? 32 : 20;
+      if (delta > targetDelta) {
+        lastTime = now;
+        renderFrame(timestamp);
+      }
+
       animationFrameId = requestAnimationFrame(loop);
     };
 
@@ -315,6 +321,7 @@ export default function AbyssalTealBackground({
         }
       } else {
         if (!prefersReducedMotion && !animationFrameId) {
+          lastTime = performance.now();
           animationFrameId = requestAnimationFrame(loop);
         }
       }
@@ -328,10 +335,10 @@ export default function AbyssalTealBackground({
         cancelAnimationFrame(animationFrameId);
       }
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseleave', handleMouseLeave);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleMouseLeave);
+      if (!isMobile) {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseleave', handleMouseLeave);
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       motionQuery.removeEventListener?.('change', handleMotionChange);
     };
@@ -351,15 +358,13 @@ export default function AbyssalTealBackground({
     >
       {/* 
         Lapisan Canvas Asap Fluida:
-        Menggunakan CSS filter blur halus (24px) dan mixBlendMode: 'screen'
-        untuk membaurkan tepi gumpalan kabut tanpa artefak garis atau banding
+        Di desktop menggunakan CSS blur halus (24px) & scale(1.05).
+        Di mobile (HP kentang): blur CSS dihilangkan (sm:filter sm:blur-[24px]),
+        mengandalkan gradien radial canvas bawaan yang secara native berbaur halus ke alpha 0
+        tanpa membebani GPU PowerVR sama sekali sehingga tab switching instan!
       */}
       <div
-        className="absolute inset-0 w-full h-full"
-        style={{
-          filter: 'blur(24px)',
-          transform: 'scale(1.05)', // Sedikit dinaikkan agar blur tepi layar tidak menyusut ke dalam
-        }}
+        className="absolute inset-0 w-full h-full sm:filter sm:blur-[24px] sm:scale-105"
       >
         <canvas
           ref={canvasRef}

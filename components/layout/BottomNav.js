@@ -101,7 +101,7 @@ export default function BottomNav({ onOpenAddTask }) {
   return (
     <nav
       aria-label="Navigasi bawah mobile"
-      className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-[var(--theme-nav-bg,rgba(16,12,10,0.92))] backdrop-blur-md backdrop-saturate-[120%] border-t border-[var(--glass-border,rgba(255,255,255,0.08))] shadow-[0_-4px_24px_rgba(0,0,0,0.4)] pb-[env(safe-area-inset-bottom,0px)] will-change-transform transform-gpu"
+      className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-[var(--theme-nav-bg,rgba(16,12,10,0.92))] backdrop-blur-sm sm:backdrop-blur-md backdrop-saturate-[120%] border-t border-[var(--glass-border,rgba(255,255,255,0.08))] shadow-[0_-4px_24px_rgba(0,0,0,0.4)] pb-[env(safe-area-inset-bottom,0px)] will-change-transform transform-gpu"
     >
       <div className="grid grid-cols-5 items-center h-16 max-w-lg mx-auto px-1 w-full">
         {leftNavItems.map(renderNavItem)}

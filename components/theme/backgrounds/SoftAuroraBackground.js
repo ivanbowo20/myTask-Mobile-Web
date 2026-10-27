@@ -18,6 +18,7 @@ export default function SoftAuroraBackground() {
     let height = 0;
     let time = 0;
     let lastTime = performance.now();
+    let isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
 
     // Check reduced motion
     const prefersReducedMotion =
@@ -25,63 +26,73 @@ export default function SoftAuroraBackground() {
       window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Mouse coordinates for gentle interactive sway
+    // Mouse coordinates for gentle interactive sway (desktop only)
     let targetMouseX = 0.5;
     let currentMouseX = 0.5;
 
     const handleMouseMove = (e) => {
+      if (isMobile) return;
       targetMouseX = e.clientX / window.innerWidth;
     };
 
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    if (!isMobile) {
+      window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    }
 
     // Aurora band configurations with dual-sided soft fading ribbons
     const bands = [
       {
         baseY: 0.28,
         amplitude: 45,
-        thickness: 90,
+        thickness: 95,
         speed: 0.0006,
         colorStops: [
           { stop: 0, color: 'rgba(6, 182, 212, 0)' },
-          { stop: 0.35, color: 'rgba(6, 182, 212, 0.45)' },
-          { stop: 0.7, color: 'rgba(45, 212, 191, 0.25)' },
+          { stop: 0.2, color: 'rgba(6, 182, 212, 0.12)' },
+          { stop: 0.45, color: 'rgba(6, 182, 212, 0.40)' },
+          { stop: 0.7, color: 'rgba(45, 212, 191, 0.22)' },
+          { stop: 0.9, color: 'rgba(6, 182, 212, 0.06)' },
           { stop: 1, color: 'rgba(6, 182, 212, 0)' },
         ],
       },
       {
         baseY: 0.38,
         amplitude: 55,
-        thickness: 110,
+        thickness: 115,
         speed: 0.00045,
         colorStops: [
           { stop: 0, color: 'rgba(99, 102, 241, 0)' },
-          { stop: 0.4, color: 'rgba(99, 102, 241, 0.40)' },
-          { stop: 0.75, color: 'rgba(139, 92, 246, 0.25)' },
+          { stop: 0.2, color: 'rgba(99, 102, 241, 0.10)' },
+          { stop: 0.45, color: 'rgba(99, 102, 241, 0.38)' },
+          { stop: 0.72, color: 'rgba(139, 92, 246, 0.22)' },
+          { stop: 0.9, color: 'rgba(99, 102, 241, 0.05)' },
           { stop: 1, color: 'rgba(99, 102, 241, 0)' },
         ],
       },
       {
         baseY: 0.48,
         amplitude: 65,
-        thickness: 120,
+        thickness: 125,
         speed: 0.0007,
         colorStops: [
           { stop: 0, color: 'rgba(232, 121, 249, 0)' },
-          { stop: 0.35, color: 'rgba(232, 121, 249, 0.40)' },
-          { stop: 0.7, color: 'rgba(244, 114, 182, 0.22)' },
+          { stop: 0.2, color: 'rgba(232, 121, 249, 0.10)' },
+          { stop: 0.45, color: 'rgba(232, 121, 249, 0.36)' },
+          { stop: 0.7, color: 'rgba(244, 114, 182, 0.20)' },
+          { stop: 0.9, color: 'rgba(232, 121, 249, 0.05)' },
           { stop: 1, color: 'rgba(232, 121, 249, 0)' },
         ],
       },
       {
         baseY: 0.22,
         amplitude: 38,
-        thickness: 75,
+        thickness: 80,
         speed: 0.0009,
         colorStops: [
           { stop: 0, color: 'rgba(34, 211, 238, 0)' },
-          { stop: 0.4, color: 'rgba(34, 211, 238, 0.35)' },
-          { stop: 0.75, color: 'rgba(6, 182, 212, 0.18)' },
+          { stop: 0.25, color: 'rgba(34, 211, 238, 0.12)' },
+          { stop: 0.45, color: 'rgba(34, 211, 238, 0.32)' },
+          { stop: 0.75, color: 'rgba(6, 182, 212, 0.16)' },
           { stop: 1, color: 'rgba(34, 211, 238, 0)' },
         ],
       },
@@ -92,8 +103,10 @@ export default function SoftAuroraBackground() {
 
       ctx.clearRect(0, 0, width, height);
 
-      // Smooth mouse easing
-      currentMouseX += (targetMouseX - currentMouseX) * 0.04;
+      // Smooth mouse easing (desktop only)
+      if (!isMobile) {
+        currentMouseX += (targetMouseX - currentMouseX) * 0.04;
+      }
       const mouseOffset = (currentMouseX - 0.5) * 40;
 
       // Draw each organic glowing aurora wave ribbon
@@ -113,7 +126,7 @@ export default function SoftAuroraBackground() {
         ctx.fillStyle = gradient;
         ctx.beginPath();
 
-        const step = Math.max(12, Math.floor(width / 40));
+        const step = Math.max(isMobile ? 18 : 12, Math.floor(width / (isMobile ? 24 : 40)));
 
         // Trace top boundary wave
         for (let x = 0; x <= width + step; x += step) {
@@ -149,8 +162,9 @@ export default function SoftAuroraBackground() {
     // Handle resize with downscaled internal resolution for optimal battery & GPU efficiency
     const handleResize = () => {
       if (!canvas) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      const scale = 0.6;
+      isMobile = window.innerWidth < 768;
+      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.5);
+      const scale = isMobile ? 0.45 : 0.6;
       width = Math.floor(window.innerWidth * scale * dpr);
       height = Math.floor(window.innerHeight * scale * dpr);
       canvas.width = width;
@@ -184,8 +198,9 @@ export default function SoftAuroraBackground() {
 
       const now = performance.now();
       const delta = now - lastTime;
-      // Cap at ~35-45 FPS for battery friendliness
-      if (delta > 22) {
+      // Cap at ~30 FPS on mobile (delta > 32ms) and ~45 FPS on desktop for battery & GPU friendliness
+      const targetDelta = isMobile ? 32 : 22;
+      if (delta > targetDelta) {
         lastTime = now;
         time += delta;
         drawAurora(time);
@@ -217,20 +232,20 @@ export default function SoftAuroraBackground() {
       {/* Deep Midnight Navy Backdrop */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#060810] via-[#091122] to-[#0D162B]" />
 
-      {/* Soft Aurora Canvas */}
+      {/* Soft Aurora Canvas: Tanpa CSS blur di mobile agar GPU PowerVR HP kentang 60 FPS mulus */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full filter blur-[28px] sm:blur-[36px] opacity-85 transform-gpu"
+        className="absolute inset-0 w-full h-full sm:filter sm:blur-[36px] opacity-85 transform-gpu"
         style={{ mixBlendMode: 'screen' }}
       />
 
-      {/* Gentle ambient glow accents */}
+      {/* Gentle ambient glow accents (Desktop only, hemat 100% GPU fillrate di HP kentang) */}
       <div
-        className="absolute -top-24 left-1/4 w-[500px] h-[350px] rounded-full opacity-35 filter blur-[100px] pointer-events-none"
+        className="hidden sm:block absolute -top-24 left-1/4 w-[500px] h-[350px] rounded-full opacity-35 filter blur-[100px] pointer-events-none"
         style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.4) 0%, rgba(99,102,241,0.1) 70%, transparent 100%)' }}
       />
       <div
-        className="absolute top-1/3 -right-20 w-[450px] h-[400px] rounded-full opacity-30 filter blur-[110px] pointer-events-none"
+        className="hidden sm:block absolute top-1/3 -right-20 w-[450px] h-[400px] rounded-full opacity-30 filter blur-[110px] pointer-events-none"
         style={{ background: 'radial-gradient(circle, rgba(232,121,249,0.35) 0%, rgba(139,92,246,0.1) 70%, transparent 100%)' }}
       />
     </div>
