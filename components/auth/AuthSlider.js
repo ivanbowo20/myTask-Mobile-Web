@@ -275,8 +275,8 @@ export default function AuthSlider({ initialMode = "login" }) {
   }
 
   return (
-    <div className="w-full max-w-md sm:max-w-4xl mx-auto p-1.5 sm:p-2 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] shadow-2xl backdrop-blur-xl">
-      <div className="relative rounded-[calc(2rem-0.5rem)] bg-[var(--glass-bg,rgba(22,17,14,0.65))] border border-white/[0.08] shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] overflow-hidden">
+    <div className="w-full max-w-md sm:max-w-4xl mx-auto p-1.5 sm:p-2 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] shadow-2xl backdrop-blur-xl auth-card-outer">
+      <div className="relative rounded-[calc(2rem-0.5rem)] bg-[var(--glass-bg,rgba(22,17,14,0.65))] border border-white/[0.08] shadow-[inset_0_1px_1px_rgba(255,255,255,0.12)] overflow-hidden auth-card-inner">
         {/* Mobile Segmented Switcher Capsule (< 640px) */}
         <div className="sm:hidden p-4 pb-0">
           <div className="relative p-1 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md flex items-center">
@@ -383,11 +383,11 @@ export default function AuthSlider({ initialMode = "login" }) {
 
               {/* Divider */}
               <div className="relative flex items-center justify-center">
-                <div className="border-t border-white/[0.08] w-full" />
+                <div className="border-t border-white/[0.08] auth-divider-line w-full" />
                 <span className="px-3 text-[11px] text-[#71717A] uppercase tracking-wider shrink-0 bg-transparent">
                   atau dengan email
                 </span>
-                <div className="border-t border-white/[0.08] w-full" />
+                <div className="border-t border-white/[0.08] auth-divider-line w-full" />
               </div>
 
               {/* Email & Password Form */}
@@ -401,7 +401,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                     Alamat Email
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">
                       <AtSign className="w-4 h-4" />
                     </div>
                     <input
@@ -410,7 +410,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="nama@email.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
+                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
                       required
                       autoComplete="email"
                     />
@@ -426,7 +426,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                     Kata Sandi
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
@@ -435,7 +435,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="••••••••"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
+                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
                       required
                       autoComplete="current-password"
                     />
@@ -443,7 +443,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type="button"
                       onClick={() => setShowLoginPassword((prev) => !prev)}
                       aria-label={showLoginPassword ? "Sembunyikan kata sandi" : "Lihat kata sandi"}
-                      className="absolute inset-y-0 right-0 px-3 flex items-center text-zinc-400 hover:text-white min-h-[44px] min-w-[44px] justify-center transition-colors cursor-pointer"
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-zinc-400 hover:text-white [html[data-theme='celestial-sky']_&]:text-slate-500 [html[data-theme='celestial-sky']_&]:hover:text-slate-900 min-h-[44px] min-w-[44px] justify-center transition-colors cursor-pointer"
                     >
                       {showLoginPassword ? (
                         <EyeOff className="w-4 h-4" />
@@ -461,7 +461,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded border border-white/[0.16] bg-white/[0.04] text-[#FAFAFA] focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] cursor-pointer accent-white"
+                      className="w-4 h-4 rounded border border-white/[0.16] [html[data-theme='celestial-sky']_&]:border-sky-300 [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:accent-[#0284C7] bg-white/[0.04] text-[#FAFAFA] focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] cursor-pointer accent-white"
                     />
                     <span className="text-xs text-[#A1A1AA]">Ingat saya</span>
                   </label>
@@ -471,7 +471,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="w-full mt-2"
+                  className="w-full mt-2 auth-submit-btn"
                   disabled={loginLoading || isGoogleLoading}
                 >
                   {loginLoading ? (
@@ -558,11 +558,11 @@ export default function AuthSlider({ initialMode = "login" }) {
 
               {/* Divider */}
               <div className="relative flex items-center justify-center">
-                <div className="border-t border-white/[0.08] w-full" />
+                <div className="border-t border-white/[0.08] auth-divider-line w-full" />
                 <span className="px-3 text-[11px] text-[#71717A] uppercase tracking-wider shrink-0 bg-transparent">
                   atau isi formulir
                 </span>
-                <div className="border-t border-white/[0.08] w-full" />
+                <div className="border-t border-white/[0.08] auth-divider-line w-full" />
               </div>
 
               {/* Register Form */}
@@ -576,7 +576,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                     Nama Lengkap
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">
                       <User className="w-4 h-4" />
                     </div>
                     <input
@@ -585,7 +585,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="Contoh: Budi Santoso"
                       value={nama}
                       onChange={(e) => setNama(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
+                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
                       required
                       autoComplete="name"
                     />
@@ -601,7 +601,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                     Alamat Email
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">
                       <AtSign className="w-4 h-4" />
                     </div>
                     <input
@@ -610,7 +610,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="nama@email.com"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
+                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
                       required
                       autoComplete="email"
                     />
@@ -626,7 +626,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                     Kata Sandi
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
@@ -635,7 +635,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="Minimal 8 karakter"
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
+                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
                       required
                       minLength={8}
                       autoComplete="new-password"
@@ -644,7 +644,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type="button"
                       onClick={() => setShowRegisterPassword((prev) => !prev)}
                       aria-label={showRegisterPassword ? "Sembunyikan kata sandi" : "Lihat kata sandi"}
-                      className="absolute inset-y-0 right-0 px-3 flex items-center text-zinc-400 hover:text-white min-h-[44px] min-w-[44px] justify-center transition-colors cursor-pointer"
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-zinc-400 hover:text-white [html[data-theme='celestial-sky']_&]:text-slate-500 [html[data-theme='celestial-sky']_&]:hover:text-slate-900 min-h-[44px] min-w-[44px] justify-center transition-colors cursor-pointer"
                     >
                       {showRegisterPassword ? (
                         <EyeOff className="w-4 h-4" />
@@ -664,7 +664,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                     Konfirmasi Kata Sandi
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">
                       <ShieldCheck className="w-4 h-4" />
                     </div>
                     <input
@@ -673,7 +673,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       placeholder="Ulangi kata sandi"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200"
+                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
                       required
                       autoComplete="new-password"
                     />
@@ -681,7 +681,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type="button"
                       onClick={() => setShowConfirmPassword((prev) => !prev)}
                       aria-label={showConfirmPassword ? "Sembunyikan konfirmasi kata sandi" : "Lihat konfirmasi kata sandi"}
-                      className="absolute inset-y-0 right-0 px-3 flex items-center text-zinc-400 hover:text-white min-h-[44px] min-w-[44px] justify-center transition-colors cursor-pointer"
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-zinc-400 hover:text-white [html[data-theme='celestial-sky']_&]:text-slate-500 [html[data-theme='celestial-sky']_&]:hover:text-slate-900 min-h-[44px] min-w-[44px] justify-center transition-colors cursor-pointer"
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="w-4 h-4" />
@@ -696,7 +696,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                 <Button
                   type="submit"
                   variant="primary"
-                  className="w-full mt-2"
+                  className="w-full mt-2 auth-submit-btn"
                   disabled={registerLoading || isGoogleLoading}
                 >
                   {registerLoading ? (

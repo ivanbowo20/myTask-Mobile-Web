@@ -674,6 +674,63 @@ html[data-theme="celestial-sky"] aside {
   border-right-color: rgba(226, 232, 240, 0.8) !important;
 }
 
+/* ============================================================ */
+/* CELESTIAL SKY AUTH & FORM INPUT FROSTED ICE HARDENING        */
+/* ============================================================ */
+html[data-theme="celestial-sky"] .auth-card-outer {
+  background-color: rgba(255, 255, 255, 0.40) !important;
+  border-color: rgba(186, 230, 253, 0.65) !important;
+  box-shadow: 0 20px 60px -15px rgba(2, 132, 199, 0.20), 0 4px 16px -2px rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-theme="celestial-sky"] .auth-card-inner {
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(186, 230, 253, 0.70) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), 0 8px 32px -4px rgba(2, 132, 199, 0.12) !important;
+}
+
+html[data-theme="celestial-sky"] .auth-input-field {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(186, 230, 253, 0.85) !important;
+  color: #0F172A !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), inset 0 1px 2px 0 rgba(255, 255, 255, 0.80) !important;
+}
+
+html[data-theme="celestial-sky"] .auth-input-field:hover {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #0284C7 !important;
+}
+
+html[data-theme="celestial-sky"] .auth-input-field:focus {
+  background-color: #FFFFFF !important;
+  border-color: #0284C7 !important;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25) !important;
+  color: #0F172A !important;
+}
+
+html[data-theme="celestial-sky"] .auth-input-field::placeholder {
+  color: #64748B !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="celestial-sky"] .auth-submit-btn {
+  background-color: #0284C7 !important;
+  border-color: #0284C7 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 16px -2px rgba(2, 132, 199, 0.45), 0 2px 6px rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-theme="celestial-sky"] .auth-submit-btn:hover {
+  background-color: #0369A1 !important;
+  border-color: #0369A1 !important;
+  box-shadow: 0 6px 20px -2px rgba(2, 132, 199, 0.55) !important;
+}
+
+html[data-theme="celestial-sky"] .auth-divider-line {
+  border-color: rgba(186, 230, 253, 0.70) !important;
+}
+
+
 
 .glass-modal {
   background: var(--theme-nav-bg, rgba(22, 17, 14, 0.92));
