@@ -14,12 +14,27 @@ import {
   UserPlus,
   LogIn,
   CheckSquare,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Button from "@/components/ui/Button";
 import { toast } from "@/lib/use-toast";
 import { authClient } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
+import { cn, evaluasiAturanPassword } from "@/lib/utils";
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function InlineFieldError({ message }) {
+  if (!message) return null;
+  return (
+    <p className="text-[11px] text-[#E88B8B] [html[data-theme='celestial-sky']_&]:text-rose-600 font-medium flex items-center gap-1.5 mt-1.5">
+      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+      <span>{message}</span>
+    </p>
+  );
+}
 
 /**
  * SSR-safe, zero-hydration-mismatch mobile viewport hook (< 640px)
@@ -79,6 +94,7 @@ export default function AuthSlider({ initialMode = "login" }) {
   const [rememberMe, setRememberMe] = useState(true);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [loginFieldErrors, setLoginFieldErrors] = useState({ email: "", password: "" });
 
   // Register form states
   const [nama, setNama] = useState("");
@@ -89,6 +105,18 @@ export default function AuthSlider({ initialMode = "login" }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registerError, setRegisterError] = useState("");
   const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerFieldErrors, setRegisterFieldErrors] = useState({
+    nama: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [passwordFocused, setPasswordFocused] = useState(false);
+
+  // Real-time evaluation of password rules & confirmation
+  const passwordEval = evaluasiAturanPassword(registerPassword);
+  const showPasswordChecklist = passwordFocused || registerPassword.length > 0;
+  const isConfirmMatch = confirmPassword.length > 0 && confirmPassword === registerPassword;
 
   // Shared social auth state
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -100,6 +128,13 @@ export default function AuthSlider({ initialMode = "login" }) {
       setMode(targetMode);
       setLoginError("");
       setRegisterError("");
+      setLoginFieldErrors({ email: "", password: "" });
+      setRegisterFieldErrors({
+        nama: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
 
       if (typeof window !== "undefined") {
         const targetPath = targetMode === "register" ? "/register" : "/login";
@@ -200,9 +235,20 @@ export default function AuthSlider({ initialMode = "login" }) {
   async function handleLoginSubmit(e) {
     e.preventDefault();
     setLoginError("");
+    const errors = {};
 
-    if (!loginEmail.trim() || !loginPassword) {
-      setLoginError("Silakan lengkapi email dan kata sandi Anda.");
+    if (!loginEmail.trim()) {
+      errors.email = "Alamat email wajib diisi.";
+    } else if (!isValidEmail(loginEmail.trim())) {
+      errors.email = "Format alamat email tidak valid.";
+    }
+
+    if (!loginPassword) {
+      errors.password = "Kata sandi wajib diisi.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setLoginFieldErrors(errors);
       return;
     }
 
@@ -217,7 +263,12 @@ export default function AuthSlider({ initialMode = "login" }) {
       });
 
       if (signInError) {
-        setLoginError(signInError.message || "Email atau kata sandi tidak cocok.");
+        const errorMsg = signInError.message || "Email atau kata sandi tidak cocok.";
+        setLoginError(errorMsg);
+        setLoginFieldErrors({
+          email: "Periksa kembali alamat email Anda.",
+          password: "Kata sandi atau email tidak cocok.",
+        });
         setLoginLoading(false);
         return;
       }
@@ -234,19 +285,32 @@ export default function AuthSlider({ initialMode = "login" }) {
   async function handleRegisterSubmit(e) {
     e.preventDefault();
     setRegisterError("");
+    const errors = {};
 
-    if (!nama.trim() || !registerEmail.trim() || !registerPassword) {
-      setRegisterError("Semua kolom formulir wajib diisi.");
-      return;
+    if (!nama.trim()) {
+      errors.nama = "Nama lengkap wajib diisi.";
     }
 
-    if (registerPassword.length < 8) {
-      setRegisterError("Kata sandi minimal terdiri dari 8 karakter.");
-      return;
+    if (!registerEmail.trim()) {
+      errors.email = "Alamat email wajib diisi.";
+    } else if (!isValidEmail(registerEmail.trim())) {
+      errors.email = "Format alamat email tidak valid (contoh: nama@email.com).";
     }
 
-    if (registerPassword !== confirmPassword) {
-      setRegisterError("Konfirmasi kata sandi tidak cocok.");
+    if (!registerPassword) {
+      errors.password = "Kata sandi wajib diisi.";
+    } else if (!passwordEval.isValid) {
+      errors.password = "Kata sandi belum memenuhi seluruh 4 kriteria keamanan.";
+    }
+
+    if (!confirmPassword) {
+      errors.confirmPassword = "Ketik ulang kata sandi untuk konfirmasi.";
+    } else if (registerPassword !== confirmPassword) {
+      errors.confirmPassword = "Konfirmasi kata sandi tidak cocok.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setRegisterFieldErrors(errors);
       return;
     }
 
@@ -261,7 +325,26 @@ export default function AuthSlider({ initialMode = "login" }) {
       });
 
       if (signUpError) {
-        setRegisterError(signUpError.message || "Gagal membuat akun. Silakan coba lagi.");
+        const msg = signUpError.message || "Gagal membuat akun. Silakan coba lagi.";
+        const lower = msg.toLowerCase();
+        if (
+          lower.includes("email") ||
+          lower.includes("already") ||
+          lower.includes("exists") ||
+          lower.includes("user")
+        ) {
+          setRegisterFieldErrors((prev) => ({
+            ...prev,
+            email: "Alamat email ini sudah terdaftar. Silakan gunakan email lain atau masuk.",
+          }));
+        } else if (lower.includes("password") || lower.includes("sandi")) {
+          setRegisterFieldErrors((prev) => ({
+            ...prev,
+            password: msg,
+          }));
+        } else {
+          setRegisterError(msg);
+        }
         setRegisterLoading(false);
         return;
       }
@@ -318,7 +401,7 @@ export default function AuthSlider({ initialMode = "login" }) {
 
         {/* Form Container: Dual-column grid on desktop, horizontal sliding track with Framer Motion on mobile */}
         <motion.div
-          className="relative flex w-[200%] sm:w-full sm:grid sm:grid-cols-2 min-h-[580px] sm:min-h-[640px]"
+          className="relative flex w-[200%] sm:w-full sm:grid sm:grid-cols-2 min-h-[580px] sm:min-h-[680px]"
           animate={{ x: isMobile ? (isRegister ? "-50%" : "0%") : "0%" }}
           transition={
             shouldReduceMotion
@@ -396,7 +479,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                 <div className="w-full space-y-1.5">
                   <label
                     htmlFor="login-email"
-                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300"
+                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700"
                   >
                     Alamat Email
                   </label>
@@ -409,19 +492,29 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type="email"
                       placeholder="nama@email.com"
                       value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
+                      onChange={(e) => {
+                        setLoginEmail(e.target.value);
+                        if (loginFieldErrors.email) {
+                          setLoginFieldErrors((prev) => ({ ...prev, email: "" }));
+                        }
+                      }}
+                      className={cn(
+                        "w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field",
+                        loginFieldErrors.email &&
+                          "!border-[#E88B8B]/70 [html[data-theme='celestial-sky']_&]:!border-rose-500 !ring-1 !ring-[#E88B8B]/30 [html[data-theme='celestial-sky']_&]:!ring-rose-500/20"
+                      )}
                       required
                       autoComplete="email"
                     />
                   </div>
+                  <InlineFieldError message={loginFieldErrors.email} />
                 </div>
 
                 {/* Password */}
                 <div className="w-full space-y-1.5">
                   <label
                     htmlFor="login-password"
-                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300"
+                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700"
                   >
                     Kata Sandi
                   </label>
@@ -434,8 +527,17 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type={showLoginPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
+                      onChange={(e) => {
+                        setLoginPassword(e.target.value);
+                        if (loginFieldErrors.password) {
+                          setLoginFieldErrors((prev) => ({ ...prev, password: "" }));
+                        }
+                      }}
+                      className={cn(
+                        "w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field",
+                        loginFieldErrors.password &&
+                          "!border-[#E88B8B]/70 [html[data-theme='celestial-sky']_&]:!border-rose-500 !ring-1 !ring-[#E88B8B]/30 [html[data-theme='celestial-sky']_&]:!ring-rose-500/20"
+                      )}
                       required
                       autoComplete="current-password"
                     />
@@ -452,6 +554,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                       )}
                     </button>
                   </div>
+                  <InlineFieldError message={loginFieldErrors.password} />
                 </div>
 
                 {/* Remember Me */}
@@ -571,7 +674,7 @@ export default function AuthSlider({ initialMode = "login" }) {
                 <div className="w-full space-y-1.5">
                   <label
                     htmlFor="register-name"
-                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300"
+                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700"
                   >
                     Nama Lengkap
                   </label>
@@ -584,19 +687,34 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type="text"
                       placeholder="Contoh: Budi Santoso"
                       value={nama}
-                      onChange={(e) => setNama(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
+                      onChange={(e) => {
+                        setNama(e.target.value);
+                        if (registerFieldErrors.nama) {
+                          setRegisterFieldErrors((prev) => ({ ...prev, nama: "" }));
+                        }
+                      }}
+                      className={cn(
+                        "w-full min-h-[44px] pl-10 pr-10 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field",
+                        registerFieldErrors.nama &&
+                          "!border-[#E88B8B]/70 [html[data-theme='celestial-sky']_&]:!border-rose-500 !ring-1 !ring-[#E88B8B]/30 [html[data-theme='celestial-sky']_&]:!ring-rose-500/20"
+                      )}
                       required
                       autoComplete="name"
                     />
+                    {nama.trim().length >= 2 && !registerFieldErrors.nama && (
+                      <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-emerald-400 [html[data-theme='celestial-sky']_&]:text-emerald-700 animate-in fade-in duration-200">
+                        <Check className="w-4 h-4" />
+                      </div>
+                    )}
                   </div>
+                  <InlineFieldError message={registerFieldErrors.nama} />
                 </div>
 
                 {/* Email */}
                 <div className="w-full space-y-1.5">
                   <label
                     htmlFor="register-email"
-                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300"
+                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700"
                   >
                     Alamat Email
                   </label>
@@ -609,19 +727,34 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type="email"
                       placeholder="nama@email.com"
                       value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
+                      onChange={(e) => {
+                        setRegisterEmail(e.target.value);
+                        if (registerFieldErrors.email) {
+                          setRegisterFieldErrors((prev) => ({ ...prev, email: "" }));
+                        }
+                      }}
+                      className={cn(
+                        "w-full min-h-[44px] pl-10 pr-10 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field",
+                        registerFieldErrors.email &&
+                          "!border-[#E88B8B]/70 [html[data-theme='celestial-sky']_&]:!border-rose-500 !ring-1 !ring-[#E88B8B]/30 [html[data-theme='celestial-sky']_&]:!ring-rose-500/20"
+                      )}
                       required
                       autoComplete="email"
                     />
+                    {isValidEmail(registerEmail) && !registerFieldErrors.email && (
+                      <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-emerald-400 [html[data-theme='celestial-sky']_&]:text-emerald-700 animate-in fade-in duration-200">
+                        <Check className="w-4 h-4" />
+                      </div>
+                    )}
                   </div>
+                  <InlineFieldError message={registerFieldErrors.email} />
                 </div>
 
                 {/* Password */}
                 <div className="w-full space-y-1.5">
                   <label
                     htmlFor="register-password"
-                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300"
+                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700"
                   >
                     Kata Sandi
                   </label>
@@ -634,8 +767,18 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type={showRegisterPassword ? "text" : "password"}
                       placeholder="Minimal 8 karakter"
                       value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
+                      onFocus={() => setPasswordFocused(true)}
+                      onChange={(e) => {
+                        setRegisterPassword(e.target.value);
+                        if (registerFieldErrors.password) {
+                          setRegisterFieldErrors((prev) => ({ ...prev, password: "" }));
+                        }
+                      }}
+                      className={cn(
+                        "w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field",
+                        registerFieldErrors.password &&
+                          "!border-[#E88B8B]/70 [html[data-theme='celestial-sky']_&]:!border-rose-500 !ring-1 !ring-[#E88B8B]/30 [html[data-theme='celestial-sky']_&]:!ring-rose-500/20"
+                      )}
                       required
                       minLength={8}
                       autoComplete="new-password"
@@ -653,13 +796,108 @@ export default function AuthSlider({ initialMode = "login" }) {
                       )}
                     </button>
                   </div>
+                  <InlineFieldError message={registerFieldErrors.password} />
+
+                  {/* Password Rules Checklist & Strength Meter */}
+                  <AnimatePresence>
+                    {showPasswordChecklist && (
+                      <motion.div
+                        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                        transition={{ duration: 0.2 }}
+                        className="pt-1"
+                      >
+                        <div className="p-3 rounded-xl bg-white/[0.04] [html[data-theme='celestial-sky']_&]:bg-sky-50/80 border border-white/[0.08] [html[data-theme='celestial-sky']_&]:border-sky-200/80 space-y-2.5 backdrop-blur-sm shadow-xs">
+                          {/* Strength Meter Header & Bar */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 font-medium">
+                                Kekuatan Sandi
+                              </span>
+                              <span
+                                className={cn(
+                                  "font-semibold transition-colors duration-200",
+                                  passwordEval.score <= 1
+                                    ? "text-rose-400 [html[data-theme='celestial-sky']_&]:text-rose-600"
+                                    : passwordEval.score === 2
+                                    ? "text-amber-400 [html[data-theme='celestial-sky']_&]:text-amber-600"
+                                    : passwordEval.score === 3
+                                    ? "text-sky-400 [html[data-theme='celestial-sky']_&]:text-sky-600"
+                                    : "text-emerald-400 [html[data-theme='celestial-sky']_&]:text-emerald-700"
+                                )}
+                              >
+                                {passwordEval.strengthLabel || "Belum terisi"}
+                              </span>
+                            </div>
+                            {/* 4-segment strength bar */}
+                            <div className="grid grid-cols-4 gap-1.5 h-1.5">
+                              {[1, 2, 3, 4].map((seg) => {
+                                const isFilled = passwordEval.score >= seg;
+                                let segColor =
+                                  "bg-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-slate-200";
+                                if (isFilled) {
+                                  if (passwordEval.score <= 1) segColor = "bg-rose-500";
+                                  else if (passwordEval.score === 2) segColor = "bg-amber-500";
+                                  else if (passwordEval.score === 3)
+                                    segColor =
+                                      "bg-sky-500 [html[data-theme='celestial-sky']_&]:bg-[#0284C7]";
+                                  else segColor = "bg-emerald-500";
+                                }
+                                return (
+                                  <div
+                                    key={seg}
+                                    className={cn(
+                                      "h-full rounded-full transition-all duration-300",
+                                      segColor
+                                    )}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* 4 Interactive Checklist Rules (2x2 grid for compact clean layout) */}
+                          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/[0.06] [html[data-theme='celestial-sky']_&]:border-sky-200/60 text-[11px]">
+                            {passwordEval.criteria.map((rule) => (
+                              <div
+                                key={rule.id}
+                                className="flex items-center gap-1.5 transition-colors duration-200"
+                              >
+                                <div
+                                  className={cn(
+                                    "w-3.5 h-3.5 rounded-full flex items-center justify-center transition-all duration-200 shrink-0",
+                                    rule.passed
+                                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 [html[data-theme='celestial-sky']_&]:bg-emerald-100 [html[data-theme='celestial-sky']_&]:text-emerald-700 [html[data-theme='celestial-sky']_&]:border-emerald-300"
+                                      : "bg-white/[0.04] text-transparent border border-white/[0.16] [html[data-theme='celestial-sky']_&]:bg-white [html[data-theme='celestial-sky']_&]:border-slate-300"
+                                  )}
+                                >
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                </div>
+                                <span
+                                  className={cn(
+                                    "transition-colors duration-200",
+                                    rule.passed
+                                      ? "text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-slate-900 font-medium"
+                                      : "text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500"
+                                  )}
+                                >
+                                  {rule.label}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Confirm Password */}
                 <div className="w-full space-y-1.5">
                   <label
                     htmlFor="register-confirm"
-                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300"
+                    className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700"
                   >
                     Konfirmasi Kata Sandi
                   </label>
@@ -672,8 +910,17 @@ export default function AuthSlider({ initialMode = "login" }) {
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Ulangi kata sandi"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field"
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (registerFieldErrors.confirmPassword) {
+                          setRegisterFieldErrors((prev) => ({ ...prev, confirmPassword: "" }));
+                        }
+                      }}
+                      className={cn(
+                        "w-full min-h-[44px] pl-10 pr-12 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] focus:border-[var(--theme-accent,#D97706)] focus:outline-none focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))] text-base sm:text-sm text-[#FAFAFA] placeholder:text-[#71717A] transition-all duration-200 auth-input-field",
+                        registerFieldErrors.confirmPassword &&
+                          "!border-[#E88B8B]/70 [html[data-theme='celestial-sky']_&]:!border-rose-500 !ring-1 !ring-[#E88B8B]/30 [html[data-theme='celestial-sky']_&]:!ring-rose-500/20"
+                      )}
                       required
                       autoComplete="new-password"
                     />
@@ -690,6 +937,20 @@ export default function AuthSlider({ initialMode = "login" }) {
                       )}
                     </button>
                   </div>
+                  <InlineFieldError message={registerFieldErrors.confirmPassword} />
+                  {!registerFieldErrors.confirmPassword && confirmPassword.length > 0 && (
+                    isConfirmMatch ? (
+                      <p className="text-[11px] text-emerald-400 [html[data-theme='celestial-sky']_&]:text-emerald-700 font-medium flex items-center gap-1.5 mt-1.5 animate-in fade-in duration-200">
+                        <Check className="w-3.5 h-3.5 shrink-0 text-emerald-400 [html[data-theme='celestial-sky']_&]:text-emerald-700" />
+                        <span>Kata sandi cocok</span>
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 font-medium flex items-center gap-1.5 mt-1.5 animate-in fade-in duration-200">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-400 [html[data-theme='celestial-sky']_&]:text-amber-600" />
+                        <span>Kata sandi belum sama</span>
+                      </p>
+                    )
+                  )}
                 </div>
 
                 {/* Submit Button */}
