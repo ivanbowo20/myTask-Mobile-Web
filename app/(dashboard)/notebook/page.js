@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
   Plus,
@@ -48,6 +48,22 @@ export default function NotebookPage() {
   } = useNotebooks();
 
   const searchInputRef = useRef(null);
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+
+  // Sinkronkan input lokal saat searchQuery di context berubah (misal tombol reset filter ditekan)
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  // Debounce filter teks sebesar 200ms agar keyboard HP (Infinix Smart 6) 100% responsif tanpa jank
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch !== searchQuery) {
+        setSearchQuery(localSearch);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [localSearch, searchQuery, setSearchQuery]);
 
   // Keyboard shortcut Ctrl+K / Cmd+K to focus search input
   useEffect(() => {
@@ -105,8 +121,8 @@ export default function NotebookPage() {
           <input
             ref={searchInputRef}
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Cari materi atau topik... (Ctrl+K)"
             className={cn(
               'w-full pl-10 pr-16 py-2.5 rounded-xl text-xs sm:text-sm font-medium glass-card',
@@ -116,10 +132,13 @@ export default function NotebookPage() {
               'transition-all duration-150 shadow-sm'
             )}
           />
-          {searchQuery ? (
+          {localSearch ? (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setLocalSearch('');
+                setSearchQuery('');
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-white"
             >
               <X className="w-3.5 h-3.5" />
@@ -183,6 +202,7 @@ export default function NotebookPage() {
               <Button
                 variant="secondary"
                 onClick={() => {
+                  setLocalSearch('');
                   setSearchQuery('');
                   setDateFilter('all');
                 }}

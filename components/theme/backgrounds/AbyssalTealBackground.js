@@ -127,6 +127,8 @@ export default function AbyssalTealBackground({
     let height = 0;
     let lastTime = performance.now();
     let isMobile = typeof window !== 'undefined' ? (window.innerWidth < 768 || 'ontouchstart' in window) : false;
+    let isScrolling = false;
+    let scrollTimer = null;
 
     // Deteksi mode 'prefers-reduced-motion'
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -293,6 +295,12 @@ export default function AbyssalTealBackground({
     const loop = (timestamp) => {
       if (!isRunning) return;
 
+      // Yield 100% GPU ke touch scrolling di HP low-end (Infinix Smart 6)
+      if (isScrolling && isMobile) {
+        animationFrameId = null;
+        return;
+      }
+
       const now = performance.now();
       const delta = now - lastTime;
       // Batasi ~30 FPS di mobile (delta > 32ms) dan ~45 FPS di desktop untuk hemat baterai & GPU
@@ -304,6 +312,21 @@ export default function AbyssalTealBackground({
 
       animationFrameId = requestAnimationFrame(loop);
     };
+
+    // Auto-pause loop saat user menggulir layar sentuh di HP
+    const handleScroll = () => {
+      if (window.innerWidth >= 768) return;
+      isScrolling = true;
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        isScrolling = false;
+        if (isRunning && !animationFrameId && !prefersReducedMotion && !document.hidden) {
+          lastTime = performance.now();
+          animationFrameId = requestAnimationFrame(loop);
+        }
+      }, 180);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     // Mulai animasi jika tidak dalam mode reduced-motion
     if (!prefersReducedMotion) {
@@ -334,7 +357,9 @@ export default function AbyssalTealBackground({
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
+      if (scrollTimer) clearTimeout(scrollTimer);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
       if (!isMobile) {
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseleave', handleMouseLeave);

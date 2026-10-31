@@ -38,6 +38,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const cari = searchParams.get("cari")?.trim() || "";
+    const limitParam = searchParams.get("limit");
 
     let sql = `
       SELECT * FROM public.notebooks
@@ -50,7 +51,12 @@ export async function GET(request) {
       sql += ` AND (judul ILIKE $2 OR konten ILIKE $2)`;
     }
 
-    sql += ` ORDER BY penting DESC, diperbarui_pada DESC, dibuat_pada DESC;`;
+    sql += ` ORDER BY penting DESC, diperbarui_pada DESC, dibuat_pada DESC`;
+
+    // Safe cap (default 150, max 300) untuk mencegah memory bloat & payload transfer berlebih di HP
+    const safeLimit = limitParam !== null ? Math.min(Math.max(1, parseInt(limitParam, 10) || 50), 300) : 150;
+    params.push(safeLimit);
+    sql += ` LIMIT $${params.length};`;
 
     const result = await query(sql, params);
     const notebooks = result.rows.map(mapRowToNotebook);

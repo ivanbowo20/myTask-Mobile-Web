@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from "next/dynamic";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import BottomNav from "@/components/layout/BottomNav";
@@ -7,13 +8,24 @@ import AddTaskModal from "@/components/tugas/AddTaskModal";
 import EditTaskModal from "@/components/tugas/EditTaskModal";
 import AddCategoryModal from "@/components/kategori/AddCategoryModal";
 import EditCategoryModal from "@/components/kategori/EditCategoryModal";
-import AddNotebookModal from "@/components/notebook/AddNotebookModal";
-import EditNotebookModal from "@/components/notebook/EditNotebookModal";
-import NotebookWhatsNewModal from "@/components/notebook/NotebookWhatsNewModal";
 import TopProgressBar from "@/components/ui/TopProgressBar";
 import PwaInstallPrompt from "@/components/pwa/PwaInstallPrompt";
 import { useTasks } from "@/lib/task-context";
 import { useNotebooks } from "@/lib/notebook-context";
+
+// Lazy-load modal notebook & rich-text editor secara on-demand (hemat bundle awal di HP low-end)
+const AddNotebookModal = dynamic(
+  () => import("@/components/notebook/AddNotebookModal"),
+  { ssr: false }
+);
+const EditNotebookModal = dynamic(
+  () => import("@/components/notebook/EditNotebookModal"),
+  { ssr: false }
+);
+const NotebookWhatsNewModal = dynamic(
+  () => import("@/components/notebook/NotebookWhatsNewModal"),
+  { ssr: false }
+);
 
 export default function DashboardShell({ children }) {
   const {
@@ -123,17 +135,21 @@ export default function DashboardShell({ children }) {
         onUpdate={updateCategory}
       />
 
-      {/* Global Notebook Modals */}
-      <AddNotebookModal
-        isOpen={Boolean(isAddNotebookOpen)}
-        onClose={closeAddNotebook || (() => {})}
-      />
+      {/* Global Notebook Modals (Mounted only on-demand) */}
+      {Boolean(isAddNotebookOpen) && (
+        <AddNotebookModal
+          isOpen={Boolean(isAddNotebookOpen)}
+          onClose={closeAddNotebook || (() => {})}
+        />
+      )}
 
-      <EditNotebookModal
-        isOpen={Boolean(editingNotebook)}
-        onClose={closeEditNotebook || (() => {})}
-        notebook={editingNotebook}
-      />
+      {Boolean(editingNotebook) && (
+        <EditNotebookModal
+          isOpen={Boolean(editingNotebook)}
+          onClose={closeEditNotebook || (() => {})}
+          notebook={editingNotebook}
+        />
+      )}
 
       {/* One-Time Feature Announcement Modal (v1.3.0 Notebook) */}
       <NotebookWhatsNewModal />

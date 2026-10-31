@@ -19,6 +19,8 @@ export default function SoftAuroraBackground() {
     let time = 0;
     let lastTime = performance.now();
     let isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+    let isScrolling = false;
+    let scrollTimer = null;
 
     // Check reduced motion
     const prefersReducedMotion =
@@ -163,8 +165,8 @@ export default function SoftAuroraBackground() {
     const handleResize = () => {
       if (!canvas) return;
       isMobile = window.innerWidth < 768;
-      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.5);
-      const scale = isMobile ? 0.55 : 0.6;
+      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 0.8 : 1.5);
+      const scale = isMobile ? 0.35 : 0.6;
       width = Math.floor(window.innerWidth * scale * dpr);
       height = Math.floor(window.innerHeight * scale * dpr);
       canvas.width = width;
@@ -177,6 +179,21 @@ export default function SoftAuroraBackground() {
 
     handleResize();
     window.addEventListener('resize', handleResize, { passive: true });
+
+    // Auto-pause rendering loop saat pengguna aktif menggulir layar sentuh di HP
+    const handleScroll = () => {
+      if (window.innerWidth >= 768) return;
+      isScrolling = true;
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        isScrolling = false;
+        if (isRunning && !animationFrameId && !prefersReducedMotion && !document.hidden) {
+          lastTime = performance.now();
+          render();
+        }
+      }, 180);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     // Handle tab visibility to pause when inactive
     const handleVisibilityChange = () => {
@@ -196,10 +213,16 @@ export default function SoftAuroraBackground() {
     const render = () => {
       if (!isRunning) return;
 
+      // Yield 100% GPU ke touch scrolling di HP low-end (Infinix Smart 6)
+      if (isScrolling && isMobile) {
+        animationFrameId = 0;
+        return;
+      }
+
       const now = performance.now();
       const delta = now - lastTime;
-      // Cap at ~30 FPS on mobile (delta > 32ms) and ~45 FPS on desktop for battery & GPU friendliness
-      const targetDelta = isMobile ? 32 : 22;
+      // Cap at ~27 FPS on mobile (delta > 36ms) and ~45 FPS on desktop for battery & GPU friendliness
+      const targetDelta = isMobile ? 36 : 22;
       if (delta > targetDelta) {
         lastTime = now;
         time += delta;
@@ -221,8 +244,10 @@ export default function SoftAuroraBackground() {
     return () => {
       isRunning = false;
       cancelAnimationFrame(animationFrameId);
+      if (scrollTimer) clearTimeout(scrollTimer);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
@@ -232,10 +257,10 @@ export default function SoftAuroraBackground() {
       {/* Deep Midnight Navy Backdrop */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#060810] via-[#091122] to-[#0D162B]" />
 
-      {/* Soft Aurora Canvas: Efek blur lembut di mobile + desktop agar pendaran cahaya mulus alami tanpa patahan poligon */}
+      {/* Soft Aurora Canvas: Di mobile menggunakan perbauran gradien kanvas murni tanpa filter CSS berat */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full filter blur-[20px] sm:blur-[36px] opacity-85 transform-gpu"
+        className="absolute inset-0 w-full h-full sm:filter sm:blur-[36px] opacity-85 transform-gpu"
         style={{ mixBlendMode: 'screen' }}
       />
 

@@ -247,6 +247,8 @@ export const CloudShader = ({
     let buffer = null;
     let observer = null;
     let drawFn = null;
+    let isScrolling = false;
+    let scrollTimer = null;
 
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -301,8 +303,8 @@ export const CloudShader = ({
       const resize = () => {
         if (!gl || !canvas) return;
         const isMobile = window.innerWidth < 768;
-        const scaleFactor = isMobile ? 0.5 : 1.0;
-        const maxDpr = isMobile ? 1.0 : 1.5;
+        const scaleFactor = isMobile ? 0.35 : 1.0;
+        const maxDpr = isMobile ? 0.8 : 1.5;
         const dpr = Math.min(window.devicePixelRatio || 1, maxDpr) * scaleFactor;
 
         const width = canvas.clientWidth || window.innerWidth;
@@ -328,7 +330,15 @@ export const CloudShader = ({
         if (!running || !gl) return;
 
         const isMobile = window.innerWidth < 768;
-        const minInterval = isMobile ? 32 : 16;
+
+        // Auto-pause rendering loop during active touch scroll on low-end mobile
+        // to yield 100% GPU fillrate to smooth native scrolling
+        if (isScrolling && isMobile) {
+          frame = 0;
+          return;
+        }
+
+        const minInterval = isMobile ? 36 : 16;
         const delta = now - lastDrawTime;
 
         if (delta < minInterval) {
@@ -374,13 +384,29 @@ export const CloudShader = ({
       }
     };
 
+    // Listener scroll mobile untuk auto-pause rendering saat user aktif menggulir layar
+    const handleScroll = () => {
+      if (window.innerWidth >= 768) return;
+      isScrolling = true;
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        isScrolling = false;
+        if (running && !frame && !reduceMotion && drawFn && !document.hidden) {
+          frame = requestAnimationFrame(drawFn);
+        }
+      }, 180);
+    };
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       running = false;
       clearTimeout(initTimer);
+      if (scrollTimer) clearTimeout(scrollTimer);
       if (frame) cancelAnimationFrame(frame);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("scroll", handleScroll);
       if (observer) observer.disconnect();
       if (gl) {
         if (buffer) gl.deleteBuffer(buffer);

@@ -22,6 +22,7 @@ export default function RichTextEditor({
 }) {
   const editorRef = useRef(null);
   const isTypingRef = useRef(false);
+  const activeStatesRafRef = useRef(null);
 
   // Active command states (for highlighting buttons when cursor is on bold/italic/etc.)
   const [activeStates, setActiveStates] = useState({
@@ -32,20 +33,34 @@ export default function RichTextEditor({
     orderedList: false,
   });
 
-  // Update active state on selection change
+  // Update active state on selection change with requestAnimationFrame throttle
   const updateActiveStates = useCallback(() => {
     if (typeof document === 'undefined') return;
-    try {
-      setActiveStates({
-        bold: document.queryCommandState('bold'),
-        italic: document.queryCommandState('italic'),
-        underline: document.queryCommandState('underline'),
-        unorderedList: document.queryCommandState('insertUnorderedList'),
-        orderedList: document.queryCommandState('insertOrderedList'),
-      });
-    } catch {
-      // Ignore if document not active
-    }
+    if (activeStatesRafRef.current) return;
+
+    activeStatesRafRef.current = requestAnimationFrame(() => {
+      activeStatesRafRef.current = null;
+      try {
+        setActiveStates({
+          bold: document.queryCommandState('bold'),
+          italic: document.queryCommandState('italic'),
+          underline: document.queryCommandState('underline'),
+          unorderedList: document.queryCommandState('insertUnorderedList'),
+          orderedList: document.queryCommandState('insertOrderedList'),
+        });
+      } catch {
+        // Ignore if document not active
+      }
+    });
+  }, []);
+
+  // Cleanup pending rAF on unmount
+  useEffect(() => {
+    return () => {
+      if (activeStatesRafRef.current) {
+        cancelAnimationFrame(activeStatesRafRef.current);
+      }
+    };
   }, []);
 
   // Sync value from prop to DOM when not typing (e.g. initial load or external reset)
