@@ -147,13 +147,13 @@ export default function RichTextEditor({
   return (
     <div
       className={cn(
-        'rounded-xl border border-white/[0.08] overflow-hidden bg-white/[0.02]',
+        'rounded-xl border border-white/[0.12] overflow-hidden bg-black/40',
         '[html[data-theme="celestial-sky"]_&]:bg-white [html[data-theme="celestial-sky"]_&]:border-sky-200/80 [html[data-theme="celestial-sky"]_&]:shadow-sm',
         className
       )}
     >
       {/* Visual Toolbar (Apple Notes & Notion Inspired) */}
-      <div className="flex items-center flex-wrap gap-1 p-1.5 bg-white/[0.04] [html[data-theme='celestial-sky']_&]:bg-sky-50/70 border-b border-white/[0.08] [html[data-theme='celestial-sky']_&]:border-sky-100">
+      <div className="flex items-center flex-wrap gap-1 p-1.5 bg-black/50 [html[data-theme='celestial-sky']_&]:bg-sky-50/70 border-b border-white/[0.08] [html[data-theme='celestial-sky']_&]:border-sky-100">
         {/* Bold Button */}
         <button
           type="button"

@@ -144,14 +144,14 @@ export default function Modal({
           aria-modal="true"
           aria-labelledby="modal-title"
         >
-          {/* Overlay with subtle blur (Desktop only, mobile adalah layar penuh native) */}
+          {/* Overlay Backdrop universal: Meredupkan konten halaman di belakangnya pada semua ukuran layar */}
           <motion.div
             key="modal-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="hidden lg:block fixed inset-0 bg-black/60 backdrop-blur-[4px]"
+            className="fixed inset-0 bg-black/75 backdrop-blur-[6px]"
             onClick={onClose}
             aria-hidden="true"
           />

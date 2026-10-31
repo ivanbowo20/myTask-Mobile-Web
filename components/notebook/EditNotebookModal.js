@@ -161,13 +161,13 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
       description="Ubah materi atau ringkasan belajar Anda. Perubahan tersimpan secara otomatis."
       maxWidth="max-w-2xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+      <form onSubmit={handleSubmit} className="space-y-4 pt-1 flex flex-col min-h-full">
         {/* Title Input & Cloud Sync Status */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label
               htmlFor="edit-notebook-title-input"
-              className="text-xs font-semibold text-zinc-300"
+              className="text-xs font-semibold text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-800"
             >
               Judul Catatan Materi <span className="text-amber-500">*</span>
             </label>
@@ -201,8 +201,8 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
             maxLength={255}
             className={cn(
               'w-full px-3.5 py-2.5 rounded-xl text-sm font-medium',
-              'bg-white/[0.04] border border-white/[0.1] text-zinc-100 placeholder:text-zinc-500',
-              'focus:outline-none focus:border-amber-500/70 focus:ring-1 focus:ring-amber-500/50',
+              'bg-black/40 [html[data-theme="celestial-sky"]_&]:bg-white/80 border border-white/[0.12] [html[data-theme="celestial-sky"]_&]:border-sky-200/80 text-zinc-100 [html[data-theme="celestial-sky"]_&]:text-slate-900 placeholder:text-zinc-500 [html[data-theme="celestial-sky"]_&]:placeholder:text-slate-400',
+              'focus:outline-none focus:bg-black/60 focus:border-amber-500/70 focus:ring-1 focus:ring-amber-500/50 [html[data-theme="celestial-sky"]_&]:focus:bg-white [html[data-theme="celestial-sky"]_&]:focus:border-sky-500',
               'transition-all duration-150',
               errorJudul && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/50'
             )}
@@ -293,8 +293,8 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
           </label>
         </div>
 
-        {/* Modal Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">
+        {/* Sticky Footer Actions (Stays anchored at bottom of screen / adapts above keyboard) */}
+        <div className="sticky bottom-0 z-10 bg-[var(--theme-nav-bg,#0C0A09)]/95 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:p-0 lg:pt-3 border-t border-white/10 lg:border-white/[0.08] flex items-center justify-between -mx-4 lg:-mx-0 mt-auto">
           {/* Delete action button */}
           <button
             type="button"
