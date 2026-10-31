@@ -10,6 +10,7 @@ import {
   ListOrdered,
   Quote,
   RemoveFormatting,
+  TextSelect,
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,8 @@ export default function RichTextEditor({
   const editorRef = useRef(null);
   const isTypingRef = useRef(false);
   const activeStatesRafRef = useRef(null);
+  const savedRangeRef = useRef(null);
+  const lastActionTimeRef = useRef(0);
 
   // Active command states (for highlighting buttons when cursor is on bold/italic/etc.)
   const [activeStates, setActiveStates] = useState({
@@ -32,6 +35,32 @@ export default function RichTextEditor({
     unorderedList: false,
     orderedList: false,
   });
+
+  // Save current selection range inside editorRef
+  const saveSelection = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && editorRef.current) {
+      try {
+        const range = sel.getRangeAt(0);
+        if (editorRef.current.contains(range.commonAncestorContainer)) {
+          savedRangeRef.current = range.cloneRange();
+        }
+      } catch {}
+    }
+  }, []);
+
+  // Restore saved selection range
+  const restoreSelection = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (savedRangeRef.current && window.getSelection) {
+      try {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRangeRef.current);
+      } catch {}
+    }
+  }, []);
 
   // Update active state on selection change with requestAnimationFrame throttle
   const updateActiveStates = useCallback(() => {
@@ -54,6 +83,17 @@ export default function RichTextEditor({
     });
   }, []);
 
+  // Continuously track selection changes to keep savedRangeRef fresh
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    function onSelectionChange() {
+      saveSelection();
+      updateActiveStates();
+    }
+    document.addEventListener('selectionchange', onSelectionChange);
+    return () => document.removeEventListener('selectionchange', onSelectionChange);
+  }, [saveSelection, updateActiveStates]);
+
   // Cleanup pending rAF on unmount
   useEffect(() => {
     return () => {
@@ -68,6 +108,14 @@ export default function RichTextEditor({
     const el = editorRef.current;
     if (!el) return;
 
+    // Do not clobber DOM and destroy selection while user is focused inside editor, unless externally reset to empty
+    const isEditorFocused =
+      typeof document !== 'undefined' &&
+      (document.activeElement === el || el.contains(document.activeElement));
+    if (isEditorFocused && value) {
+      return;
+    }
+
     if (!isTypingRef.current && el.innerHTML !== value) {
       // Clean any rogue font tags from older pastes before rendering
       const cleaned = (value || '').replace(/<font[^>]*>/gi, '').replace(/<\/font>/gi, '');
@@ -81,27 +129,63 @@ export default function RichTextEditor({
       const el = editorRef.current;
       if (!el) return;
 
+      isTypingRef.current = true;
       el.focus();
+      restoreSelection();
+
       try {
         document.execCommand(command, false, arg);
       } catch (err) {
         console.warn('execCommand error:', err);
       }
 
+      saveSelection();
+
       // Notify change
       if (onChange) {
         onChange(el.innerHTML);
       }
       updateActiveStates();
+
+      setTimeout(() => {
+        isTypingRef.current = false;
+      }, 150);
     },
-    [onChange, updateActiveStates]
+    [onChange, updateActiveStates, restoreSelection, saveSelection]
   );
+
+  // Select All Content (One-touch on mobile, instant on desktop)
+  const handleSelectAll = useCallback(() => {
+    const el = editorRef.current;
+    if (!el) return;
+
+    el.focus();
+    try {
+      if (!document.execCommand('selectAll', false, null)) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    saveSelection();
+    updateActiveStates();
+  }, [saveSelection, updateActiveStates]);
 
   function handleInput() {
     isTypingRef.current = true;
     const el = editorRef.current;
     if (!el) return;
 
+    saveSelection();
     if (onChange) {
       onChange(el.innerHTML);
     }
@@ -132,17 +216,44 @@ export default function RichTextEditor({
   }
 
   function handleKeyUp() {
+    saveSelection();
     updateActiveStates();
   }
 
   function handleMouseUp() {
+    saveSelection();
     updateActiveStates();
   }
 
-  // Helper for button onMouseDown: e.preventDefault() prevents editor from losing selection!
-  const preventFocusLoss = (e) => {
-    e.preventDefault();
-  };
+  // Helper for buttons: prevents editor from losing selection and runs action smoothly across mouse & touch
+  const handleButtonAction = useCallback(
+    (actionFn) => {
+      return {
+        onMouseDown: (e) => {
+          e.preventDefault();
+          saveSelection();
+        },
+        onTouchStart: () => {
+          saveSelection();
+        },
+        onTouchEnd: (e) => {
+          e.preventDefault();
+          const now = Date.now();
+          if (now - lastActionTimeRef.current < 100) return;
+          lastActionTimeRef.current = now;
+          actionFn();
+        },
+        onClick: (e) => {
+          e.preventDefault();
+          const now = Date.now();
+          if (now - lastActionTimeRef.current < 100) return;
+          lastActionTimeRef.current = now;
+          actionFn();
+        },
+      };
+    },
+    [saveSelection]
+  );
 
   return (
     <div
@@ -157,8 +268,7 @@ export default function RichTextEditor({
         {/* Bold Button */}
         <button
           type="button"
-          onMouseDown={preventFocusLoss}
-          onClick={() => execCmd('bold')}
+          {...handleButtonAction(() => execCmd('bold'))}
           title="Tebal (Ctrl+B)"
           aria-label="Format teks tebal"
           className={cn(
@@ -174,8 +284,7 @@ export default function RichTextEditor({
         {/* Italic Button */}
         <button
           type="button"
-          onMouseDown={preventFocusLoss}
-          onClick={() => execCmd('italic')}
+          {...handleButtonAction(() => execCmd('italic'))}
           title="Miring (Ctrl+I)"
           aria-label="Format teks miring"
           className={cn(
@@ -191,8 +300,7 @@ export default function RichTextEditor({
         {/* Underline Button */}
         <button
           type="button"
-          onMouseDown={preventFocusLoss}
-          onClick={() => execCmd('underline')}
+          {...handleButtonAction(() => execCmd('underline'))}
           title="Garis Bawah (Ctrl+U)"
           aria-label="Format teks garis bawah"
           className={cn(
@@ -210,8 +318,7 @@ export default function RichTextEditor({
         {/* Heading Button */}
         <button
           type="button"
-          onMouseDown={preventFocusLoss}
-          onClick={() => execCmd('formatBlock', '<h2>')}
+          {...handleButtonAction(() => execCmd('formatBlock', '<h2>'))}
           title="Judul Bagian (H2)"
           aria-label="Format judul bab"
           className="p-1.5 rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-200/60 active:scale-95 transition-all cursor-pointer"
@@ -222,8 +329,7 @@ export default function RichTextEditor({
         {/* Bullet List Button */}
         <button
           type="button"
-          onMouseDown={preventFocusLoss}
-          onClick={() => execCmd('insertUnorderedList')}
+          {...handleButtonAction(() => execCmd('insertUnorderedList'))}
           title="Daftar Poin"
           aria-label="Format daftar poin"
           className={cn(
@@ -239,8 +345,7 @@ export default function RichTextEditor({
         {/* Numbered List Button */}
         <button
           type="button"
-          onMouseDown={preventFocusLoss}
-          onClick={() => execCmd('insertOrderedList')}
+          {...handleButtonAction(() => execCmd('insertOrderedList'))}
           title="Daftar Angka (1, 2, 3)"
           aria-label="Format daftar angka"
           className={cn(
@@ -256,8 +361,7 @@ export default function RichTextEditor({
         {/* Quote Button */}
         <button
           type="button"
-          onMouseDown={preventFocusLoss}
-          onClick={() => execCmd('formatBlock', '<blockquote>')}
+          {...handleButtonAction(() => execCmd('formatBlock', '<blockquote>'))}
           title="Kutipan (Quote)"
           aria-label="Format kutipan"
           className="p-1.5 rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-200/60 active:scale-95 transition-all cursor-pointer"
@@ -265,11 +369,23 @@ export default function RichTextEditor({
           <Quote className="w-3.5 h-3.5" />
         </button>
 
+        <span className="w-px h-4 bg-white/[0.1] [html[data-theme='celestial-sky']_&]:bg-slate-300 mx-0.5" />
+
+        {/* Select All Button (One-Touch on Mobile & Desktop) */}
+        <button
+          type="button"
+          {...handleButtonAction(handleSelectAll)}
+          title="Pilih Semua Teks (Ctrl+A)"
+          aria-label="Pilih semua isi teks"
+          className="p-1.5 rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-amber-300 [html[data-theme='celestial-sky']_&]:hover:text-sky-700 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-sky-100 active:scale-95 transition-all cursor-pointer"
+        >
+          <TextSelect className="w-3.5 h-3.5" />
+        </button>
+
         {/* Remove Format Button */}
         <button
           type="button"
-          onMouseDown={preventFocusLoss}
-          onClick={() => execCmd('removeFormat')}
+          {...handleButtonAction(() => execCmd('removeFormat'))}
           title="Hapus Format (Kembali Teks Biasa)"
           aria-label="Hapus format terpilih"
           className="p-1.5 rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-rose-400 [html[data-theme='celestial-sky']_&]:hover:text-rose-600 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-rose-50 active:scale-95 transition-all cursor-pointer"
@@ -292,6 +408,7 @@ export default function RichTextEditor({
         onKeyDown={handleKeyDown}
         onKeyUp={handleKeyUp}
         onMouseUp={handleMouseUp}
+        onTouchEnd={handleMouseUp}
         data-placeholder={placeholder}
         className={cn(
           'w-full px-4 py-3 min-h-[200px] max-h-[420px] overflow-y-auto text-sm leading-relaxed',

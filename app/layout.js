@@ -62,7 +62,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className="min-h-[100dvh] text-[#FAFAFA] font-sans antialiased selection:bg-[#FAFAFA] selection:text-[#0A0A0A] relative bg-[var(--theme-base-bg,#0C0A09)]">
+      <body className="min-h-[100dvh] text-[#FAFAFA] font-sans antialiased relative bg-[var(--theme-base-bg,#0C0A09)]">
         <ThemeProvider>
           {/* Dynamic Theme Background Canvas with WCAG AA Scrim Mask */}
           <ThemeBackground />

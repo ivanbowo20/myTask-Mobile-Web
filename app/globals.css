@@ -78,6 +78,51 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Theme-Aware Text Selection (High Contrast on Dark & Light Surfaces) */
+::selection {
+  background: var(--theme-accent, #D97706);
+  color: #FFFFFF;
+}
+
+::-moz-selection {
+  background: var(--theme-accent, #D97706);
+  color: #FFFFFF;
+}
+
+/* Light Mode (Celestial Sky) Clear Blue Selection Contrast */
+html[data-color-scheme="light"] ::selection,
+html[data-theme="celestial-sky"] ::selection {
+  background: rgba(2, 132, 199, 0.28) !important;
+  color: #0369A1 !important;
+}
+
+html[data-color-scheme="light"] ::-moz-selection,
+html[data-theme="celestial-sky"] ::-moz-selection {
+  background: rgba(2, 132, 199, 0.28) !important;
+  color: #0369A1 !important;
+}
+
+/* Modal ContentEditable Specific Selection Reinforcement */
+.glass-modal [contenteditable="true"]::selection,
+.glass-modal [contenteditable="true"] *::selection {
+  background: var(--theme-accent, #D97706);
+  color: #FFFFFF;
+}
+
+html[data-theme="celestial-sky"] .glass-modal [contenteditable="true"]::selection,
+html[data-theme="celestial-sky"] .glass-modal [contenteditable="true"] *::selection {
+  background: #BAE6FD !important;
+  color: #0369A1 !important;
+}
+
+/* Mobile Touch & Native Selection Hardening for ContentEditable */
+[contenteditable="true"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -webkit-touch-callout: default !important;
+  touch-action: pan-y;
+}
+
 /* Typography utility classes */
 .font-heading {
   font-family: var(--font-heading);
