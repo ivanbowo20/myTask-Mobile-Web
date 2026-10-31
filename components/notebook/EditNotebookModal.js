@@ -161,7 +161,7 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
       description="Ubah materi atau ringkasan belajar Anda. Perubahan tersimpan secara otomatis."
       maxWidth="max-w-2xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-4 pt-1 flex flex-col min-h-full">
+      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
         {/* Title Input & Cloud Sync Status */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
@@ -201,8 +201,8 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
             maxLength={255}
             className={cn(
               'w-full px-3.5 py-2.5 rounded-xl text-sm font-medium',
-              'bg-black/40 [html[data-theme="celestial-sky"]_&]:bg-white/80 border border-white/[0.12] [html[data-theme="celestial-sky"]_&]:border-sky-200/80 text-zinc-100 [html[data-theme="celestial-sky"]_&]:text-slate-900 placeholder:text-zinc-500 [html[data-theme="celestial-sky"]_&]:placeholder:text-slate-400',
-              'focus:outline-none focus:bg-black/60 focus:border-amber-500/70 focus:ring-1 focus:ring-amber-500/50 [html[data-theme="celestial-sky"]_&]:focus:bg-white [html[data-theme="celestial-sky"]_&]:focus:border-sky-500',
+              'bg-white/[0.04] [html[data-theme="celestial-sky"]_&]:bg-white/90 border border-white/[0.12] [html[data-theme="celestial-sky"]_&]:border-sky-200/80 text-zinc-100 [html[data-theme="celestial-sky"]_&]:text-slate-900 placeholder:text-zinc-500 [html[data-theme="celestial-sky"]_&]:placeholder:text-slate-500',
+              'focus:outline-none focus:border-amber-500/70 focus:ring-1 focus:ring-amber-500/50 [html[data-theme="celestial-sky"]_&]:focus:border-sky-500',
               'transition-all duration-150',
               errorJudul && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/50'
             )}

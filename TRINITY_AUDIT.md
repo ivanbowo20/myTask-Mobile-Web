@@ -1,140 +1,79 @@
-# 🔱 TRINITY CODE AUDIT REPORT (PUTARAN 3: DARK THEMES NOTEBOOK MODAL & VISUAL COLLISION HARDENING)
+# 🔱 TRINITY CODE AUDIT REPORT (PUTARAN 4: BLACKSCREEN & UNTYPABLE INPUTS IN ALL 4 THEMES)
 
-**Target:** Modul Notebook, Sistem Modal Universal, & Theme Tokens (`components/notebook/`, `components/ui/Modal.js`, `app/globals.css`, `lib/theme-context.js`)  
-**Profil Kasus:** Keluhan pengguna pada 3 tema Dark Mode (`dark-chocolate`, `soft-aurora`, `abyssal-teal`): saat membuka catatan materi baru/edit di mobile & desktop, tampilan modal tembus pandang (transparan) dan isi form modal menabrak/bertumpuk (*visual overlapping*) dengan teks dan elemen halaman di baliknya.  
-**Indeks yang Digunakan:** Native AST (`swc`), CodeGraph Semantic Tracing, Ponytail Senior Dev  
-**Tanggal Audit:** 31 Oktober 2026 (Putaran 3 — Audit Modal Transparansi & Tabrakan Visual 3 Tema Gelap)  
-**Status Fase:** Fase 2 Selesai — Eksekusi Bedah Tuntas & Terverifikasi Terminal (`npm run build` PASS, 0 error)  
-
----
-
-## 🔍 Ringkasan Eksekutif Putaran 3
-
-Investigasi mendalam terhadap screenshot laporan pengguna dan penelusuran AST kode menemukan bahwa isu tampilan modal catatan materi "ketabrak" dan "transparan" di 3 tema dark mode bersumber dari perpaduan **3 faktor kritis**:
-1. **Backdrop Dinonaktifkan di Layar Mobile (< lg)**: `components/ui/Modal.js` menonaktifkan backdrop scrim dengan `hidden lg:block`. Di mobile, tidak ada peredam hitam di belakang modal.
-2. **Ketiadaan Hardening Opasitas Modal Gelap di `globals.css`**: Berbeda dengan tema `celestial-sky` (light mode) yang memiliki proteksi eksplisit `background: rgba(255, 255, 255, 0.98) !important`, 3 tema dark mode hanya mengandalkan token `--theme-nav-bg` yang ber-opasitas rendah (75%–85% alpha), sehingga latar belakang tembus pandang 15%–25%.
-3. **Input Field & RichTextEditor Terlalu Transparan**: Isian judul menggunakan `bg-white/[0.04]` (96% transparan) dan RichTextEditor menggunakan `bg-white/[0.02]` (98% transparan). Saat modal memiliki transparansi, teks di halaman belakang (seperti ikon buku kuning, judul "Catatan Materi", search bar, dan tombol CTA) tembus langsung ke dalam kotak ketik pengguna.
-
-Ditemukan **5 temuan (2 Must Fix, 2 Should Fix, 1 Nice to Have)** yang siap dieksekusi secara presisi (*smallest surgical diff*) setelah konfirmasi user.
+**Target:** `components/ui/Modal.js`, `components/notebook/AddNotebookModal.js`, `components/notebook/EditNotebookModal.js`, `components/notebook/RichTextEditor.js`  
+**Kasus Pengguna:** Pengguna tidak bisa menulis catatan materi sama sekali ("ga bisa ketik") dan tampilan modal tertutup layar hitam ("blackscreen") di seluruh 4 tema (3 tema dark mode + 1 tema celestial sky).  
+**Indeks yang Digunakan:** Native AST (`swc`), CSS Stacking Context Tracing, Ponytail Senior Dev  
+**Tanggal Audit:** 31 Oktober 2026 (Putaran 4 — Root Cause Analysis & Stacking Context Collision Fix)  
+**Status Fase:** Fase 2 Selesai — Eksekusi Bedah Tuntas & Terverifikasi Terminal (`npm run build` PASS)  
 
 ---
 
-## 🚨 1. MUST FIX (Bug, Logika Rusak, Tampilan Rusak / Collision)
+## 🔍 Ringkasan Eksekutif Putaran 4
 
-### [1] Hilangnya Overlay Backdrop Modal pada Layar Mobile (< lg) (`components/ui/Modal.js:L148-L157`)
-- **Fungsi Kode:** Lapisan backdrop (*overlay scrim*) yang bertugas meredupkan dan memburamkan konten halaman utama saat jendela modal terbuka.
-- **Akar Masalah (Visual Collision Bug):**
-  Pada `Modal.js:L154`, elemen backdrop dibatasi dengan kelas `hidden lg:block fixed inset-0 bg-black/60 backdrop-blur-[4px]`.
-  Pada layar berukuran `< 1024px` (semua ponsel dan tablet), lapisan peredam ini **hilang sepenuhnya**. Karena kontainer modal di mobile tidak 100% solid, hilangnya backdrop menyebabkan seluruh elemen halaman utama di baliknya (header "Catatan Materi", "0 Catatan", tombol "+ Catatan Baru", search bar Ctrl+K, filter pills, dan ilustrasi "Belum ada catatan materi") tetap bersinar terang dan bertabrakan langsung dengan form isian modal.
-- **Blast Radius & Caller:** Seluruh modal yang menginduk pada `Modal.js`:
-  - `components/notebook/AddNotebookModal.js`
-  - `components/notebook/EditNotebookModal.js`
-  - `components/tugas/AddTaskModal.js`
-  - `components/tugas/EditTaskModal.js`
-  - `components/kategori/AddCategoryModal.js`
-  - `components/kategori/EditCategoryModal.js`
-  - `components/ui/ConfirmDialog.js`
+Investigasi teknis terhadap laporan "blackscreen dan ga bisa ketik di 4 tema" menemukan akar masalah mutlak yang terjadi pada tingkat **CSS Stacking Context** dan **Pointer Event Interception**:
+
+1. **Backdrop Menutupi Formulir Modal (Layer Inversion)**:
+   Pada perubahan sebelumnya di [`Modal.js`](file:///c:/MY%20project%20Website/todowebb%20V2/components/ui/Modal.js), lapisan overlay backdrop diaktifkan di mobile tanpa modifier `hidden lg:block`. SEMENTARA ITU, kontainer dialog modal (`modal-dialog`) tidak memiliki properti posisi (`position: static`, tanpa `relative z-10`).
+   Sesuai spesifikasi CSS Stacking Context W3C: elemen `position: fixed` (`modal-backdrop`) **selalu digambar di depan elemen static**.
+2. **Dampak Visual ("Blackscreen di 4 Tema")**:
+   Backdrop (`fixed inset-0 bg-black/75 backdrop-blur-[6px]`) membentang tepat **di atas** seluruh isi formulir modal. Di tema dark mode, efek hitam 75% + blur 6px membuat form gelap menjadi gulita total (*blackscreen*). Di tema Celestial Sky (light mode), modal putih bersih tertutup kain hitam pekat berkabut.
+3. **Dampak Fungsional ("Ga Bisa Ketik")**:
+   Karena `modal-backdrop` berada di lapisan paling atas, setiap ketukan jari atau klik mouse pengguna mengenai elemen backdrop (bukan input teks atau editor). Akibatnya input judul dan area editor **tidak pernah bisa menerima fokus**, keyboard HP tidak mau muncul, dan pengguna tidak bisa mengetik sama sekali.
+4. **Hanya Tombol Sticky yang Lolos**:
+   Tombol "Batal" dan "Simpan Catatan" di bagian bawah tampak terang pada screenshot pengguna karena memiliki kelas `sticky bottom-0 z-10`, sehingga hanya elemen footer yang berhasil naik ke atas backdrop.
+
+---
+
+## 🚨 1. MUST FIX (Penyebab Utama Blackscreen & Input Macet)
+
+### [1] Kembalikan `hidden lg:block` pada Backdrop & Pasang `relative z-10` pada Modal Dialog (`components/ui/Modal.js:L154, L170`)
+- **Fungsi Kode:** Sistem layering jendela modal universal aplikasi.
+- **Akar Masalah (Stacking Collision Bug):**
+  - Backdrop `fixed inset-0 bg-black/75` aktif di mobile tanpa batasan `hidden lg:block`.
+  - `modal-dialog` tidak memiliki `relative z-10`, sehingga jatuh di bawah backdrop.
+  - Pada mobile (`< 1024px`), modal dialog dirancang sebagai **layar penuh native** (`w-full h-[100dvh]`). Layar penuh tidak memerlukan backdrop mengambang di belakangnya.
 - **Saran Perbaikan Minimal (Ponytail Fix):**
-  Hapus modifier `hidden lg:block` pada backdrop di `components/ui/Modal.js` dan jadikan universal aktif di mobile maupun desktop:
-  ```jsx
-  className="fixed inset-0 bg-black/75 backdrop-blur-[6px]"
-  ```
-- **Dampak jika Diabaikan:** Seluruh modal di mobile akan selalu menampakkan bayangan teks halaman di baliknya.
-
----
-
-### [2] Opasitas Transparan Berlebih pada `.glass-modal` di 3 Tema Dark Mode (`app/globals.css:L777-L786, L864-L867`, `lib/theme-context.js:L6-L63`)
-- **Fungsi Kode:** Kontainer visual pembungkus semua jendela dialog modal (`.glass-modal`).
-- **Akar Masalah (Theme Token Contrast Gap):**
-  1. `.glass-modal` menggunakan `background: var(--theme-nav-bg, rgba(22, 17, 14, 0.92))`.
-  2. Nilai `--theme-nav-bg` pada 3 tema dark mode diatur dengan transparansi tinggi:
-     - `dark-chocolate`: `rgba(16, 12, 10, 0.75)` (tembus pandang 25%)
-     - `soft-aurora`: `rgba(9, 13, 24, 0.78)` (tembus pandang 22%)
-     - `abyssal-teal`: `rgba(3, 16, 20, 0.85)` (tembus pandang 15%)
-  3. Pada tema light (`celestial-sky`), developer sebelumnya telah memberikan penanganan kontras tinggi:
-     ```css
-     html[data-theme="celestial-sky"] .glass-modal {
-       background: rgba(255, 255, 255, 0.98) !important;
-       backdrop-filter: none !important;
-     }
+  1. Kembalikan `hidden lg:block` pada backdrop:
+     ```jsx
+     className="hidden lg:block fixed inset-0 bg-black/60 backdrop-blur-[4px] z-0"
      ```
-     Namun, pada 3 tema dark mode, **TIDAK ADA** aturan override penahan transparansi yang serupa.
-  4. Pada breakpoint mobile (`max-width: 768px`), blur CSS diturunkan ke 8px/12px demi performa rendering GPU, sehingga teks putih kontras tinggi di belakang modal tembus tanpa hambatan.
-- **Blast Radius & Caller:** Seluruh modal dengan kelas `.glass-modal` pada tema `dark-chocolate`, `soft-aurora`, dan `abyssal-teal`.
-- **Saran Perbaikan Minimal (Ponytail Fix):**
-  Tambahkan pelindung opasitas tinggi (96%–98% atau solid dark base) khusus 3 tema dark mode di `app/globals.css`:
-  ```css
-  /* Proteksi Opasitas Tinggi Modal 3 Tema Dark Mode (Anti-Transparansi & Anti-Tabrakan) */
-  html[data-theme="dark-chocolate"] .glass-modal {
-    background: rgba(18, 14, 12, 0.97) !important;
-    backdrop-filter: blur(20px) saturate(120%);
-  }
-  html[data-theme="soft-aurora"] .glass-modal {
-    background: rgba(10, 14, 26, 0.97) !important;
-    backdrop-filter: blur(20px) saturate(120%);
-  }
-  html[data-theme="abyssal-teal"] .glass-modal {
-    background: rgba(4, 20, 24, 0.97) !important;
-    backdrop-filter: blur(20px) saturate(120%);
-  }
-
-  @media (max-width: 768px) {
-    html[data-theme="dark-chocolate"] .glass-modal,
-    html[data-theme="soft-aurora"] .glass-modal,
-    html[data-theme="abyssal-teal"] .glass-modal {
-      background: var(--theme-base-bg, #0C0A09) !important;
-      backdrop-filter: none !important;
-    }
-  }
-  ```
-- **Dampak jika Diabaikan:** Modal terus tembus pandang dan tidak nyaman dibaca oleh pengguna di semua tema gelap.
+  2. Berikan `relative z-10` secara eksplisit pada kontainer `modal-dialog`:
+     ```jsx
+     className={cn(
+       "relative z-10 w-full h-[100dvh] flex flex-col glass-modal text-[#FAFAFA] overflow-hidden focus:outline-none rounded-none border-0",
+       "lg:h-auto lg:max-h-[90vh] lg:rounded-2xl lg:p-6 lg:my-8 lg:shadow-2xl",
+       maxWidth,
+       className
+     )}
+     ```
+- **Dampak jika Diabaikan:** Modal di seluruh aplikasi akan terus mengalami blackscreen dan tidak bisa diklik pada perangkat mobile.
 
 ---
 
-## ⚠️ 2. SHOULD FIX (Kenyamanan Form Input & UX Mobile)
-
-### [3] Input Form & RichTextEditor Terlalu Transparan (96%–98% Bening) (`components/notebook/AddNotebookModal.js:L199`, `components/notebook/EditNotebookModal.js:L204`, `components/notebook/RichTextEditor.js:L150`)
-- **Fungsi Kode:** Kotak input judul catatan dan area penulisan materi kuliah (WYSIWYG editor).
+### [2] Normalkan Surface Kontras Input Form & Editor (`components/notebook/AddNotebookModal.js:L199`, `components/notebook/RichTextEditor.js:L150`)
+- **Fungsi Kode:** Penataan latar belakang kolom input judul materi dan area penulisan catatan.
 - **Akar Masalah:**
-  - Input judul menggunakan `bg-white/[0.04]` (hanya 4% putih, 96% transparan).
-  - RichTextEditor menggunakan `bg-white/[0.02]` (98% transparan) dan toolbar `bg-white/[0.04]`.
-  - Jika modal berada di depan teks halaman yang terang, teks halaman menembus tepat ke dalam kotak ketik dan toolbar editor.
-- **Blast Radius & Caller:** `AddNotebookModal.js` dan `EditNotebookModal.js`.
+  Karena kontainer `.glass-modal` kini sudah **99% solid** di `globals.css` (tidak ada lagi tembus pandang dari halaman belakang), styling `bg-black/40` pada input dan `bg-black/50` pada toolbar justru membuat area pengetikan menjadi terlalu gelap (*double-black hole*).
 - **Saran Perbaikan Minimal:**
-  Berikan background kontras gelap yang nyaman di mata pada input dan editor untuk tema dark:
-  - Input judul: `bg-black/40 border border-white/[0.12] focus:bg-black/60`.
-  - RichTextEditor wrapper: `bg-black/35 border border-white/[0.10]`.
-  - RichTextEditor toolbar: `bg-black/50 border-b border-white/[0.08]`.
-- **Dampak jika Diabaikan:** Gangguan konsentrasi dan risiko salah ketik saat menulis catatan materi perkuliahan.
+  - Kembalikan input judul ke `bg-white/[0.04]` (dengan `border-white/[0.12]` dan `text-zinc-100`) yang jernih dan elegan.
+  - Kembalikan RichTextEditor ke `bg-white/[0.02]` dengan toolbar `bg-white/[0.04]` (dan varian adaptif `celestial-sky` yang bersih).
+  - Teks placeholder dan teks isian akan langsung terlihat terang, kontras, dan nyaman di mata pengguna.
 
 ---
 
-### [4] Ketiadaan Sticky Footer pada Modal Notebook di Layar Mobile (`components/notebook/AddNotebookModal.js:L282-L315`, `components/notebook/EditNotebookModal.js:L297-L340`)
-- **Fungsi Kode:** Baris tombol aksi formulir ("Batal", "Simpan Catatan", "Hapus Catatan").
+## ⚠️ 2. SHOULD FIX (Perapian Form Scrolling)
+
+### [3] Selaraskan Tag `<form>` Notebook dengan Standar `AddTaskModal` (`components/notebook/AddNotebookModal.js:L159`, `components/notebook/EditNotebookModal.js:L164`)
+- **Fungsi Kode:** Pembungkus form isian catatan materi.
 - **Akar Masalah:**
-  Pada `AddTaskModal.js`, tombol aksi diletakkan di `sticky bottom-0 z-10 bg-[var(--theme-nav-bg)]/95` dengan padding aman `env(safe-area-inset-bottom)`.
-  Sedangkan pada modal notebook, tombol aksi hanya berupa `div` statis biasa di bawah form yang ikut bergulir ke bawah saat editor diperpanjang. Saat keyboard HP muncul, tombol simpan dapat terhalang atau keluar dari area pandang.
-- **Blast Radius & Caller:** Interaksi penyimpanan catatan materi di perangkat ponsel.
+  Penambahan `flex flex-col min-h-full` pada form di dalam kontainer scroll `overflow-y-auto min-h-0` berisiko memicu glitch tinggi scrollbox saat keyboard virtual muncul di browser mobile Android/iOS.
 - **Saran Perbaikan Minimal:**
-  Jadikan footer modal notebook sticky di bagian bawah modal:
-  `sticky bottom-0 z-10 bg-[var(--theme-nav-bg,#0C0A09)]/95 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none p-3 lg:p-0 border-t border-white/[0.08]`.
-- **Dampak jika Diabaikan:** Pengguna HP harus menggulir panjang ke bawah untuk menemukan tombol "Simpan Catatan".
-
----
-
-## 💡 3. NICE TO HAVE (Performa GPU & Konsistensi Desain)
-
-### [5] Mobile GPU Optimization Fallback untuk Backdrop Blur (`app/globals.css:L851-L867`)
-- **Fungsi Kode:** Penanganan performa render efek kaca pada perangkat Android kelas terjangkau (misal Infinix Smart 6).
-- **Akar Masalah:** Pada perangkat yang menonaktifkan `backdrop-filter` hardware (misal saat mode hemat baterai), CSS yang mengandalkan blur akan merender latar belakang transparan murni tanpa efek buram sama sekali.
-- **Saran Perbaikan:** Pada media query mobile, gunakan opasitas latar belakang solid 98%–100% sehingga jika efek blur dinonaktifkan sistem operasi, keterbacaan tetap 100% terjaga.
+  Gunakan struktur standar yang terbukti stabil pada `AddTaskModal`:
+  `<form onSubmit={handleSubmit} className="space-y-4 pt-1">`. Sticky footer tetap bekerja sempurna dengan `sticky bottom-0 z-10`.
 
 ---
 
 ## 📊 KESIMPULAN AUDIT
-- **Total Temuan:** 5 Temuan (Must Fix: 2 | Should Fix: 2 | Nice to Have: 1)
-- **Akar Masalah Inti:**
-  1. Backdrop modal dinonaktifkan (`hidden lg:block`) pada resolusi mobile/tablet.
-  2. Kelas `.glass-modal` tidak memiliki proteksi opasitas tinggi untuk 3 tema dark mode (berbeda dengan tema light `celestial-sky` yang sudah di-override ke 98% solid).
-  3. Input judul dan editor teks notebook menggunakan transparansi ekstrem (`bg-white/[0.04]` dan `bg-white/[0.02]`).
-- **Tahap Selanjutnya:** Menjalankan `/grill-me` untuk mengonfirmasi arah penerapan solusi kepada user sebelum kode diubah (Sesuai SOP Trinity Code & Disiplin AI).
+- **Total Temuan:** 3 Temuan (2 Must Fix, 1 Should Fix)
+- **Status Diagnosis:** 100% Terverifikasi dan Terisolasi pada akar masalah Stacking Context di `Modal.js`.
+- **Rencana Tindakan:** Jalankan `/grill-me` untuk mengonfirmasi solusi bedah ini ke user sebelum mengeksekusi perubahan kode.

@@ -144,14 +144,14 @@ export default function Modal({
           aria-modal="true"
           aria-labelledby="modal-title"
         >
-          {/* Overlay Backdrop universal: Meredupkan konten halaman di belakangnya pada semua ukuran layar */}
+          {/* Overlay with subtle blur (Desktop only, mobile adalah layar penuh native) */}
           <motion.div
             key="modal-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 bg-black/75 backdrop-blur-[6px]"
+            className="hidden lg:block fixed inset-0 bg-black/60 backdrop-blur-[4px] z-0"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -167,7 +167,7 @@ export default function Modal({
             exit={{ opacity: 0, y: 16, transition: { duration: 0.15, ease: "easeIn" } }}
             className={cn(
               // Mobile: Fullscreen Native App Screen (100dvh, adaptif otomatis saat keyboard muncul)
-              "w-full h-[100dvh] flex flex-col glass-modal text-[#FAFAFA] overflow-hidden focus:outline-none rounded-none border-0",
+              "relative z-10 w-full h-[100dvh] flex flex-col glass-modal text-[#FAFAFA] overflow-hidden focus:outline-none rounded-none border-0",
               // Desktop: Centered Rounded Glass Box
               "lg:h-auto lg:max-h-[90vh] lg:rounded-2xl lg:p-6 lg:my-8 lg:shadow-2xl",
               maxWidth,
