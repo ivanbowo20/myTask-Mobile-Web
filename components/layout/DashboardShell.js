@@ -7,9 +7,13 @@ import AddTaskModal from "@/components/tugas/AddTaskModal";
 import EditTaskModal from "@/components/tugas/EditTaskModal";
 import AddCategoryModal from "@/components/kategori/AddCategoryModal";
 import EditCategoryModal from "@/components/kategori/EditCategoryModal";
+import AddNotebookModal from "@/components/notebook/AddNotebookModal";
+import EditNotebookModal from "@/components/notebook/EditNotebookModal";
+import NotebookWhatsNewModal from "@/components/notebook/NotebookWhatsNewModal";
 import TopProgressBar from "@/components/ui/TopProgressBar";
 import PwaInstallPrompt from "@/components/pwa/PwaInstallPrompt";
 import { useTasks } from "@/lib/task-context";
+import { useNotebooks } from "@/lib/notebook-context";
 
 export default function DashboardShell({ children }) {
   const {
@@ -33,6 +37,19 @@ export default function DashboardShell({ children }) {
     closeEditCategory,
     toggleComplete,
   } = useTasks();
+
+  let notebookContext = null;
+  try {
+    notebookContext = useNotebooks();
+  } catch (e) {
+    // Graceful fallback if rendered outside NotebookProvider
+  }
+
+  const isAddNotebookOpen = notebookContext?.isAddOpen;
+  const closeAddNotebook = notebookContext?.closeAddNotebook;
+  const editingNotebook = notebookContext?.editingNotebook;
+  const closeEditNotebook = notebookContext?.closeEditNotebook;
+  const notebookTotal = notebookContext?.stats?.total || 0;
 
   return (
     <div className="min-h-[100dvh] flex flex-col overflow-x-clip">
@@ -60,6 +77,7 @@ export default function DashboardShell({ children }) {
             selesai: stats.completed,
             kategori: categories.length,
             notifikasi: stats.overdue + stats.today,
+            notebook: notebookTotal,
           }}
         />
 
@@ -74,7 +92,7 @@ export default function DashboardShell({ children }) {
       {/* Mobile Bottom Navigation Bar (5 slots with prominent center add) */}
       <BottomNav onOpenAddTask={openAddTask} />
 
-      {/* Global Modals */}
+      {/* Global Task & Category Modals */}
       <AddTaskModal
         isOpen={isAddTaskOpen}
         onClose={closeAddTask}
@@ -104,6 +122,21 @@ export default function DashboardShell({ children }) {
         kategori={editingCategory}
         onUpdate={updateCategory}
       />
+
+      {/* Global Notebook Modals */}
+      <AddNotebookModal
+        isOpen={Boolean(isAddNotebookOpen)}
+        onClose={closeAddNotebook || (() => {})}
+      />
+
+      <EditNotebookModal
+        isOpen={Boolean(editingNotebook)}
+        onClose={closeEditNotebook || (() => {})}
+        notebook={editingNotebook}
+      />
+
+      {/* One-Time Feature Announcement Modal (v1.3.0 Notebook) */}
+      <NotebookWhatsNewModal />
 
       {/* Floating In-App PWA Install Prompt (Android & iOS) */}
       <PwaInstallPrompt />

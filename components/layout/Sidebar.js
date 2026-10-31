@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ListTodo,
+  BookOpen,
   Folder,
   Settings,
   Shirt,
@@ -28,11 +29,19 @@ export default function Sidebar({
       href: "/tugas",
       label: "Tugas",
       icon: ListTodo,
+      badge: badges.total,
+    },
+    {
+      href: "/notebook",
+      label: "Notebook",
+      icon: BookOpen,
+      badge: badges.notebook,
     },
     {
       href: "/kategori",
       label: "Kategori",
       icon: Folder,
+      badge: badges.kategori,
     },
   ];
 
@@ -45,7 +54,7 @@ export default function Sidebar({
   ];
 
   function renderLinkItem({ href, label, icon: Icon, badge, badgeColor }) {
-    const isActive = pathname === href || (href === "/tugas" && pathname.startsWith("/tugas"));
+    const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 
     return (
       <div key={href}>

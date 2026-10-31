@@ -7,21 +7,36 @@ import {
   ListTodo,
   Plus,
   Folder,
-  Settings,
+  BookOpen,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useTasks } from '@/lib/task-context';
+import { useNotebooks } from '@/lib/notebook-context';
 
 export default function BottomNav({ onOpenAddTask }) {
   const pathname = usePathname();
+
   let taskContext = null;
   try {
     taskContext = useTasks();
   } catch (e) {
     // Graceful fallback if rendered outside TaskProvider
   }
+
+  let notebookContext = null;
+  try {
+    notebookContext = useNotebooks();
+  } catch (e) {
+    // Graceful fallback if rendered outside NotebookProvider
+  }
+
   const handleOpenAddTask = onOpenAddTask || taskContext?.openAddTask;
+  const isNotebookTab = pathname.startsWith('/notebook');
+
+  const handleCenterAction = isNotebookTab
+    ? (notebookContext?.openAddNotebook || handleOpenAddTask)
+    : handleOpenAddTask;
 
   const leftNavItems = [
     {
@@ -40,16 +55,16 @@ export default function BottomNav({ onOpenAddTask }) {
 
   const rightNavItems = [
     {
+      href: '/notebook',
+      label: 'Notebook',
+      icon: BookOpen,
+      isActive: pathname === '/notebook' || pathname.startsWith('/notebook/'),
+    },
+    {
       href: '/kategori',
       label: 'Kategori',
       icon: Folder,
       isActive: pathname === '/kategori' || pathname.startsWith('/kategori/'),
-    },
-    {
-      href: '/pengaturan',
-      label: 'Pengaturan',
-      icon: Settings,
-      isActive: pathname === '/pengaturan' || pathname.startsWith('/pengaturan/'),
     },
   ];
 
@@ -106,14 +121,15 @@ export default function BottomNav({ onOpenAddTask }) {
       <div className="grid grid-cols-5 items-center h-16 max-w-lg mx-auto px-1 w-full">
         {leftNavItems.map(renderNavItem)}
 
-        {/* Slot 3: Center Elevated Prominent Quick-Add Button (Thumb Zone) */}
+        {/* Slot 3: Center Elevated Prominent Action Button (Context-Aware) */}
         <div className="flex items-center justify-center min-w-0 shrink-0">
           <motion.button
             type="button"
             whileTap={{ scale: 0.9 }}
             whileHover={{ scale: 1.05 }}
-            onClick={handleOpenAddTask}
-            aria-label="Tambah tugas baru"
+            onClick={handleCenterAction}
+            aria-label={isNotebookTab ? 'Tambah catatan materi baru' : 'Tambah tugas baru'}
+            title={isNotebookTab ? 'Tambah catatan materi baru' : 'Tambah tugas baru'}
             className="relative -top-3.5 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-[var(--theme-accent,#D97706)] to-[#F59E0B] text-[#0A0A0A] flex items-center justify-center shadow-[0_4px_16px_var(--theme-glow,rgba(217,119,6,0.45))] border-2 border-[var(--theme-nav-bg,#100C0A)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all cursor-pointer shrink-0"
           >
             <Plus className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.75]" />
@@ -125,4 +141,3 @@ export default function BottomNav({ onOpenAddTask }) {
     </nav>
   );
 }
-

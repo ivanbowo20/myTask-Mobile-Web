@@ -181,17 +181,12 @@ export default function SettingsPage() {
             </div>
             <div className="py-3 flex items-center justify-between">
               <span className="text-[#A1A1AA]">Versi Aplikasi</span>
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-semibold text-[#FAFAFA]">v1.2.0</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                  Terbaru
-                </span>
-              </div>
+              <span className="font-mono font-semibold text-[#FAFAFA]">v1.3.0</span>
             </div>
             <div className="py-3 flex items-start sm:items-center justify-between gap-4">
               <span className="text-[#A1A1AA] shrink-0">Catatan Rilis</span>
               <span className="font-medium text-[#FAFAFA] text-right">
-                Pembaruan Tema Celestial Sky &amp; Optimalisasi Antarmuka
+                Fitur Baru Catatan Materi (Notebook), Pembaruan Tema Celestial Sky &amp; Aurora
               </span>
             </div>
           </div>
