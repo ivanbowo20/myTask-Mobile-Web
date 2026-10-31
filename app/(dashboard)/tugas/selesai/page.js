@@ -31,20 +31,20 @@ export default function CompletedTasksPage() {
     <div className="space-y-6">
       {/* Header */}
       <AnimatedContent delay={0}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-5">
+        <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#8FB88F]/15 border border-[#8FB88F]/30 flex items-center justify-center text-[#8FB88F]">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
-              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] tracking-tight">
+              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
                 Tugas Selesai
               </h1>
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#8FB88F]/15 border border-[#8FB88F]/30 text-[#8FB88F]">
                 {completedTasks.length} tugas tuntas
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-[#A1A1AA]">
+            <p className="text-xs sm:text-sm text-[#A1A1AA] [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
               Riwayat keberhasilan dan produktivitas yang telah Anda capai.
             </p>
           </div>

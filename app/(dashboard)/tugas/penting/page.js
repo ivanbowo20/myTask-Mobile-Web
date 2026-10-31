@@ -31,22 +31,24 @@ export default function ImportantTasksPage() {
     <div className="space-y-6">
       {/* Header */}
       <AnimatedContent delay={0}>
-        <div className="border-b border-white/[0.08] pb-5 space-y-1">
+        <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 z-10">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]">
               <Star className="w-4 h-4 fill-[#F59E0B]" />
             </div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] tracking-tight">
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
               Tugas Penting
             </h1>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#F59E0B]">
               {activeCount} prioritas aktif
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-[#A1A1AA]">
+          <p className="text-xs sm:text-sm text-[#A1A1AA] [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
             Fokus pada tugas-tugas bertanda bintang yang memiliki dampak terbesar.
           </p>
         </div>
+      </div>
       </AnimatedContent>
 
       {/* Task List or Empty State */}

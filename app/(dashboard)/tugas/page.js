@@ -122,23 +122,25 @@ function AllTasksContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header (Hero Glass Banner — SielloMita Anti-Washout Standard) */}
       <AnimatedContent delay={0}>
-        <div className="border-b border-white/[0.08] pb-5 space-y-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#FAFAFA]">
-              <ListTodo className="w-4 h-4" />
+        <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 z-10">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-sky-100/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:text-sky-700 flex items-center justify-center text-[#FAFAFA] shadow-sm shrink-0">
+                <ListTodo className="w-4 h-4" />
+              </div>
+              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
+                Semua Tugas
+              </h1>
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:text-slate-800 text-zinc-300 shadow-sm">
+                {filteredTasks.length} tugas
+              </span>
             </div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] tracking-tight">
-              Semua Tugas
-            </h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-zinc-300">
-              {filteredTasks.length} tugas
-            </span>
+            <p className="text-xs sm:text-sm text-zinc-300 [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
+              Kelola seluruh daftar tugas, filter kategori, dan atur prioritas kerja Anda.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-zinc-300">
-            Kelola seluruh daftar tugas, filter kategori, dan atur prioritas kerja Anda.
-          </p>
         </div>
       </AnimatedContent>
 

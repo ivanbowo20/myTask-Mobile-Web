@@ -371,9 +371,21 @@ html[data-theme="celestial-sky"] .glass-modal .sticky.bottom-0 {
 
 html[data-color-scheme="light"] .glass-modal input[type="text"],
 html[data-color-scheme="light"] .glass-modal textarea,
+html[data-color-scheme="light"] .glass-modal [contenteditable="true"],
 html[data-theme="celestial-sky"] .glass-modal input[type="text"],
-html[data-theme="celestial-sky"] .glass-modal textarea {
+html[data-theme="celestial-sky"] .glass-modal textarea,
+html[data-theme="celestial-sky"] .glass-modal [contenteditable="true"] {
   color: #0F172A !important;
+}
+
+html[data-theme="celestial-sky"] .glass-modal [contenteditable="true"] * {
+  color: #0F172A !important;
+}
+
+html[data-theme="celestial-sky"] .glass-modal [contenteditable="true"] strong,
+html[data-theme="celestial-sky"] .glass-modal [contenteditable="true"] b {
+  color: #0F172A !important;
+  font-weight: 800 !important;
 }
 
 html[data-color-scheme="light"] .glass-modal input::placeholder,
@@ -522,17 +534,23 @@ html[data-theme="celestial-sky"] .btn-secondary:hover {
   border-color: #0284C7 !important;
 }
 
-/* Tombol Selesai footer pada ThemeModal */
-html[data-theme="celestial-sky"] .glass-modal .border-t button:not([aria-pressed]) {
+/* Tombol Selesai footer pada ThemeModal (kecualikan tombol palet warna & aksi modal lainnya) */
+html[data-theme="celestial-sky"] .glass-modal .border-t button:not([aria-pressed]):not(.color-picker-btn):not([aria-label*="warna"]):not([aria-label*="Pilih"]) {
   background-color: rgba(224, 242, 254, 0.85) !important;
   border: 1px solid rgba(186, 230, 253, 0.80) !important;
   color: #0284C7 !important;
   font-weight: 600 !important;
 }
 
-html[data-theme="celestial-sky"] .glass-modal .border-t button:not([aria-pressed]):hover {
+html[data-theme="celestial-sky"] .glass-modal .border-t button:not([aria-pressed]):not(.color-picker-btn):not([aria-label*="warna"]):not([aria-label*="Pilih"]):hover {
   background-color: #0284C7 !important;
   color: #FFFFFF !important;
+}
+
+/* Proteksi Tombol Palet Warna Aksen Notebook */
+html[data-theme="celestial-sky"] .color-picker-btn {
+  border: 1.5px solid rgba(15, 23, 42, 0.15) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12) !important;
 }
 
 /* Aksen Tombol Primer: Teks putih kontras tinggi */
@@ -624,12 +642,36 @@ html[data-theme="celestial-sky"] .border-b.border-white\/\[0\.08\] {
   border-color: rgba(186, 230, 253, 0.50) !important;
 }
 
-/* Subtitle and header anti-washout text shadow */
-html[data-theme="celestial-sky"] h1 + p,
-html[data-theme="celestial-sky"] .text-xs.sm\:text-sm.text-zinc-300 {
-  color: #1E293B !important;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.75);
-  font-weight: 500;
+/* Hero Glass Banner Header & Typography Hardening */
+html[data-theme="celestial-sky"] h1 {
+  color: #0F172A !important;
+}
+
+html[data-theme="celestial-sky"] .glass-card h1 {
+  color: #0F172A !important;
+  text-shadow: none !important;
+}
+
+html[data-theme="celestial-sky"] .glass-card p {
+  color: #334155 !important;
+  text-shadow: none !important;
+}
+
+/* Celestial Sky Notebook Card & Content Contrast Hardening */
+html[data-theme="celestial-sky"] article.glass-card {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(186, 230, 253, 0.65) !important;
+  box-shadow: 0 8px 30px -4px rgba(2, 132, 199, 0.12), 0 2px 6px -1px rgba(15, 23, 42, 0.05) !important;
+}
+
+html[data-theme="celestial-sky"] article.glass-card h3 {
+  color: #0F172A !important;
+}
+
+html[data-theme="celestial-sky"] article.glass-card strong,
+html[data-theme="celestial-sky"] article.glass-card b {
+  color: #0F172A !important;
+  font-weight: 800 !important;
 }
 
 /* Inactive filter tab chips */

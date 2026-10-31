@@ -38,21 +38,23 @@ export default function TodayTasksPage() {
     <div className="space-y-6">
       {/* Header */}
       <AnimatedContent delay={0}>
-        <div className="border-b border-white/[0.08] pb-5 space-y-1">
+        <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 z-10">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/30 flex items-center justify-center text-[var(--theme-accent,#D97706)]">
               <Calendar className="w-4 h-4" />
             </div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] tracking-tight">
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
               Tugas Hari Ini
             </h1>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/30 text-[var(--theme-accent,#D97706)]">
               {pendingCount} belum selesai
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-[#A1A1AA]">
+          <p className="text-xs sm:text-sm text-[#A1A1AA] [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
             {formatTanggalSederhana(new Date().toISOString())} — Fokus selesaikan target hari ini.
           </p>
+          </div>
         </div>
       </AnimatedContent>
 

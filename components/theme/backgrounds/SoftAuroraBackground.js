@@ -126,7 +126,7 @@ export default function SoftAuroraBackground() {
         ctx.fillStyle = gradient;
         ctx.beginPath();
 
-        const step = Math.max(isMobile ? 18 : 12, Math.floor(width / (isMobile ? 24 : 40)));
+        const step = Math.max(isMobile ? 6 : 8, Math.floor(width / (isMobile ? 36 : 48)));
 
         // Trace top boundary wave
         for (let x = 0; x <= width + step; x += step) {
@@ -164,7 +164,7 @@ export default function SoftAuroraBackground() {
       if (!canvas) return;
       isMobile = window.innerWidth < 768;
       const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.5);
-      const scale = isMobile ? 0.45 : 0.6;
+      const scale = isMobile ? 0.55 : 0.6;
       width = Math.floor(window.innerWidth * scale * dpr);
       height = Math.floor(window.innerHeight * scale * dpr);
       canvas.width = width;
@@ -232,10 +232,10 @@ export default function SoftAuroraBackground() {
       {/* Deep Midnight Navy Backdrop */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#060810] via-[#091122] to-[#0D162B]" />
 
-      {/* Soft Aurora Canvas: Tanpa CSS blur di mobile agar GPU PowerVR HP kentang 60 FPS mulus */}
+      {/* Soft Aurora Canvas: Efek blur lembut di mobile + desktop agar pendaran cahaya mulus alami tanpa patahan poligon */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full sm:filter sm:blur-[36px] opacity-85 transform-gpu"
+        className="absolute inset-0 w-full h-full filter blur-[20px] sm:blur-[36px] opacity-85 transform-gpu"
         style={{ mixBlendMode: 'screen' }}
       />
 
