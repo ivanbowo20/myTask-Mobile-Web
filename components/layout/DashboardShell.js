@@ -22,6 +22,10 @@ const EditNotebookModal = dynamic(
   () => import("@/components/notebook/EditNotebookModal"),
   { ssr: false }
 );
+const NotebookPreviewModal = dynamic(
+  () => import("@/components/notebook/NotebookPreviewModal"),
+  { ssr: false }
+);
 const NotebookWhatsNewModal = dynamic(
   () => import("@/components/notebook/NotebookWhatsNewModal"),
   { ssr: false }
@@ -61,6 +65,9 @@ export default function DashboardShell({ children }) {
   const closeAddNotebook = notebookContext?.closeAddNotebook;
   const editingNotebook = notebookContext?.editingNotebook;
   const closeEditNotebook = notebookContext?.closeEditNotebook;
+  const previewNotebook = notebookContext?.previewNotebook;
+  const closePreviewNotebook = notebookContext?.closePreviewNotebook;
+  const openEditNotebook = notebookContext?.openEditNotebook;
   const notebookTotal = notebookContext?.stats?.total || 0;
 
   return (
@@ -140,6 +147,18 @@ export default function DashboardShell({ children }) {
         <AddNotebookModal
           isOpen={Boolean(isAddNotebookOpen)}
           onClose={closeAddNotebook || (() => {})}
+        />
+      )}
+
+      {Boolean(previewNotebook) && (
+        <NotebookPreviewModal
+          isOpen={Boolean(previewNotebook)}
+          onClose={closePreviewNotebook || (() => {})}
+          notebook={previewNotebook}
+          onEdit={(nb) => {
+            if (closePreviewNotebook) closePreviewNotebook();
+            if (openEditNotebook) openEditNotebook(nb);
+          }}
         />
       )}
 

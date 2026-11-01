@@ -86,7 +86,7 @@ export default function NotebookPage() {
       <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1.5 z-10">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 [html[data-theme='celestial-sky']_&]:bg-amber-500/15 [html[data-theme='celestial-sky']_&]:border-amber-400/40 [html[data-theme='celestial-sky']_&]:text-amber-600 shadow-sm shrink-0">
+            <div className="p-2 rounded-xl bg-[var(--theme-accent,#0284C7)]/15 border border-[var(--theme-accent,#0284C7)]/30 text-[var(--theme-accent,#0284C7)] shadow-sm shrink-0">
               <BookOpen className="w-5 h-5" />
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
@@ -128,7 +128,7 @@ export default function NotebookPage() {
               'w-full pl-10 pr-16 py-2.5 rounded-xl text-xs sm:text-sm font-medium glass-card',
               'bg-white/[0.04] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-500',
               '[html[data-theme="celestial-sky"]_&]:bg-white/80 [html[data-theme="celestial-sky"]_&]:text-slate-900 [html[data-theme="celestial-sky"]_&]:placeholder:text-slate-500 [html[data-theme="celestial-sky"]_&]:border-sky-200/70',
-              'focus:outline-none focus:border-amber-500/70 focus:ring-1 focus:ring-amber-500/50 [html[data-theme="celestial-sky"]_&]:focus:border-sky-500 [html[data-theme="celestial-sky"]_&]:focus:ring-sky-400/40',
+              'focus:outline-none focus:border-[var(--theme-accent,#0284C7)] focus:ring-1 focus:ring-[var(--theme-accent,#0284C7)]/50',
               'transition-all duration-150 shadow-sm'
             )}
           />
@@ -162,7 +162,7 @@ export default function NotebookPage() {
                 className={cn(
                   'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer',
                   dateFilter === opt.value
-                    ? 'bg-amber-500/20 text-amber-300 [html[data-theme="celestial-sky"]_&]:bg-amber-500 [html[data-theme="celestial-sky"]_&]:text-slate-950 font-semibold border border-amber-500/30 shadow-sm'
+                    ? 'bg-[var(--theme-accent,#0284C7)] text-white [html[data-theme="abyssal-teal"]_&]:text-slate-950 [html[data-theme="soft-aurora"]_&]:text-slate-950 [html[data-theme="dark-chocolate"]_&]:text-slate-950 font-semibold shadow-sm'
                     : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:hover:text-slate-900 hover:bg-white/[0.04] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-100/60'
                 )}
               >
@@ -180,7 +180,7 @@ export default function NotebookPage() {
       {filteredNotebooks.length === 0 ? (
         /* Actionable Empty State (SielloMita Protocol: Never lazy empty text) */
         <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-inner">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--theme-accent,#0284C7)]/15 border border-[var(--theme-accent,#0284C7)]/30 flex items-center justify-center text-[var(--theme-accent,#0284C7)] shadow-inner">
             <BookOpen className="w-7 h-7" />
           </div>
 
@@ -222,8 +222,8 @@ export default function NotebookPage() {
           {/* Section 1: Pinned / Important Notebooks (If any) */}
           {pinnedNotebooks.length > 0 && (
             <section className="space-y-3.5">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
-                <Star className="w-3.5 h-3.5 fill-amber-400" />
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--theme-accent,#0284C7)]">
+                <Star className="w-3.5 h-3.5 fill-[var(--theme-accent,#0284C7)]" />
                 <span>Materi Penting Dipin ({pinnedNotebooks.length})</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

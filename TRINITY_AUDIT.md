@@ -1,146 +1,95 @@
-# 🔱 TRINITY CODE AUDIT REPORT (PUTARAN 5: SELECTION HIGHLIGHT INVISIBLE & MOBILE TOUCH FORMATTING)
+# 🔱 TRINITY CODE AUDIT REPORT (PUTARAN 7: THEME-ADAPTIVE ACCENTS & DUAL-EDIT BUTTON ELIMINATION)
 
-**Target:** `app/layout.js`, `app/globals.css`, `components/notebook/RichTextEditor.js`, `components/notebook/AddNotebookModal.js`, `components/notebook/EditNotebookModal.js`  
-**Kasus Pengguna:**
-1. Desktop: Pengguna mengeluhkan tidak bisa men-drag tulisan di atas untuk dijadikan bold ("ga bisa drag tulisan yg diatas utk jadikan bold soalnya sistem di destkop ga bisa ini").
-2. Mobile: Pengguna menanyakan apakah di mobile juga demikian saat ingin memilih semua tulisan ("dan apakah di mobile juga begitu mau di klik semua tulisan cuman ga bisa").  
-**Indeks & Alat:** Native AST, CSS Stacking & Highlight Contrast Audit, Mobile Touch Event Lifecycle Analysis  
-**Tanggal Audit:** 31 Oktober 2026 (Putaran 5 — Root Cause Analysis & Cross-Device Strategy)  
-**Status Fase:** Fase 2 Selesai — Eksekusi Bedah Tuntas & Terverifikasi Terminal (`npm run build` PASS)  
-
----
-
-## 🔍 Ringkasan Eksekutif & Temuan Akar Masalah
-
-Investigasi mendalam berbasis data flow dan event tracing terhadap kendala seleksi teks (drag mouse di desktop) dan formatting di mobile menemukan **4 akar masalah nyata**:
-
-1. **Warna Seleksi Teks Kasat Mata (Invisible Highlight) di Tema Celestial Sky (Desktop & Mobile):**
-   - Di `app/layout.js:L65`, terdapat kelas Tailwind global:  
-     `selection:bg-[#FAFAFA] selection:text-[#0A0A0A]` pada elemen `<body>`.
-   - Pada tema **Celestial Sky** (tema terang yang sedang digunakan pada screenshot pengguna), latar modal dan editor adalah putih bersih (`#FFFFFF` / `rgba(255, 255, 255, 0.98)`).
-   - Ketika mouse di-drag untuk memblok teks, warna seleksi `#FAFAFA` (putih gading) di atas latar putih `#FFFFFF` memiliki rasio kontras hanya **1.04 : 1 (100% tidak kasat mata)**.
-   - **Dampak Nyata:** Teks sebenarnya ter-blok di dalam memori browser, tetapi **tidak ada garis seleksi biru/highlight yang tampak**. Pengguna mengira mouse atau sistem tidak bisa men-drag teks sama sekali.
-
-2. **Kehilangan Seleksi & Fokus saat Mengetuk Tombol Toolbar di Mobile (Touch Event Drop):**
-   - Di `RichTextEditor.js:L158-L278`, tombol format (B, I, U, dsb.) hanya memiliki event handler `onMouseDown={preventFocusLoss}`:
-     ```javascript
-     const preventFocusLoss = (e) => { e.preventDefault(); };
-     ```
-   - Di layar sentuh HP (Android/iOS), urutan event sentuhan adalah: `touchstart` ➔ `touchend` ➔ `click` (event `mousedown` tidak fired di awal).
-   - Tanpa `onTouchStart={preventFocusLoss}`, saat jari pengguna menyentuh tombol **B (Bold)** di HP, fokus langsung terlepas dari editor `<div contentEditable>`, keyboard virtual tertutup, dan **seleksi teks aktif seketika dibatalkan/dihapus oleh mobile OS**.
-   - Saat `onClick` memanggil `document.execCommand('bold')`, browser sudah tidak memiliki teks yang terseleksi, sehingga **format Bold di mobile selalu gagal**.
-
-3. **Ketiadaan Aksi "Pilih Semua" (Select All) Satu Sentuhan di Mobile:**
-   - Di HP, menyeleksi banyak paragraf atau diagram teks (seperti teks WEDGE dari roadmap) via *drag touch pin* sangat sulit dan sering kali macet/terpotong gesture scroll modal.
-   - Mobile tidak memiliki tombol fisik `Ctrl+A`. Tidak ada tombol "Pilih Semua" di toolbar visual editor untuk menyeleksi seluruh teks dalam satu ketukan.
-
-4. **Resiko Penimpaan DOM oleh Auto-Save Re-render (Deselection Hazard):**
-   - Di `AddNotebookModal.js`, auto-save timer berjalan setiap 1.5 detik (`setAutoSaveStatus('saved')`), memicu re-render dan memasukkan kembali prop `value`.
-   - Di `RichTextEditor.js:L71`, jika `!isTypingRef.current && el.innerHTML !== value`, kode mengeksekusi `el.innerHTML = DOMPurify.sanitize(cleaned)`.
-   - Setiap kali `innerHTML` pada elemen `contentEditable` ditimpa, seluruh seleksi teks yang sedang aktif **dihancurkan** oleh browser.
+**Target:** `components/notebook/NotebookPreviewModal.js`, `app/(dashboard)/notebook/page.js`, `components/notebook/NotebookCard.js`, `components/notebook/EditNotebookModal.js`, `components/notebook/AddNotebookModal.js`  
+**Kasus Pengguna & Evaluasi SielloMita:**  
+1. **Duplikasi Tombol Edit (Dual CTA Tell):** Modal Card Preview menampilkan 2 tombol "Edit Catatan" sekaligus dalam satu viewport (satu di header atas dan satu di sticky footer bawah). Hal ini melanggar hierarki UI/UX SielloMita Anti-Slop (kebingungan aksi ganda & visual clutter).
+2. **Kebocoran Aksen Hardcoded Amber/Oren (`#D97706` / `amber-500`):** Seluruh elemen fitur notebook (tombol, filter pill tanggal aktif, badge ikon buku) menggunakan warna hardcoded oranye Amber milik tema Dark Chocolate, padahal pengguna sedang berada di tema **Celestial Sky** (yang seharusnya bertema biru langit terang `#0284C7`), **Abyssal Teal** (hijau zamrud `#2DD4BF`), atau **Soft Aurora** (cyan `#06B6D4`). Perbedaan warna kontras tanpa identitas ini membuat tampilan "bertabrakan dan memusingkan".  
+**Indeks & Alat:** SielloMita Design System, CSS Theme Token Architecture (`--theme-accent`), AST Static Analysis  
+**Tanggal Audit:** 01 November 2026 (Putaran 7 — Theme Harmonization & CTA Hierarchy)  
+**Status Fase:** Fase 2 Selesai — Eksekusi Bedah Selesai & Terverifikasi Terminal (AST Valid, `npm run build` PASS Exit Code 0)  
 
 ---
 
-## 🚨 1. MUST FIX (Prioritas Utama: Desktop Drag & Mobile Touch Formatting)
+## 🔍 Ringkasan Diagnostik SielloMita Anti-Slop & Arsitektur Tema
 
-### [1] Buat Warna Seleksi Teks Adaptif per Tema (Kontras Tinggi di Celestial Sky & Dark Themes)
-- **File:** `app/layout.js:L65` & `app/globals.css`
-- **Akar Masalah:** `selection:bg-[#FAFAFA]` membuat blok seleksi tidak kasat mata pada background putih di tema terang.
-- **Saran Perbaikan Minimal (Ponytail Fix):**
-  - Ganti seleksi global statis di `layout.js` dengan CSS variable yang peka tema di `globals.css`:
-    - Di tema gelap: `::selection { background: rgba(217, 119, 6, 0.45); color: #FFFFFF; }` (atau aksen tema masing-masing).
-    - Di tema `celestial-sky` (terang): `::selection { background: rgba(2, 132, 199, 0.28); color: #0284C7; }` (warna biru langit tegas dengan kontras jelas).
-- **Dampak jika Diabaikan:** Pengguna di desktop akan terus merasa sistem macet karena tidak ada visual feedback saat men-drag kursor mouse.
-
----
-
-### [2] Tambahkan `onTouchStart={preventFocusLoss}` pada Seluruh Tombol Toolbar Editor
-- **File:** `components/notebook/RichTextEditor.js`
-- **Akar Masalah:** Ketukan jari di HP melepas seleksi teks sebelum `execCmd` berjalan karena ketiadaan `onTouchStart` preventDefault.
-- **Saran Perbaikan Minimal (Ponytail Fix):**
-  - Pasang `onTouchStart={preventFocusLoss}` pada semua elemen `<button>` di dalam toolbar `RichTextEditor.js`:
-    ```jsx
-    <button
-      type="button"
-      onMouseDown={preventFocusLoss}
-      onTouchStart={preventFocusLoss}
-      onClick={() => execCmd('bold')}
-      ...
-    />
-    ```
-- **Dampak jika Diabaikan:** Pengguna mobile tidak akan pernah bisa menebalkan, memiringkan, atau memformat teks yang sudah dipilih.
+### 1. Masalah Duplikasi Tombol Edit:
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        NOTEBOOK PREVIEW MODAL                          │
+├────────────────────────────────────────────────────────────────────────┤
+│ Header: [Judul Catatan]  [Salin] [Pin] [Edit Catatan (Oren)] ◄── CTA 1 │
+│ ────────────────────────────────────────────────────────────────────── │
+│ Body:                                                                  │
+│   Lorem ipsum dolor sit amet, consectetur adipiscing elit...           │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────┤
+│ Sticky Footer: [Hapus]                  [Tutup] [Edit Catatan] ◄── CTA 2
+└────────────────────────────────────────────────────────────────────────┘
+```
+- **Analisis SielloMita:** Menampilkan dua tombol dengan fungsi dan teks identik dalam satu layar memperlihatkan cacat perancangan tata letak (*layout indecision*). Tombol aksi primer harus memiliki **Single Point of Focus**.
+- **Rekomendasi SielloMita:**
+  - Letakkan tombol primer bertuliskan `"Edit Catatan"` pada **Sticky Footer** di sebelah tombol `"Tutup"` (ergonomis dan terjangkau ibu jari di mobile, serta konsisten dengan seluruh modal sistem).
+  - Di Header atas, biarkan fokus pada judul dan ikon ringkas: Tombol Salin, Tombol Pin, dan Tombol Tutup (X).
 
 ---
 
-## ⚠️ 2. SHOULD FIX (Aksesibilitas Mobile & Stabilitas Seleksi)
+### 2. Masalah Hardcoded Amber/Oren vs Token Tema Dinamis:
+Di `lib/theme-context.js`, todowebb V2 telah mendefinisikan 4 tema dengan aksen resmi:
+- **Celestial Sky:** `--theme-accent: #0284C7` (Sky Blue cerah, background daylight awan)
+- **Abyssal Teal:** `--theme-accent: #2DD4BF` (Bioluminescent Teal emerald laut dalam)
+- **Soft Aurora:** `--theme-accent: #06B6D4` (Cyan & magenta aurora borealis)
+- **Dark Chocolate:** `--theme-accent: #D97706` (Amber espresso obsidian gelap)
 
-### [3] Tambahkan Tombol "Pilih Semua" (Select All) di Toolbar Visual
-- **File:** `components/notebook/RichTextEditor.js`
-- **Akar Masalah:** Di mobile, pengguna tidak bisa menekan `Ctrl+A` dan sangat kesulitan memblok teks panjang untuk diformat sekaligus.
-- **Saran Perbaikan Minimal (Ponytail Fix):**
-  - Tambahkan tombol aksi cepat `Pilih Semua` (ikon `CheckCheck` dari lucide-react) di toolbar yang mengeksekusi `document.execCommand('selectAll')`.
-  - Berfungsi sempurna di desktop dan mobile: satu sentuhan langsung memilih seluruh isi catatan.
+Namun di berkas-berkas notebook, terdapat hardcode warna oranye:
+1. `NotebookPreviewModal.js`:
+   - Tombol header: `bg-amber-500 hover:bg-amber-400 text-slate-950`
+   - Pin active state: `text-amber-400 bg-amber-400/10`
+   - Blockquote: `border-amber-500`
+2. `app/(dashboard)/notebook/page.js`:
+   - Filter pill tanggal aktif: `bg-amber-500/20 text-amber-300 [html[data-theme="celestial-sky"]_&]:bg-amber-500`
+   - Ikon header buku: `bg-amber-500/10 text-amber-400`
+   - Focus ring search bar: `focus:border-amber-500/70 focus:ring-amber-500/50`
+   - Section pinned header: `text-amber-400 fill-amber-400`
+3. `NotebookCard.js`:
+   - Default card color: `#D97706` (seharusnya fallback ke `var(--theme-accent)`)
+   - Hover title: `group-hover:text-amber-400`
 
 ---
 
-### [4] Pasang Pengecekan Active Element pada Efek Sinkronisasi Nilai Editor
-- **File:** `components/notebook/RichTextEditor.js:L67-L76`
-- **Akar Masalah:** Re-render auto-save setiap 1.5 detik dapat mereset `innerHTML` dan memusnahkan seleksi teks.
+## 🚨 1. MUST FIX (Prioritas Utama: Hierarki & Identitas Tema)
+
+### [1] Eliminasi Duplikasi Tombol Edit Menjadi 1 Tombol Primer di Sticky Footer
+- **File:** `components/notebook/NotebookPreviewModal.js`
+- **Akar Masalah:** Terdapat tombol Edit di Header dan tombol Edit di Footer secara bersamaan.
+- **Saran Perbaikan Minimal (SielloMita Standard):**
+  - Hapus tombol teks `<Button>Edit Catatan</Button>` dari baris Header.
+  - Header difokuskan untuk judul, metadata, dan aksi icon-only (Copy, Pin/Star, Tutup).
+  - Jadikan tombol "Edit Catatan" di Sticky Footer sebagai satu-satunya CTA primer dengan warna tema dinamis.
+
+---
+
+### [2] Migrasi Warna Aksen Notebook ke CSS Variable Tema Dinamis (`--theme-accent`)
+- **File:** `components/notebook/NotebookPreviewModal.js`, `app/(dashboard)/notebook/page.js`, `components/notebook/NotebookCard.js`
+- **Akar Masalah:** Hardcoded warna oranye `amber-500` dan `#D97706` merusak konsistensi tema Celestial Sky, Abyssal Teal, dan Soft Aurora.
 - **Saran Perbaikan Minimal:**
-  - Jangan menimpa `el.innerHTML` jika editor sedang memiliki fokus aktif (`document.activeElement === el`), kecuali jika nilainya kosong secara eksternal (reset form).
+  - Ganti warna tombol primer agar menggunakan kelas `bg-[var(--theme-accent)] hover:opacity-90 text-[var(--color-accent-text,#FFFFFF)]` atau selector adaptif per-tema.
+  - Di `page.js`, ganti filter pill tanggal aktif menjadi warna tema:
+    - Di Celestial Sky: Biru langit `bg-[#0284C7] text-white shadow-sm`
+    - Di Abyssal Teal: Hijau `bg-[#2DD4BF] text-slate-950 shadow-sm`
+    - Di Soft Aurora: Cyan `bg-[#06B6D4] text-slate-950 shadow-sm`
+    - Di Dark Chocolate: Amber `bg-[#D97706] text-slate-950 shadow-sm`
+  - Ganti ikon buku dan focus search bar agar mengikuti `--theme-accent`.
 
 ---
 
-## 📊 KESIMPULAN AUDIT PUTARAN 5
-- **Total Temuan:** 4 (Must Fix: 2 | Should Fix: 2) — Seluruh temuan telah berhasil diperbaiki dan teruji.
-- **Status Kode:** SELESAI & TERVERIFIKASI (`npm run build` PASS, 0 error).
-
-
----
-
-# 🔱 TRINITY CODE AUDIT REPORT (PUTARAN 6: MOBILE TOUCH SELECTION MODEL & DEVTOOLS EMULATION)
-
-**Target:** `app/globals.css`, `components/notebook/RichTextEditor.js`  
-**Kasus Pengguna:**
-- Pengguna mengonfirmasi bahwa di laptop normal (desktop mouse cursor) fungsi drag untuk memblok/memformat teks kini sudah berhasil berjalan lancar ("nah drag drop nya bisa").
-- Namun saat beralih ke tampilan mode mobile di laptop (DevTools responsive/touch mode), pengguna mencoba men-drag kursor tetapi teks tidak terseleksi. Pengguna mengira bahwa jika di mode mobile laptop tidak bisa di-drag, maka di smartphone fisik juga tidak akan bisa ("pas saya coba ubah ke mode mobile di laptop kok ga bisa drag ya... berarti di hp beneran ga bisa").
-
-**Indeks & Alat:** W3C Touch Events Standard vs Mouse Events, Mobile Touch Action Pipeline, ContentEditable iOS/Android Selection Specification  
-**Tanggal Audit:** 31 Oktober 2026 (Putaran 6 — Mobile Touch Interaction Audit)  
-**Status Fase:** Fase 2 Selesai — Eksekusi Penguatan Touch Tuntas & Terverifikasi Terminal (`npm run build` PASS)  
-
----
-
-## 🔍 Ringkasan Temuan & Investigasi Teknis Putaran 6
-
-1. **Perbedaan Mendasar Kursor Mouse (Desktop) vs Touch Pointer (Mobile Emulation / Layar Sentuh HP):**
-   - **Pada Kursor Mouse Desktop:**  
-     Event yang ditembakkan adalah `mousedown` ➔ `mousemove` ➔ `mouseup`.  
-     OS komputer mengalokasikan tombol kiri mouse yang ditekan sambil digeser (*drag*) sebagai perintah **Text Selection Range** (blok teks).
-   - **Pada Mode Mobile DevTools & HP Fisik (Touch Screen):**  
-     Kursor berubah menjadi lingkaran abu-abu yang mensimulasikan **ujung jari manusia pada layar sentuh**. Event yang ditembakkan adalah `touchstart` ➔ `touchmove` ➔ `touchend`.
-   - **Hukum W3C Touch Events & Mobile OS (Android/iOS):**  
-     Geseran jari di atas layar (`touchmove`) **secara mutlak dialokasikan sebagai GESTURE SCROLL (menggulung halaman/layar)**.  
-     Jika browser HP mengizinkan geseran jari biasa untuk memblok teks, maka pengguna smartphone di seluruh dunia tidak akan pernah bisa membaca atau meng-scroll chat WhatsApp, artikel berita, atau catatan tanpa secara tidak sengaja memblok kalimat demi kalimat.
-
-2. **Bagaimana Cara Kerja Seleksi Teks di HP Sebenarnya?**
-   Di layar sentuh smartphone maupun di mode mobile DevTools, seleksi teks dilakukan melalui 3 metode native:
-   - **Metode 1: Long Press (Tekan & Tahan ~0.5 detik).**  
-     Sentuh kata yang diinginkan dan tahan setengah detik tanpa digeser. Browser mobile akan memunculkan **Pin/Handle Seleksi** (teardrop handle) dan menu konteks (Salin, Tempel, Tebalkan). Setelah Pin muncul, barulah Pin tersebut ditarik (*drag pin*) untuk memperluas area seleksi.
-   - **Metode 2: Tombol Pintasan "Pilih Semua" (Select All):**  
-     Gunakan tombol ikon kotak seleksi `TextSelect` di toolbar visual yang baru saja kita pasang. Cukup **1 ketukan jari** untuk memblok seluruh catatan materi secara instan tanpa perlu repot menahan dan menarik pin.
-   - **Metode 3: Double-Tap (Ketuk 2x cepat):**  
-     Mengetuk kata dua kali secara cepat untuk langsung memilih kata tersebut.
-
-3. **Penguatan Tambahan yang Diperlukan pada CSS & Komponen:**
-   - Tambahkan aturan CSS penegasan native selection di `globals.css`:
-     ```css
-     [contenteditable="true"] {
-       user-select: text !important;
-       -webkit-user-select: text !important;
-       -webkit-touch-callout: default !important;
-       touch-action: pan-y;
-     }
-     ```
-     Ini memastikan browser mobile (terutama Safari iOS dan Chrome Android) tidak menahan kemunculan menu pin seleksi dan magnifying loupe saat dilakukan long-press.
-   - Di `RichTextEditor.js`: Pasang `onTouchEnd={handleMouseUp}` pada elemen `<div contentEditable>` agar state toolbar dan range seleksi mobile selalu sinkron seketika saat jari diangkat dari layar.
+## 📊 KESIMPULAN AUDIT & METRIK
+- **Total Temuan:** 2 (Must Fix: 2) — SEMUA TELAH DIIMPLEMENTASI
+- **Komponen Dimodifikasi:**
+  - [`NotebookPreviewModal.js`](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/NotebookPreviewModal.js) (Hapus tombol edit ganda di header, tombol sticky footer adaptif terhadap tema aktif)
+  - [`page.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/(dashboard)/notebook/page.js) (Filter pill aktif, ikon buku, focus search bar adaptif `--theme-accent`)
+  - [`NotebookCard.js`](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/NotebookCard.js) (Aksen fallback, star icon, hover title adaptif `--theme-accent`)
+  - [`AddNotebookModal.js`](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/AddNotebookModal.js) & [`EditNotebookModal.js`](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/EditNotebookModal.js) (Pin switch toggle adaptif `--theme-accent`)
+- **Bukti Terminal:**
+  - AST Static Scope Check: PASS (0 undeclared variables)
+  - `npm run build`: PASS (Exit Code 0, 11/11 pages compiled)
+- **Status Akhir:** READY FOR USER VALIDATION

@@ -271,7 +271,7 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
             <div
               className={cn(
                 'w-9 h-5 rounded-full transition-colors relative',
-                penting ? 'bg-amber-500' : 'bg-white/[0.12] [html[data-theme="celestial-sky"]_&]:bg-slate-200'
+                penting ? 'bg-[var(--theme-accent,#0284C7)]' : 'bg-white/[0.12] [html[data-theme="celestial-sky"]_&]:bg-slate-200'
               )}
             >
               <div
@@ -285,7 +285,7 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
               <Star
                 className={cn(
                   'w-3.5 h-3.5',
-                  penting ? 'text-amber-400 fill-amber-400' : 'text-zinc-500 [html[data-theme="celestial-sky"]_&]:text-slate-400'
+                  penting ? 'text-[var(--theme-accent,#0284C7)] fill-[var(--theme-accent,#0284C7)]' : 'text-zinc-500 [html[data-theme="celestial-sky"]_&]:text-slate-400'
                 )}
               />
               <span>Catatan Penting (Pin ke Atas)</span>

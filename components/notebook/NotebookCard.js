@@ -17,7 +17,7 @@ import { useNotebooks } from '@/lib/notebook-context';
 import { cn, formatTanggal, htmlToChatFormattedText } from '@/lib/utils';
 
 function NotebookCard({ notebook }) {
-  const { openEditNotebook, openDeleteConfirm, toggleImportant } = useNotebooks();
+  const { openPreviewNotebook, openEditNotebook, openDeleteConfirm, toggleImportant } = useNotebooks();
   const [isCopied, setIsCopied] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -101,18 +101,27 @@ function NotebookCard({ notebook }) {
     openDeleteConfirm(notebook);
   }
 
-  const accentColor = notebook.warna || '#D97706';
+  const accentColor = notebook.warna || 'var(--theme-accent, #0284C7)';
 
   return (
     <article
-      onClick={() => openEditNotebook(notebook)}
+      onClick={() => openPreviewNotebook(notebook)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openPreviewNotebook(notebook);
+        }
+      }}
+      aria-label={`Buka preview catatan ${notebook.judul}`}
       className={cn(
         'group relative flex flex-col justify-between rounded-2xl p-5 cursor-pointer glass-card',
         'bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-white/[0.16]',
         '[html[data-theme="celestial-sky"]_&]:bg-white/85 [html[data-theme="celestial-sky"]_&]:hover:bg-white/95 [html[data-theme="celestial-sky"]_&]:border-sky-200/60',
         'sm:backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.18)] [html[data-theme="celestial-sky"]_&]:shadow-[0_8px_24px_rgba(2,132,199,0.12)]',
         'transition-all duration-200 active:scale-[0.985] will-change-transform select-none',
-        notebook.penting && 'ring-1 ring-amber-500/30 border-amber-500/20 bg-amber-500/[0.02] [html[data-theme="celestial-sky"]_&]:bg-amber-50/70 [html[data-theme="celestial-sky"]_&]:border-amber-300'
+        notebook.penting && 'ring-1 ring-[var(--theme-accent,#0284C7)]/30 border-[var(--theme-accent,#0284C7)]/20 bg-[var(--theme-accent,#0284C7)]/[0.03] [html[data-theme="celestial-sky"]_&]:bg-sky-50/70 [html[data-theme="celestial-sky"]_&]:border-sky-300'
       )}
     >
       {/* Top Bar: Accent Tag + Quick Actions */}
@@ -155,14 +164,14 @@ function NotebookCard({ notebook }) {
             className={cn(
               'p-1.5 rounded-lg active:scale-90 transition-all cursor-pointer',
               notebook.penting
-                ? 'text-amber-400 bg-amber-400/10 hover:bg-amber-400/20'
-                : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-amber-300 [html[data-theme="celestial-sky"]_&]:hover:text-amber-600 hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-200/60'
+                ? 'text-[var(--theme-accent,#0284C7)] bg-[var(--theme-accent,#0284C7)]/15'
+                : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-[var(--theme-accent,#0284C7)] hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-200/60'
             )}
           >
             <Star
               className={cn(
                 'w-3.5 h-3.5 transition-transform duration-200',
-                notebook.penting && 'fill-amber-400 stroke-amber-400 scale-105'
+                notebook.penting && 'fill-[var(--theme-accent,#0284C7)] stroke-[var(--theme-accent,#0284C7)] scale-105'
               )}
             />
           </button>
@@ -211,7 +220,7 @@ function NotebookCard({ notebook }) {
 
       {/* Card Body: Judul & Content Preview */}
       <div className="flex-1 min-w-0 space-y-2 mb-4">
-        <h3 className="text-base font-bold text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A] group-hover:text-amber-400/95 [html[data-theme='celestial-sky']_&]:group-hover:text-amber-600 transition-colors line-clamp-1 tracking-tight">
+        <h3 className="text-base font-bold text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A] group-hover:text-[var(--theme-accent,#0284C7)] transition-colors line-clamp-1 tracking-tight">
           {notebook.judul}
         </h3>
 
