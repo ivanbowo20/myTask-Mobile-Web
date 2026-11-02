@@ -85,7 +85,7 @@ export default function CategoriesPage() {
 
       {/* Quick Add Inline Card */}
       <AnimatedContent delay={0.08}>
-        <div className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
+        <div className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4 [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 shadow-sm">
           <h2 className="font-heading text-sm font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] flex items-center gap-2">
             <Plus weight="bold" className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
             Tambah Kategori Cepat
@@ -110,11 +110,11 @@ export default function CategoriesPage() {
                 type="color"
                 value={warnaBaru}
                 onChange={(e) => setWarnaBaru(e.target.value)}
-                className="w-11 h-11 rounded-xl bg-transparent border border-white/[0.16] cursor-pointer"
+                className="w-11 h-11 rounded-xl bg-transparent border border-white/[0.16] [html[data-theme='celestial-sky']_&]:border-sky-300 cursor-pointer shrink-0"
                 title="Pilih warna kategori"
               />
 
-              <Button type="submit" variant="primary" className="flex-1 sm:flex-none">
+              <Button type="submit" variant="primary" className="flex-1 sm:flex-none active:scale-[0.97] transition-all">
                 Tambah
               </Button>
             </div>
@@ -126,7 +126,7 @@ export default function CategoriesPage() {
       <AnimatedContent delay={0.16}>
         {categories.length === 0 ? (
           <EmptyState
-            icon={Folder}
+            icon={FolderSimple}
             title="Belum ada kategori"
             description="Buat kategori pertama Anda untuk memudahkan pengelolaan dan penyaringan tugas."
             actionLabel="Tambah Kategori Baru"

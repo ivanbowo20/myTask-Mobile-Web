@@ -27,7 +27,8 @@ Saat user meminta rekomendasi atau penambahan animasi, AI HARUS merujuk pada kat
 Untuk seluruh perancangan antarmuka, styling komponen, dan review visual:
 1. Gunakan skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine).
 2. Terapkan prinsip:
-   - **Banned AI Slop Tells**: Dilarang menggunakan 12 AI slop tells (gradien ungu default tanpa identitas brand, judul hero 6-baris, tombol pill berlebih pada semua elemen, bento berlubang/kosong, 3 kartu fitur simetris identik tanpa visual anchor, dan dual competing primary CTAs).
+   - **Banned AI Slop Tells**: Dilarang menggunakan 14 AI slop tells (gradien ungu default tanpa identitas brand, judul hero 6-baris, tombol pill berlebih pada semua elemen, bento berlubang/kosong, 3 kartu fitur simetris identik tanpa visual anchor, dual competing primary CTAs, shouty hype copy, dan chaotic ambient pulsing).
+   - **The 9-Pass Unslopping Protocol**: Setiap audit & refactor UI wajib mengikuti urutan 9 lapis redline (Spacing -> Color -> Icons -> Copy -> Type -> Layout -> Details -> Visuals -> Motion).
    - **WWDC Fluid Springs**: Semua interaksi aktif wajib responsif seketika pada pointer-down (`:active scale(0.97)`) dengan spring physics interruptible.
    - **Gapless Bento Grid (Stageshow Protocol)**: Bento grid wajib menggunakan `grid-flow-dense` dengan perhitungan `col-span` & `row-span` presisi, serta dilarang kartu pasif hanya-teks (setiap kartu wajib memuat artefak micro-widget produk nyata).
    - **Phosphor Dynamic Iconography**: Navigasi utama desktop & mobile wajib menggunakan `@phosphor-icons/react` dengan transisi state dinamis (unselected `regular`, selected `fill`) untuk sensasi aplikasi native.

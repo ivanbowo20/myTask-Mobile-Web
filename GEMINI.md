@@ -16,7 +16,8 @@
 
 ## Frontend Design & Anti-AI Slop (SielloMita Design)
 - Menggunakan standar skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine):
-  - **Anti-AI Slop Enforcement**: Melarang 12 AI slop tells (gradien generik ungu, judul hero membungkus 6 baris, pill shapes di semua tombol/kartu, glassmorphism kabur berlebih, bento berlubang, 3 kartu fitur simetris tanpa visual anchor, dan dual competing primary CTAs).
+  - **Anti-AI Slop Enforcement**: Melarang 14 AI slop tells (gradien generik ungu, judul hero membungkus 6 baris, pill shapes di semua tombol/kartu, glassmorphism kabur berlebih, bento berlubang, 3 kartu fitur simetris tanpa visual anchor, dual competing primary CTAs, shouty hype copy, dan chaotic ambient pulsing).
+  - **The 9-Pass Unslopping Protocol**: Audit & refactor wajib mengikuti 9 lapis redline (Spacing -> Color -> Icons -> Copy -> Type -> Layout -> Details -> Visuals -> Motion).
   - **Apple WWDC Fluid Motion**: Interaksi aktif wajib responsif seketika (`:active scale(0.97)`), interruptible springs.
   - **Gapless Dense Grid (Stageshow Protocol)**: Wajib menggunakan `grid-flow-dense` dan dilarang kartu pasif hanya-teks (wajib artefak micro-widget produk nyata).
   - **Phosphor Dynamic Iconography**: Navigasi utama desktop & mobile wajib menggunakan `@phosphor-icons/react` dengan transisi state dinamis (unselected `regular`, selected `fill`).

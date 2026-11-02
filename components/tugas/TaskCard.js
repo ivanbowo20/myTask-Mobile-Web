@@ -98,14 +98,16 @@ const TaskCard = memo(function TaskCard({
             <h3
               className={cn(
                 "text-[13px] font-medium truncate transition-colors duration-200 leading-snug",
-                task.selesai ? "text-zinc-400 line-through decoration-zinc-500" : "text-[#FAFAFA]"
+                task.selesai
+                  ? "text-zinc-400 line-through decoration-zinc-500 [html[data-theme='celestial-sky']_&]:text-slate-400"
+                  : "text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]"
               )}
               title={task.judul}
             >
               {task.judul}
             </h3>
 
-            <div className="flex items-center gap-1.5 text-[11px] text-zinc-300 mt-0.5 truncate">
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600 mt-0.5 truncate">
               {kategori ? (
                 <span
                   className="inline-flex items-center gap-1 font-medium shrink-0"
@@ -118,10 +120,10 @@ const TaskCard = memo(function TaskCard({
                   <span className="truncate max-w-[85px]">{kategori.nama}</span>
                 </span>
               ) : (
-                <span className="text-zinc-400 shrink-0">Umum</span>
+                <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 shrink-0">Umum</span>
               )}
 
-              <span className="text-zinc-400 shrink-0">·</span>
+              <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-400 shrink-0">·</span>
 
               {/* Deadline / Status inline */}
               {!task.selesai && status === "terlewat" ? (
@@ -137,11 +139,11 @@ const TaskCard = memo(function TaskCard({
                   <span>Selesai</span>
                 </span>
               ) : task.deadline ? (
-                <span className="text-zinc-300 truncate">
+                <span className="text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600 truncate">
                   {formatTanggal(task.deadline).split(",")[1] || formatTanggal(task.deadline)}
                 </span>
               ) : (
-                <span className="text-zinc-400 shrink-0">Tanpa deadline</span>
+                <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 shrink-0">Tanpa deadline</span>
               )}
             </div>
           </div>
@@ -195,13 +197,13 @@ const TaskCard = memo(function TaskCard({
               transition={{ duration: 0.25, ease: "easeOut" }}
               className="overflow-hidden"
             >
-              <div className="pt-2.5 mt-2 border-t border-white/[0.06] space-y-2.5 text-xs">
+              <div className="pt-2.5 mt-2 border-t border-white/[0.06] [html[data-theme='celestial-sky']_&]:border-sky-200/60 space-y-2.5 text-xs">
                 {/* Judul Lengkap */}
                 <div className="space-y-0.5">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 font-semibold">
                     Judul Tugas:
                   </span>
-                  <p className="text-xs font-semibold text-[#FAFAFA] leading-snug break-words">
+                  <p className="text-xs font-semibold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] leading-snug break-words">
                     {task.judul}
                   </p>
                 </div>
@@ -209,28 +211,28 @@ const TaskCard = memo(function TaskCard({
                 {/* Deskripsi Catatan (jika ada) */}
                 {task.deskripsi && (
                   <div className="space-y-0.5">
-                    <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 font-semibold">
                       Catatan:
                     </span>
-                    <p className="text-xs text-zinc-300 leading-relaxed break-words bg-white/[0.02] p-2 rounded-lg border border-white/[0.04]">
+                    <p className="text-xs text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700 leading-relaxed break-words bg-white/[0.02] [html[data-theme='celestial-sky']_&]:bg-slate-100/90 p-2 rounded-lg border border-white/[0.04] [html[data-theme='celestial-sky']_&]:border-sky-200/60">
                       {task.deskripsi}
                     </p>
                   </div>
                 )}
 
                 {/* Info Tenggat Waktu Lengkap */}
-                <div className="flex items-center gap-1.5 text-zinc-300 text-xs pt-0.5">
+                <div className="flex items-center gap-1.5 text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600 text-xs pt-0.5">
                   <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)] shrink-0" />
                   <span className="text-[11px]">
                     {task.deadline ? (
                       <>
-                        <span className="text-zinc-400">Tenggat: </span>
-                        <span className="font-medium text-[#FAFAFA]">
+                        <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">Tenggat: </span>
+                        <span className="font-medium text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
                           {formatTanggal(task.deadline)}
                         </span>
                       </>
                     ) : (
-                      <span className="text-zinc-400">Tanpa batas waktu</span>
+                      <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">Tanpa batas waktu</span>
                     )}
                   </span>
                 </div>
@@ -241,9 +243,9 @@ const TaskCard = memo(function TaskCard({
                     type="button"
                     onClick={() => onEdit(task)}
                     aria-label={`Ubah tugas ${task.judul}`}
-                    className="min-h-[44px] px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.16] text-[#FAFAFA] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    className="min-h-[44px] px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white [html[data-theme='celestial-sky']_&]:border-sky-200/80 [html[data-theme='celestial-sky']_&]:text-slate-800 border border-white/[0.08] hover:border-white/[0.16] text-[#FAFAFA] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
                   >
-                    <Pencil className="w-3.5 h-3.5 text-zinc-300" />
+                    <Pencil className="w-3.5 h-3.5 text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-500" />
                     Ubah Tugas
                   </button>
 
@@ -251,7 +253,7 @@ const TaskCard = memo(function TaskCard({
                     type="button"
                     onClick={() => onDelete(task)}
                     aria-label={`Hapus tugas ${task.judul}`}
-                    className="min-h-[44px] px-3 py-2 rounded-xl bg-[#E88B8B]/10 hover:bg-[#E88B8B]/20 border border-[#E88B8B]/20 hover:border-[#E88B8B]/40 text-[#E88B8B] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    className="min-h-[44px] px-3 py-2 rounded-xl bg-[#E88B8B]/10 hover:bg-[#E88B8B]/20 border border-[#E88B8B]/20 hover:border-[#E88B8B]/40 text-[#E88B8B] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Hapus Tugas
@@ -303,7 +305,9 @@ const TaskCard = memo(function TaskCard({
             <h3
               className={cn(
                 "text-sm font-semibold line-clamp-2 break-words leading-snug transition-colors duration-200",
-                task.selesai ? "text-zinc-400 line-through decoration-zinc-500" : "text-[#FAFAFA]"
+                task.selesai
+                  ? "text-zinc-400 line-through decoration-zinc-500 [html[data-theme='celestial-sky']_&]:text-slate-400"
+                  : "text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]"
               )}
               title={task.judul}
             >
@@ -336,13 +340,13 @@ const TaskCard = memo(function TaskCard({
 
         {/* Deskripsi Tugas (Indentasi sejajar judul) */}
         {task.deskripsi && (
-          <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed pl-8 -mt-1">
+          <p className="text-xs text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600 line-clamp-2 leading-relaxed pl-8 -mt-1">
             {task.deskripsi}
           </p>
         )}
 
         {/* Footer Metadata & Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-white/[0.06] text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-white/[0.06] [html[data-theme='celestial-sky']_&]:border-sky-200/60 text-xs">
           {/* Left: Kategori & Status Pills */}
           <div className="flex flex-wrap items-center gap-1.5 min-w-0">
             {kategori ? (

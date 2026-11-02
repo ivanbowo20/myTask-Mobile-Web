@@ -295,23 +295,23 @@ export default function DashboardPage() {
       {/* Mobile-First Progress & Unified Focus Agenda (< 1024px) */}
       <div className="lg:hidden space-y-4">
         {/* Sleek 1-Row Progress Card */}
-        <div className="glass-card p-4 rounded-2xl border border-white/[0.08] space-y-2.5">
+        <div className="glass-card p-4 rounded-2xl border border-white/[0.08] [html[data-theme='celestial-sky']_&]:border-sky-200/60 space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/30 text-[var(--theme-accent,#D97706)] flex items-center justify-center">
                 <CheckCircle2 className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-semibold text-[#FAFAFA]">
+              <span className="text-xs font-semibold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
                 Progress Tugas
               </span>
             </div>
-            <span className="text-xs font-bold text-zinc-300">
+            <span className="text-xs font-bold text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600">
               <span className="text-[var(--theme-accent,#D97706)]">{stats.completed}</span> dari {stats.total} tugas ({mobileProgressPercent}%)
             </span>
           </div>
 
           {/* Progress Bar Track */}
-          <div className="w-full h-2 rounded-full bg-white/[0.06] overflow-hidden p-0.5">
+          <div className="w-full h-2 rounded-full bg-white/[0.06] [html[data-theme='celestial-sky']_&]:bg-black/5 overflow-hidden p-0.5">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${mobileProgressPercent}%` }}
@@ -330,10 +330,10 @@ export default function DashboardPage() {
                 key={chip.id}
                 type="button"
                 onClick={() => setMobileFilter(chip.id)}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer active:scale-[0.96] select-none ${
                   isActive
-                    ? "bg-[var(--theme-accent,#D97706)] text-[#0A0A0A] border-[var(--theme-accent,#D97706)] shadow-sm"
-                    : "bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08]"
+                    ? "bg-[var(--theme-accent,#D97706)] text-[#0A0A0A] border-[var(--theme-accent,#D97706)] shadow-sm font-bold"
+                    : "bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:text-slate-700 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:hover:bg-white"
                 }`}
               >
                 <span>{chip.label}</span>
@@ -341,7 +341,7 @@ export default function DashboardPage() {
                   className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                     isActive
                       ? "bg-black/20 text-[#0A0A0A]"
-                      : "bg-white/[0.08] text-zinc-400"
+                      : "bg-white/[0.08] text-zinc-400 [html[data-theme='celestial-sky']_&]:bg-slate-100 [html[data-theme='celestial-sky']_&]:text-slate-600"
                   }`}
                 >
                   {chip.count}
@@ -356,10 +356,10 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
-              <h2 className="font-heading text-sm font-bold text-[#FAFAFA]">
+              <h2 className="font-heading text-sm font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
                 Agenda Fokus
               </h2>
-              <span className="text-[11px] font-medium text-zinc-400">
+              <span className="text-[11px] font-medium text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">
                 ({mobileAgendaTasks.length})
               </span>
             </div>

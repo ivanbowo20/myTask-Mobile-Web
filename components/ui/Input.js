@@ -19,14 +19,14 @@ const Input = forwardRef(function Input(
       {label && (
         <label
           htmlFor={id}
-          className="block text-xs font-semibold uppercase tracking-wider text-zinc-300"
+          className="block text-xs font-semibold uppercase tracking-wider text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700"
         >
           {label}
         </label>
       )}
       <div className="relative">
         {Icon && (
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">
             <Icon className="w-4 h-4" />
           </div>
         )}
@@ -38,6 +38,7 @@ const Input = forwardRef(function Input(
             "w-full min-h-[44px] px-3.5 py-2.5 rounded-lg text-base sm:text-sm text-[#FAFAFA] placeholder:text-zinc-400 transition-all duration-200",
             "bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.16)]",
             "focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-[#FAFAFA]/40 focus:bg-[rgba(255,255,255,0.04)]",
+            "[html[data-theme='celestial-sky']_&]:bg-white/90 [html[data-theme='celestial-sky']_&]:border-sky-200/80 [html[data-theme='celestial-sky']_&]:text-[#0F172A] [html[data-theme='celestial-sky']_&]:placeholder:text-slate-400 [html[data-theme='celestial-sky']_&]:focus:border-sky-500 [html[data-theme='celestial-sky']_&]:focus:ring-sky-200/50 [html[data-theme='celestial-sky']_&]:focus:bg-white shadow-sm",
             error && "border-[#E88B8B] focus:border-[#E88B8B] focus:ring-[#E88B8B]/40",
             Icon && "pl-10",
             className
@@ -46,7 +47,7 @@ const Input = forwardRef(function Input(
         />
       </div>
       {error && <p className="text-xs text-[#E88B8B] font-medium">{error}</p>}
-      {!error && helper && <p className="text-xs text-zinc-400">{helper}</p>}
+      {!error && helper && <p className="text-xs text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">{helper}</p>}
     </div>
   );
 });

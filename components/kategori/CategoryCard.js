@@ -55,7 +55,7 @@ export default function CategoryCard({
       whileHover={shouldReduceMotion ? undefined : { y: -2 }}
       whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
       transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-      className="glass-card group relative rounded-xl sm:rounded-2xl p-3.5 sm:p-5 transition-colors duration-200 flex flex-col justify-between gap-3 select-none"
+      className="glass-card group relative rounded-xl sm:rounded-2xl p-3.5 sm:p-5 [html[data-theme='celestial-sky']_&]:bg-white/85 [html[data-theme='celestial-sky']_&]:border-sky-200/60 shadow-sm transition-colors duration-200 flex flex-col justify-between gap-3 select-none"
     >
       {/* Top Bar: Icon Badge on Left, Action Buttons on Right */}
       <div className="flex items-start justify-between gap-2">
@@ -108,7 +108,7 @@ export default function CategoryCard({
       </div>
 
       {/* Progress Bar with Animated Fill */}
-      <div className="w-full h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+      <div className="w-full h-1.5 rounded-full bg-white/[0.06] [html[data-theme='celestial-sky']_&]:bg-slate-200/80 overflow-hidden">
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: warna }}

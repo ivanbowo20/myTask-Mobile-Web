@@ -160,7 +160,7 @@ export default function NotebookPage() {
                 type="button"
                 onClick={() => setDateFilter(opt.value)}
                 className={cn(
-                  'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer',
+                  'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer active:scale-[0.97]',
                   dateFilter === opt.value
                     ? 'bg-[var(--theme-accent,#0284C7)] text-white [html[data-theme="abyssal-teal"]_&]:text-slate-950 [html[data-theme="soft-aurora"]_&]:text-slate-950 [html[data-theme="dark-chocolate"]_&]:text-slate-950 font-semibold shadow-sm'
                     : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:hover:text-slate-900 hover:bg-white/[0.04] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-100/60'
@@ -179,18 +179,18 @@ export default function NotebookPage() {
       {/* Main Content Area */}
       {filteredNotebooks.length === 0 ? (
         /* Actionable Empty State (SielloMita Protocol: Never lazy empty text) */
-        <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06] space-y-4">
+        <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 space-y-4 shadow-sm">
           <div className="w-14 h-14 rounded-2xl bg-[var(--theme-accent,#0284C7)]/15 border border-[var(--theme-accent,#0284C7)]/30 flex items-center justify-center text-[var(--theme-accent,#0284C7)] shadow-inner">
-            <BookOpen className="w-7 h-7" />
+            <BookBookmark weight="duotone" className="w-7 h-7" />
           </div>
 
           <div className="space-y-1.5 max-w-sm">
-            <h3 className="text-base sm:text-lg font-bold text-zinc-100">
+            <h3 className="text-base sm:text-lg font-bold text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
               {hasActiveFilters
                 ? 'Tidak ada catatan materi yang cocok'
                 : 'Belum ada catatan materi'}
             </h3>
-            <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+            <p className="text-xs sm:text-sm text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 leading-relaxed">
               {hasActiveFilters
                 ? 'Coba ganti kata kunci pencarian atau reset filter tanggal Anda.'
                 : 'Mulai tulis ringkasan materi kuliah, belajar, atau catatan penting Anda di sini.'}
