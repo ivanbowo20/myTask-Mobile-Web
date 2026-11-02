@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  BookOpen,
   Plus,
   Search,
   Calendar,
@@ -12,6 +11,7 @@ import {
   Star,
   Sparkles,
 } from 'lucide-react';
+import { BookBookmark } from '@phosphor-icons/react';
 import Button from '@/components/ui/Button';
 import SpecularButton from '@/components/ui/SpecularButton';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
@@ -87,7 +87,7 @@ export default function NotebookPage() {
         <div className="space-y-1.5 z-10">
           <div className="flex items-center gap-2.5 flex-wrap">
             <div className="p-2 rounded-xl bg-[var(--theme-accent,#0284C7)]/15 border border-[var(--theme-accent,#0284C7)]/30 text-[var(--theme-accent,#0284C7)] shadow-sm shrink-0">
-              <BookOpen className="w-5 h-5" />
+              <BookBookmark weight="fill" className="w-5 h-5" />
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
               Catatan Materi

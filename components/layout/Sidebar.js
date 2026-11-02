@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  ListTodo,
-  BookOpen,
-  Folder,
-  Settings,
-  Shirt,
-} from "lucide-react";
+  SquaresFour,
+  CheckSquareOffset,
+  BookBookmark,
+  FolderSimple,
+  GearSix,
+  Palette,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme-context";
 
@@ -23,24 +23,24 @@ export default function Sidebar({
     {
       href: "/dashboard",
       label: "Dashboard",
-      icon: LayoutDashboard,
+      icon: SquaresFour,
     },
     {
       href: "/tugas",
       label: "Tugas",
-      icon: ListTodo,
+      icon: CheckSquareOffset,
       badge: badges.total,
     },
     {
       href: "/notebook",
       label: "Notebook",
-      icon: BookOpen,
+      icon: BookBookmark,
       badge: badges.notebook,
     },
     {
       href: "/kategori",
       label: "Kategori",
-      icon: Folder,
+      icon: FolderSimple,
       badge: badges.kategori,
     },
   ];
@@ -49,7 +49,7 @@ export default function Sidebar({
     {
       href: "/pengaturan",
       label: "Pengaturan",
-      icon: Settings,
+      icon: GearSix,
     },
   ];
 
@@ -70,11 +70,12 @@ export default function Sidebar({
         >
           <div className="flex items-center gap-3">
             <Icon
+              weight={isActive ? "fill" : "regular"}
               className={cn(
-                "w-4 h-4 shrink-0 transition-colors duration-150",
+                "w-4 h-4 shrink-0 transition-all duration-150",
                 isActive
-                  ? "text-white [html[data-theme='celestial-sky']_&]:text-slate-900 stroke-[2.2]"
-                  : "text-zinc-400 group-hover:text-white [html[data-theme='celestial-sky']_&]:text-slate-500 [html[data-theme='celestial-sky']_&]:group-hover:text-slate-900 stroke-[1.8]"
+                  ? "text-white [html[data-theme='celestial-sky']_&]:text-slate-900 scale-105"
+                  : "text-zinc-400 group-hover:text-white [html[data-theme='celestial-sky']_&]:text-slate-500 [html[data-theme='celestial-sky']_&]:group-hover:text-slate-900"
               )}
             />
             <span>{label}</span>
@@ -126,12 +127,13 @@ export default function Sidebar({
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <Shirt
+                  <Palette
+                    weight={isThemeModalOpen ? "fill" : "regular"}
                     className={cn(
-                      "w-4 h-4 shrink-0 transition-colors duration-150",
+                      "w-4 h-4 shrink-0 transition-all duration-150",
                       isThemeModalOpen
-                        ? "text-white [html[data-theme='celestial-sky']_&]:text-slate-900 stroke-[2.2]"
-                        : "text-zinc-400 group-hover:text-white [html[data-theme='celestial-sky']_&]:text-slate-500 [html[data-theme='celestial-sky']_&]:group-hover:text-slate-900 stroke-[1.8]"
+                        ? "text-white [html[data-theme='celestial-sky']_&]:text-slate-900 scale-105"
+                        : "text-zinc-400 group-hover:text-white [html[data-theme='celestial-sky']_&]:text-slate-500 [html[data-theme='celestial-sky']_&]:group-hover:text-slate-900"
                     )}
                   />
                   <span>Tema</span>

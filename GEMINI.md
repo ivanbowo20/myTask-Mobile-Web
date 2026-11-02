@@ -10,15 +10,16 @@
 - Registries resmi yang terkonfigurasi di `components.json`:
   - `@canvas-ui`: Canvas / WebGPU fluid, 3D, physics simulation (`https://canvasui.dev`).
   - `@aceternity`: Aceternity UI animasi & 3D cards, beams, lamps (`https://ui.aceternity.com`).
-  - `@magicui`: Magic UI modern elements (`https://magicui.design`).
+  - `@magicui`: Magic UI modern elements (bento-grid, globe, animated-beam, marquee) (`https://magicui.design`).
   - `@react-bits`: React Bits animations & text effects (`https://reactbits.dev`).
 - Ketika merencanakan atau menambahkan animasi, selalu gunakan referensi dari library ini untuk rekomendasi terbaik dan install komponen dengan format `npx shadcn@latest add @registry/component-name`.
 
 ## Frontend Design & Anti-AI Slop (SielloMita Design)
 - Menggunakan standar skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine):
-  - **Anti-AI Slop Enforcement**: Melarang 10 AI slop tells (gradien generik ungu, judul hero membungkus 6 baris, pill shapes di semua tombol/kartu, glassmorphism kabur berlebih, bento berlubang).
+  - **Anti-AI Slop Enforcement**: Melarang 12 AI slop tells (gradien generik ungu, judul hero membungkus 6 baris, pill shapes di semua tombol/kartu, glassmorphism kabur berlebih, bento berlubang, 3 kartu fitur simetris tanpa visual anchor, dan dual competing primary CTAs).
   - **Apple WWDC Fluid Motion**: Interaksi aktif wajib responsif seketika (`:active scale(0.97)`), interruptible springs.
-  - **Gapless Dense Grid**: Wajib menggunakan `grid-flow-dense` untuk bento grid.
+  - **Gapless Dense Grid (Stageshow Protocol)**: Wajib menggunakan `grid-flow-dense` dan dilarang kartu pasif hanya-teks (wajib artefak micro-widget produk nyata).
+  - **Phosphor Dynamic Iconography**: Navigasi utama desktop & mobile wajib menggunakan `@phosphor-icons/react` dengan transisi state dinamis (unselected `regular`, selected `fill`).
   - **Triage 3 Arah**: Analisa slop diagnostic + 3 arah alternatif desain + kode implementasi siap pakai.
   - **Design Consultation & Plan Review**: Gunakan `/siellomita consult` untuk konsultasi sistem desain dari nol dan `/siellomita plan-review` untuk audit rencana UI/UX (rating 0-10, 5 state interaksi wajib) sebelum penulisan kode.
 

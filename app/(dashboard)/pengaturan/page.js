@@ -3,15 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Settings,
   User,
   Info,
   LogOut,
   ShieldAlert,
   Calendar,
   Mail,
-  Shirt,
 } from "lucide-react";
+import { Palette, GearSix } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AnimatedContent from "@/components/ui/AnimatedContent";
@@ -62,7 +61,7 @@ export default function SettingsPage() {
         <div className="border-b border-white/[0.08] pb-5 space-y-1">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#FAFAFA]">
-              <Settings className="w-4 h-4" />
+              <GearSix weight="fill" className="w-4 h-4" />
             </div>
             <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] tracking-tight">
               Pengaturan
@@ -119,7 +118,7 @@ export default function SettingsPage() {
         <section className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
             <div className="flex items-center gap-2">
-              <Shirt className="w-4 h-4 text-[#A1A1AA]" />
+              <Palette weight="fill" className="w-4 h-4 text-[#A1A1AA]" />
               <h2 className="font-heading text-sm font-bold text-[#FAFAFA]">Tema & Tampilan</h2>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)]/15 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/30">
@@ -159,7 +158,7 @@ export default function SettingsPage() {
               onClick={openThemeModal}
               className="shrink-0 w-full sm:w-auto"
             >
-              <Shirt className="w-4 h-4" />
+              <Palette weight="fill" className="w-4 h-4" />
               Ganti Tema
             </Button>
           </div>

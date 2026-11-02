@@ -18,7 +18,7 @@ Single-context repo (`CONTEXT.md` + `docs/adr/`). See `docs/agents/domain.md`.
 Project ini telah terintegrasi dengan shadcn registry untuk animasi & visual modern:
 1. **Canvas UI (`@canvas-ui`)**: WebGPU / WebGL canvas shaders, fluid dynamics, 3D ASCII, cloth, bend, displacement, bubble (`npx shadcn@latest add @canvas-ui/[name]`).
 2. **Aceternity UI (`@aceternity`)**: Background beams, aurora, bento-grid, 3D card tilt, lamp, sparkles, card-hover-effect, vortex, moving-border (`npx shadcn@latest add @aceternity/[name]`).
-3. **Magic UI (`@magicui`)**: Animated beam, marquee, confetti, border-beam, number-ticker.
+3. **Magic UI (`@magicui`)**: Bento-grid, globe, animated beam, marquee, confetti, border-beam, number-ticker.
 4. **React Bits (`@react-bits`)**: Split-text, blur-text, hyperspeed, magnet, star-border.
 
 Saat user meminta rekomendasi atau penambahan animasi, AI HARUS merujuk pada katalog di atas atau skill `animation-components-registry` untuk memberikan opsi visual terbaik yang sesuai dengan konteks desain.
@@ -27,9 +27,10 @@ Saat user meminta rekomendasi atau penambahan animasi, AI HARUS merujuk pada kat
 Untuk seluruh perancangan antarmuka, styling komponen, dan review visual:
 1. Gunakan skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine).
 2. Terapkan prinsip:
-   - **Banned AI Slop Tells**: Dilarang menggunakan gradien ungu default tanpa identitas brand, tombol pill berlebih pada semua elemen, bento berlubang/kosong, dan judul hero 6-baris (wajib max 2-3 baris dalam container ultra-wide).
+   - **Banned AI Slop Tells**: Dilarang menggunakan 12 AI slop tells (gradien ungu default tanpa identitas brand, judul hero 6-baris, tombol pill berlebih pada semua elemen, bento berlubang/kosong, 3 kartu fitur simetris identik tanpa visual anchor, dan dual competing primary CTAs).
    - **WWDC Fluid Springs**: Semua interaksi aktif wajib responsif seketika pada pointer-down (`:active scale(0.97)`) dengan spring physics interruptible.
-   - **Gapless Bento Grid**: Bento grid wajib menggunakan `grid-flow-dense` dengan perhitungan `col-span` & `row-span` yang presisi.
+   - **Gapless Bento Grid (Stageshow Protocol)**: Bento grid wajib menggunakan `grid-flow-dense` dengan perhitungan `col-span` & `row-span` presisi, serta dilarang kartu pasif hanya-teks (setiap kartu wajib memuat artefak micro-widget produk nyata).
+   - **Phosphor Dynamic Iconography**: Navigasi utama desktop & mobile wajib menggunakan `@phosphor-icons/react` dengan transisi state dinamis (unselected `regular`, selected `fill`) untuk sensasi aplikasi native.
    - **3-Direction Delivery**: Memberikan 3 opsi desain (Clean Apple Minimalist, Bold Editorial, Modern Fluid Bento) dan kode implementasi siap pakai tanpa placeholder.
    - **Design Consultation & Plan Review**: Gunakan `/siellomita consult` untuk membangun identitas visual dari nol dan `/siellomita plan-review` untuk mengaudit rencana UI/UX (rating 0-10, 5 state interaksi: idle, loading, actionable empty, error recovery, success) sebelum kode ditulis.
 

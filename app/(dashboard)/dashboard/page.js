@@ -8,12 +8,12 @@ import {
   Check,
   CheckCircle2,
   Clock,
-  ListTodo,
   Star,
   ArrowRight,
   Sparkles,
   Trash2,
 } from "lucide-react";
+import { CheckSquareOffset } from "@phosphor-icons/react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
@@ -387,7 +387,7 @@ export default function DashboardPage() {
 
           {mobileAgendaTasks.length === 0 ? (
             <EmptyState
-              icon={mobileFilter === "selesai" ? CheckCircle2 : ListTodo}
+              icon={mobileFilter === "selesai" ? CheckCircle2 : CheckSquareOffset}
               title={
                 mobileFilter === "selesai"
                   ? "Belum ada tugas selesai"
@@ -445,7 +445,7 @@ export default function DashboardPage() {
                 <AnimatedCounter value={stats.total} />
               </span>
               <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[#FAFAFA] flex items-center justify-center">
-                <ListTodo className="w-3.5 h-3.5" />
+                <CheckSquareOffset weight="fill" className="w-3.5 h-3.5" />
               </div>
             </div>
             <p className="text-[11px] sm:text-sm text-zinc-300 font-medium">Total Tugas</p>
@@ -668,7 +668,7 @@ export default function DashboardPage() {
 
             {recentTasksList.length === 0 ? (
               <EmptyState
-                icon={ListTodo}
+                icon={CheckSquareOffset}
                 title="Belum ada tugas"
                 description="Mulai hari produktif Anda dengan membuat tugas pertama."
                 actionLabel="Tambah Tugas"

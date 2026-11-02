@@ -16,9 +16,8 @@ import {
   BookOpen,
   Plane,
   Folder,
-  Pencil,
-  Trash2,
 } from "lucide-react";
+import { PencilSimple, Trash } from "@phosphor-icons/react";
 import { DEFAULT_CATEGORY_ICON } from "@/lib/constants";
 
 const ICON_MAP = {
@@ -80,9 +79,9 @@ export default function CategoryCard({
               onEdit(kategori);
             }}
             aria-label={`Ubah kategori ${nama}`}
-            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#FAFAFA] hover:bg-white/[0.08] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA] cursor-pointer"
+            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#FAFAFA] hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:text-slate-500 [html[data-theme='celestial-sky']_&]:hover:text-slate-900 [html[data-theme='celestial-sky']_&]:hover:bg-black/[0.04] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA] cursor-pointer"
           >
-            <Pencil className="w-4 h-4" />
+            <PencilSimple className="w-4 h-4" />
           </button>
           <button
             type="button"
@@ -91,19 +90,19 @@ export default function CategoryCard({
               onDelete(kategori);
             }}
             aria-label={`Hapus kategori ${nama}`}
-            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#E88B8B] hover:bg-[#E88B8B]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] cursor-pointer"
+            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#E88B8B] hover:bg-[#E88B8B]/10 [html[data-theme='celestial-sky']_&]:text-rose-500 [html[data-theme='celestial-sky']_&]:hover:text-rose-700 [html[data-theme='celestial-sky']_&]:hover:bg-rose-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] cursor-pointer"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* Info: Category Name & Task Count */}
       <div className="space-y-0.5 sm:space-y-1 min-w-0">
-        <h3 className="text-sm sm:text-base font-semibold text-[#FAFAFA] truncate tracking-tight">
+        <h3 className="text-sm sm:text-base font-semibold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] truncate tracking-tight">
           {nama}
         </h3>
-        <p className="text-[11px] sm:text-xs text-zinc-300 font-medium">
+        <p className="text-[11px] sm:text-xs text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600 font-medium">
           {jumlahTugas} tugas
         </p>
       </div>

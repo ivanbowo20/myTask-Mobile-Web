@@ -19,6 +19,7 @@
     "test:load": "k6 run tests/k6-load-test.js"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "@vercel/analytics": "^2.0.1",

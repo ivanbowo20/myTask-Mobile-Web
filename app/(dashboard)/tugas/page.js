@@ -3,13 +3,13 @@
 import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  ListTodo,
   Search,
   X,
   ChevronLeft,
   ChevronRight,
   Trash2,
 } from "lucide-react";
+import { CheckSquareOffset } from "@phosphor-icons/react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
@@ -128,7 +128,7 @@ function AllTasksContent() {
           <div className="space-y-1.5 z-10">
             <div className="flex items-center gap-2.5 flex-wrap">
               <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-sky-100/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:text-sky-700 flex items-center justify-center text-[#FAFAFA] shadow-sm shrink-0">
-                <ListTodo className="w-4 h-4" />
+                <CheckSquareOffset weight="fill" className="w-4 h-4" />
               </div>
               <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
                 Semua Tugas
@@ -258,7 +258,7 @@ function AllTasksContent() {
       <AnimatedContent delay={0.24}>
         {paginatedTasks.length === 0 ? (
           <EmptyState
-            icon={ListTodo}
+            icon={CheckSquareOffset}
             title="Tidak ada tugas yang sesuai"
             description={
               hasActiveFilters

@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  ListTodo,
+  SquaresFour,
+  CheckSquareOffset,
   Plus,
-  Folder,
-  BookOpen,
-} from 'lucide-react';
+  FolderSimple,
+  BookBookmark,
+} from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useTasks } from '@/lib/task-context';
@@ -42,13 +42,13 @@ export default function BottomNav({ onOpenAddTask }) {
     {
       href: '/dashboard',
       label: 'Dashboard',
-      icon: LayoutDashboard,
+      icon: SquaresFour,
       isActive: pathname === '/dashboard' || pathname.startsWith('/dashboard/'),
     },
     {
       href: '/tugas',
       label: 'Tugas',
-      icon: ListTodo,
+      icon: CheckSquareOffset,
       isActive: pathname === '/tugas' || pathname.startsWith('/tugas'),
     },
   ];
@@ -57,13 +57,13 @@ export default function BottomNav({ onOpenAddTask }) {
     {
       href: '/notebook',
       label: 'Notebook',
-      icon: BookOpen,
+      icon: BookBookmark,
       isActive: pathname === '/notebook' || pathname.startsWith('/notebook/'),
     },
     {
       href: '/kategori',
       label: 'Kategori',
-      icon: Folder,
+      icon: FolderSimple,
       isActive: pathname === '/kategori' || pathname.startsWith('/kategori/'),
     },
   ];
@@ -82,7 +82,7 @@ export default function BottomNav({ onOpenAddTask }) {
           'relative flex flex-col items-center justify-center min-w-0 w-full min-h-[48px] py-1 px-0.5 rounded-xl transition-all duration-200 group select-none cursor-pointer',
           active
             ? 'text-[var(--theme-accent,#D97706)]'
-            : 'text-zinc-400 hover:text-zinc-200'
+            : 'text-zinc-400 hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:text-slate-500 [html[data-theme="celestial-sky"]_&]:hover:text-slate-800'
         )}
       >
         {/* Active background pill */}
@@ -95,15 +95,16 @@ export default function BottomNav({ onOpenAddTask }) {
         {/* Icon & Label */}
         <div className="relative z-10 flex flex-col items-center gap-0.5 w-full min-w-0">
           <Icon
+            weight={active ? "fill" : "regular"}
             className={cn(
               'w-5 h-5 transition-transform duration-200 shrink-0',
-              active ? 'scale-105 stroke-[2.2]' : 'group-hover:scale-105'
+              active ? 'scale-110' : 'group-hover:scale-105'
             )}
           />
           <span
             className={cn(
               'text-[10px] font-medium tracking-tight truncate max-w-full text-center transition-colors duration-200 px-0.5',
-              active ? 'font-semibold text-[var(--theme-accent,#D97706)]' : 'text-zinc-400 group-hover:text-zinc-200'
+              active ? 'font-semibold text-[var(--theme-accent,#D97706)]' : 'text-zinc-400 group-hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:text-slate-500 [html[data-theme="celestial-sky"]_&]:group-hover:text-slate-800'
             )}
           >
             {item.label}

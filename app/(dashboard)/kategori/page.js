@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { Folder, Plus } from "lucide-react";
+import { FolderSimple, Plus } from "@phosphor-icons/react";
 import CategoryCard from "@/components/kategori/CategoryCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
@@ -56,28 +56,28 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* Header (Hero Glass Banner — SielloMita Anti-Washout Standard) */}
       <AnimatedContent delay={0}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#FAFAFA]">
-                <Folder className="w-4 h-4" />
+        <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 z-10">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-sky-100/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:text-sky-700 flex items-center justify-center text-[#FAFAFA] shadow-sm shrink-0">
+                <FolderSimple weight="fill" className="w-4 h-4" />
               </div>
-              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] tracking-tight">
+              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
                 Kategori Tugas
               </h1>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[#A1A1AA]">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:text-slate-800 text-zinc-300 shadow-sm">
                 {categories.length} kategori
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-[#A1A1AA]">
+            <p className="text-xs sm:text-sm text-zinc-300 [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
               Kelompokkan tugas berdasarkan bidang pekerjaan, prioritas hidup, atau kegiatan kuliah.
             </p>
           </div>
 
-          <Button variant="primary" onClick={openAddCategory}>
-            <Plus className="w-4 h-4" />
+          <Button variant="primary" onClick={openAddCategory} className="z-10 shrink-0">
+            <Plus weight="bold" className="w-4 h-4" />
             Tambah Kategori
           </Button>
         </div>
@@ -86,8 +86,8 @@ export default function CategoriesPage() {
       {/* Quick Add Inline Card */}
       <AnimatedContent delay={0.08}>
         <div className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
-          <h2 className="font-heading text-sm font-bold text-[#FAFAFA] flex items-center gap-2">
-            <Plus className="w-4 h-4" />
+          <h2 className="font-heading text-sm font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] flex items-center gap-2">
+            <Plus weight="bold" className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
             Tambah Kategori Cepat
           </h2>
 
