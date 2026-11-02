@@ -919,31 +919,38 @@ html[data-theme="abyssal-teal"] .glass-modal {
 /* Placed after base glass classes to guarantee CSS cascade win */
 /* ============================================================ */
 @media (max-width: 768px) {
-  .glass-card {
-    background: var(--glass-bg, rgba(22, 17, 14, 0.85));
-    backdrop-filter: blur(4px) saturate(110%);
-    -webkit-backdrop-filter: blur(4px) saturate(110%);
+  /* Mobile Zero-GPU-Jank Standard:
+     Nonaktifkan 100% multi-pass backdrop-filter pada seluruh kartu, panel, dan dropdown di HP
+     (Infinix Smart 6 / PowerVR GPU) agar scrolling 60 FPS lancar tanpa thermal throttling.
+     Warna kartu menggunakan background solid opaque berkontras tinggi yang nyaman di mata. */
+  .glass-card,
+  article.glass-card {
+    background: var(--glass-bg, rgba(22, 17, 14, 0.94)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .glass-panel {
-    background: var(--glass-bg, rgba(22, 17, 14, 0.82));
-    backdrop-filter: blur(8px) saturate(115%);
-    -webkit-backdrop-filter: blur(8px) saturate(115%);
+    background: var(--glass-bg, rgba(22, 17, 14, 0.94)) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .glass-modal {
-    backdrop-filter: blur(12px) saturate(120%);
-    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 
   .glass-dropdown {
-    backdrop-filter: blur(10px) saturate(120%);
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--theme-nav-bg, rgba(20, 15, 12, 0.98)) !important;
   }
 
   .dynamic-island-toast {
-    backdrop-filter: blur(10px) saturate(120%);
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--theme-nav-bg, rgba(20, 15, 12, 0.96)) !important;
   }
 
   /* Celestial Sky Mobile Glass Optimization (Frosted Solid Ice White 96% with 0% GPU Blur Overload) */

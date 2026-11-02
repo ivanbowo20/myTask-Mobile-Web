@@ -20,6 +20,7 @@ Project ini telah terintegrasi dengan shadcn registry untuk animasi & visual mod
 2. **Aceternity UI (`@aceternity`)**: Background beams, aurora, bento-grid, 3D card tilt, lamp, sparkles, card-hover-effect, vortex, moving-border (`npx shadcn@latest add @aceternity/[name]`).
 3. **Magic UI (`@magicui`)**: Bento-grid, globe, animated beam, marquee, confetti, border-beam, number-ticker.
 4. **React Bits (`@react-bits`)**: Split-text, blur-text, hyperspeed, magnet, star-border.
+5. **Ballmac UI (`@ballmac`)**: AI agent consoles, developer tools, device frames, and macOS/iOS desktop-style surfaces (`npx shadcn@latest add @ballmac/[name]`).
 
 Saat user meminta rekomendasi atau penambahan animasi, AI HARUS merujuk pada katalog di atas atau skill `animation-components-registry` untuk memberikan opsi visual terbaik yang sesuai dengan konteks desain.
 

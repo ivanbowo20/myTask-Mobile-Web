@@ -5,7 +5,12 @@ import { CloudShader } from '@/components/ui/cloud-shader';
 
 export default function CelestialSkyBackground({ children, className = '' }) {
   return (
-    <div className={`absolute inset-0 overflow-hidden pointer-events-none select-none ${className}`}>
+    <div
+      className={`absolute inset-0 overflow-hidden pointer-events-none select-none ${className}`}
+      style={{
+        background: 'linear-gradient(to bottom, #3172B8 0%, #689FD1 45%, #8CBEE8 100%)',
+      }}
+    >
       {/* 
         WebGL Procedural Cloud Shader by Aceternity UI 
         Optimized for 60fps with mobile DPR-clamping and auto-pause on inactive tabs

@@ -303,8 +303,8 @@ export const CloudShader = ({
       const resize = () => {
         if (!gl || !canvas) return;
         const isMobile = window.innerWidth < 768;
-        const scaleFactor = isMobile ? 0.35 : 1.0;
-        const maxDpr = isMobile ? 0.8 : 1.5;
+        const scaleFactor = isMobile ? 0.25 : 1.0;
+        const maxDpr = isMobile ? 0.6 : 1.5;
         const dpr = Math.min(window.devicePixelRatio || 1, maxDpr) * scaleFactor;
 
         const width = canvas.clientWidth || window.innerWidth;
@@ -338,7 +338,8 @@ export const CloudShader = ({
           return;
         }
 
-        const minInterval = isMobile ? 36 : 16;
+        // Cap at ~24 FPS on mobile (minInterval 42ms) for optimal PowerVR GPU efficiency & battery
+        const minInterval = isMobile ? 42 : 16;
         const delta = now - lastDrawTime;
 
         if (delta < minInterval) {
@@ -354,7 +355,8 @@ export const CloudShader = ({
         const skyTop = parseHex(p.skyTopColor);
         const skyBottom = parseHex(p.skyBottomColor);
 
-        const effectiveCount = isMobile ? Math.min(2, p.count) : p.count;
+        // Di mobile (< 768px), gunakan 1 pass cloud lapis utama untuk memangkas 50% loop noise FBM
+        const effectiveCount = isMobile ? 1.0 : p.count;
 
         gl.uniform1f(loc.time, elapsed);
         gl.uniform1f(loc.count, Math.min(6, Math.max(1, effectiveCount)));
@@ -427,6 +429,9 @@ export const CloudShader = ({
       <canvas
         ref={canvasRef}
         className="pointer-events-none absolute inset-0 h-full w-full"
+        style={{
+          background: 'linear-gradient(to bottom, #3172B8 0%, #689FD1 45%, #8CBEE8 100%)',
+        }}
       />
       {children ? (
         <div className="relative z-10 flex h-full w-full items-center justify-center">

@@ -14,7 +14,7 @@ export default function ThemeBackground() {
   if (!isMounted) {
     return (
       <div
-        className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)]"
+        className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='abyssal-teal']_&]:bg-[#021013] [html[data-theme='soft-aurora']_&]:bg-[#060810]"
         aria-hidden="true"
       />
     );
@@ -24,17 +24,17 @@ export default function ThemeBackground() {
 
   return (
     <div
-      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] isolate [transform:translate3d(0,0,0)]"
+      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] isolate [transform:translate3d(0,0,0)]"
       aria-hidden="true"
     >
-      {/* Dynamic Background Switcher with Fluid Simultaneous Cross-fade */}
+      {/* Dynamic Background Switcher with Fluid Simultaneous Cross-fade (initial={false} untuk 0ms first paint) */}
       <AnimatePresence initial={false}>
         <motion.div
           key={activeThemeId}
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
         >
           {activeThemeId === 'celestial-sky' && <CelestialSkyBackground />}

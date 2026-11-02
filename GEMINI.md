@@ -12,6 +12,7 @@
   - `@aceternity`: Aceternity UI animasi & 3D cards, beams, lamps (`https://ui.aceternity.com`).
   - `@magicui`: Magic UI modern elements (bento-grid, globe, animated-beam, marquee) (`https://magicui.design`).
   - `@react-bits`: React Bits animations & text effects (`https://reactbits.dev`).
+  - `@ballmac`: Ballmac UI AI agent consoles, developer tools, and device frames (`https://ui.ballmac.com`).
 - Ketika merencanakan atau menambahkan animasi, selalu gunakan referensi dari library ini untuk rekomendasi terbaik dan install komponen dengan format `npx shadcn@latest add @registry/component-name`.
 
 ## Frontend Design & Anti-AI Slop (SielloMita Design)

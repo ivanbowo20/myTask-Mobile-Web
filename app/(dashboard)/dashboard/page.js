@@ -116,16 +116,20 @@ export default function DashboardPage() {
     setSeed(Math.floor(Math.random() * 10));
   }, []);
 
-  // Passive dispatch trigger: periksa dan kirim notifikasi pengingat tertunda satu kali saat dashboard dibuka
+  // Passive dispatch trigger: periksa notifikasi tertunda secara tenang setelah halaman selesai dimuat (idle 4 detik)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    fetch("/api/notifications/dispatch", {
-      method: "POST",
-    }).catch((err) => {
-      // Fire-and-forget: abaikan kesalahan jaringan latar belakang
-      console.warn("[PASSIVE_DISPATCH] Gagal memicu dispatch pasif:", err);
-    });
+    const timer = setTimeout(() => {
+      fetch("/api/notifications/dispatch", {
+        method: "POST",
+      }).catch((err) => {
+        // Fire-and-forget: abaikan kesalahan jaringan latar belakang
+        console.warn("[PASSIVE_DISPATCH] Gagal memicu dispatch pasif:", err);
+      });
+    }, 4000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Notifikasi sambutan login satu kali per sesi browser

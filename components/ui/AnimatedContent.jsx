@@ -9,14 +9,14 @@ import { motion, useReducedMotion } from 'framer-motion';
  */
 function subscribeMobile(callback) {
   if (typeof window === 'undefined') return () => {};
-  const mql = window.matchMedia('(max-width: 639px)');
+  const mql = window.matchMedia('(max-width: 767px)');
   mql.addEventListener('change', callback);
   return () => mql.removeEventListener('change', callback);
 }
 
 function getMobileSnapshot() {
   if (typeof window === 'undefined') return false;
-  return window.matchMedia('(max-width: 639px)').matches;
+  return window.matchMedia('(max-width: 767px)').matches;
 }
 
 function getServerSnapshot() {
@@ -142,16 +142,17 @@ const AnimatedContent = forwardRef(function AnimatedContent(
   // Determine if CSS filter blur is needed.
   // CRITICAL:
   // 1. On SSR (before mounted), blur is disabled to prevent hydration mismatch and stuck blur.
-  // 2. On mobile (< 640px) or when reduced motion is on, hasBlur is false for 60 FPS.
-  const hasBlur = mounted && !shouldReduceMotion && Boolean(activeBlur) && activeBlur > 0;
+  // 2. On mobile (< 768px) or when reduced motion is on, hasBlur is false for 60 FPS.
+  const hasBlur = mounted && !shouldReduceMotion && !isMobile && Boolean(activeBlur) && activeBlur > 0;
+  const skipAnimation = shouldReduceMotion || isMobile;
 
-  // Animation variants
+  // Animation variants: di mobile, jangan pernah sembunyikan konten (opacity 1 instant paint)
   const variants = {
     hidden: {
-      opacity: animateOpacity ? initialOpacity : 1,
-      scale: shouldReduceMotion ? 1 : scale,
-      x: shouldReduceMotion ? 0 : xOffset,
-      y: shouldReduceMotion ? 0 : yOffset,
+      opacity: skipAnimation ? 1 : (animateOpacity ? initialOpacity : 1),
+      scale: skipAnimation ? 1 : scale,
+      x: skipAnimation ? 0 : xOffset,
+      y: skipAnimation ? 0 : yOffset,
       ...(hasBlur ? { filter: `blur(${activeBlur}px)` } : {}),
     },
     visible: {
@@ -168,8 +169,8 @@ const AnimatedContent = forwardRef(function AnimatedContent(
             filter: 'none',
           }),
       transition: {
-        duration: shouldReduceMotion ? 0.05 : activeDuration,
-        delay: shouldReduceMotion ? 0 : delay,
+        duration: skipAnimation ? 0.05 : activeDuration,
+        delay: skipAnimation ? 0 : delay,
         ease: ease,
       },
     },
@@ -196,11 +197,11 @@ const AnimatedContent = forwardRef(function AnimatedContent(
   return (
     <MotionComponent
       ref={handleRef}
-      initial="hidden"
+      initial={skipAnimation ? false : "hidden"}
       whileInView="visible"
       viewport={{
         once,
-        amount: activeThreshold,
+        amount: skipAnimation ? 0 : activeThreshold,
         ...(effectiveRoot ? { root: effectiveRoot } : {}),
       }}
       variants={variants}

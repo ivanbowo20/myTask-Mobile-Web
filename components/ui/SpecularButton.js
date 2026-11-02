@@ -218,6 +218,14 @@ export default function SpecularButton({
     const canvas = canvasRef.current;
     if (!button || !canvas) return undefined;
 
+    // Mobile Low-Power Optimization (< 768px):
+    // Lewati alokasi WebGL2 context dan listener global pointermove di HP (Infinix Smart 6)
+    // Gunakan styling specular CSS bawaan yang 100% hemat baterai dan bebas memory leak
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      canvas.style.display = 'none';
+      return undefined;
+    }
+
     const onContextLost = event => {
       event.preventDefault();
       canvas.style.display = 'none';
