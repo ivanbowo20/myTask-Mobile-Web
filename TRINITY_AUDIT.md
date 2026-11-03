@@ -1,83 +1,101 @@
-# 🔱 TRINITY CODE AUDIT REPORT (Mobile Performance & Infinix Smart 6 Verification)
+# 🔱 TRINITY CODE & DEEP AUDIT REPORT — INVESTIGASI RETENSI TUGAS SELESAI (3 HARI)
 
-**Target:** Web Application (Mobile Performance, Layout Stability & Semantic Design Tokens)  
-**Target Device Profile:** Infinix Smart 6 (Unisoc SC9863A / PowerVR Rogue GE8322 / 2GB RAM / Android 11 Go Edition)  
-**Metode Audit:** Graphify Macro Topology × CodeGraph Micro AST × Ponytail Lean Audit × Reality Checker  
-**Status Verifikasi:** `npm run build` PASS (Code 0), AST Check 14 Files PASS (Code 0)  
-
----
-
-## 🧭 Ringkasan Arsitektur & Beban Runtime Mobile
-
-Aplikasi **todowebb V2** adalah aplikasi Next.js 15 (React 19) dengan Tailwind CSS v4, Framer Motion, dan Better Auth.  
-Pembaruan token semantik yang baru saja dilakukan (`--text-primary`, `--text-secondary`, `--text-muted`, `--glass-bg`, `--glass-border`) **tidak menambah ukuran bundle JavaScript** (First Load JS tetap ~185 kB pada `/dashboard`, sangat ringan untuk standar Next.js).
-
-Namun, pada perangkat kelas pemula (entry-level) seperti **Infinix Smart 6**:
-1. **GPU PowerVR Rogue GE8322** memiliki keterbatasan *fillrate* dan *multi-pass shaders*. Fitur CSS `backdrop-filter: blur(...)` jika dipasang pada lebih dari 5 elemen yang terlihat bersamaan akan memaksa GPU membuat *intermediate render textures*, menyebabkan frame rate turun dari 60 FPS ke 15–25 FPS saat scrolling.
-2. **CPU Unisoc SC9863A (Cortex-A55 @ 1.6 GHz)** rentan *lag* jika ada banyak perhitungan layout atau loop `requestAnimationFrame` yang berjalan serentak saat pengguna menyentuh layar.
-3. **RAM 2GB (Android Go)** memiliki *Low Memory Killer* (LMK) yang agresif. Memori grafis (VRAM) yang terpakai oleh canvas beresolusi tinggi atau filter layer berlebih dapat memicu reload tab browser.
+**Target:** Siklus Retensi Auto-Purge Tugas Selesai (`public.tasks`), PostgreSQL RPC, dan Supabase Scheduler  
+**Ruang Lingkup:**
+- Investigasi Root Cause: Mengapa tugas selesai sejak 28 Okt 2026 belum terhapus pada 3 Nov 2026 (6 hari kemudian).
+- Status Fungsi Database Live: `public.purge_old_completed_tasks()` di PostgreSQL Supabase.
+- Status Scheduler: Native Supabase `pg_cron` vs GitHub Actions Workflow.
+- Inspeksi Data Realtime: Status dan timestamp baris tugas milik akun aktif.  
+**Indeks yang Digunakan:** Native AST: Ya | PostgreSQL Live Inspection: Ya | Reality Checker: Ya (Terbukti 100% di runtime)  
+**Status Audit:** FASE 2 — PERBAIKAN SELESAI & TERVERIFIKASI (`npm run build` PASS & PostgreSQL Verified)
 
 ---
 
-## 🚨 1. MUST FIX (Fatal Bug, Logic Crash, Data Loss)
+## 🧭 Ringkasan Eksekutif & Fakta Hasil Audit
 
-> **Hasil Audit:** **0 TEMUAN FATAL.**  
-> Seluruh 14 berkas yang diperbarui lulus uji Abstract Syntax Tree (AST `@babel/parser`) dan seluruh rute lulus kompilasi produksi `next build` tanpa broken imports, undefined symbols, atau syntax error.
+Pada tanggal 27 Oktober 2026 (commit `5396ceaf`), repositori lokal mencatat perubahan kebijakan retensi tugas selesai dari `14 days` menjadi `3 days` pada file `supabase/schema.sql` dan menambahkan instruksi workflow GitHub Actions `.github/workflows/supabase-keep-alive.yml`.
+
+Namun, audit runtime langsung terhadap database PostgreSQL Supabase yang aktif membuktikan bahwa:
+1. **Fungsi SQL di Database Server Supabase Belum Dimigrasi:**
+   Kueri ke `pg_proc` untuk `purge_old_completed_tasks` di server Supabase masih memuat definisi lama:
+   ```sql
+   where selesai = true
+     and selesai_pada is not null
+     and selesai_pada < (now() - interval '14 days');
+   ```
+   Fungsi di server belum pernah dieksekusi dengan versi `interval '3 days'`. Akibatnya, tugas yang baru berumur 6 hari (28 Okt – 3 Nov) dianggap belum memenuhi syarat hapus (> 14 hari).
+2. **Ketiadaan Cron Job di Supabase `pg_cron`:**
+   Kueri ke tabel `cron.job` di database Supabase menunjukkan hanya ada 1 job aktif:
+   `dispatch-task-reminders` (berjalan setiap 1 menit untuk webhook pengingat tugas).
+   Fungsi `purge_old_completed_tasks()` sama sekali belum pernah didaftarkan ke `pg_cron` internal Supabase.
+3. **Ketergantungan Eksternal pada GitHub Actions:**
+   Pembersihan saat ini hanya bergantung pada `.github/workflows/supabase-keep-alive.yml` yang berjalan setiap 3 hari sekali. Jika `SUPABASE_SERVICE_ROLE_KEY` belum disetel di GitHub Secrets, workflow hanya melakukan ping HTTP anonim dan melewati eksekusi pembersihan.
+4. **Temuan Waktu Selesai (Timestamp) Tugas Pengguna:**
+   - **Tugas 1 ("Perbaiki form pendaftaran", ID 34):**
+     Selesai pada: `2026-10-28T10:31:57.636Z` (28 Okt 2026, 17:31 WIB).
+     Tugas ini sudah berusia **6 hari**, sehingga memang seharusnya terhapus jika sistem retensi 3 hari berjalan.
+   - **Tugas 2 ("Belajar database dan security", ID 14):**
+     Selesai pada: `2026-11-03T03:18:07.152Z` (3 Nov 2026, 10:18 WIB).
+     Tugas ini baru diselesaikan **hari ini**, sehingga baru akan memenuhi batas 3 hari pada **6 November 2026**.
 
 ---
 
-## ⚠️ 2. SHOULD FIX (Performa Khusus HP Infinix Smart 6 & Low-End Devices)
+## 🚨 1. MUST FIX (Akar Masalah Sistem Tidak Bekerja)
 
-### [1] Kebocoran `backdrop-filter` via Utility Class Tailwind Inline
-- **Lokasi Berkas:** [app/globals.css](file:///c:/MY%20project%20Website/todowebb%20V2/app/globals.css#L324-L342), [app/(dashboard)/dashboard/page.js](file:///c:/MY%20project%20Website/todowebb%20V2/app/(dashboard)/dashboard/page.js#L286-L545), [app/(dashboard)/tugas/page.js](file:///c:/MY%20project%20Website/todowebb%20V2/app/(dashboard)/tugas/page.js#L150-L223)
-- **Fungsi Kode:** Memberikan efek kaca buram pada tombol, tab filter status, search input, dan kartu tugas snap-carousel.
-- **Akar Masalah (GPU Stutter):**
-  Sebelumnya, berkas `globals.css` sudah menonaktifkan `backdrop-filter` untuk `.glass-card` dan `.glass-panel` pada `@media (max-width: 768px)`. Namun, beberapa elemen masih memuat class Tailwind langsung seperti `backdrop-blur-md` dan `backdrop-blur-sm` di tag JSX.  
-  Di HP Infinix Smart 6, saat pengguna menggulir layar (scroll), browser Chrome Mobile merender ulang 10+ layer blur tersebut di setiap frame, menghasilkan sensasi "berat" atau *stuttering*.
-- **Reality Check & Bukti Pemicu:**
-  Pada halaman Dashboard, komponen filter tab, salam hero, dan kartu snap scroll horizontal memiliki `backdrop-blur-md`. Ketika ada 5-10 tugas dalam snap horizontal, terjadi penumpukan *compositing layers* di GPU PowerVR.
-- **Blast Radius:** Tampilan mobile layar `< 768px`.
-- **Saran Perbaikan Minimal (Ponytail Fix):**
-  Tambahkan 1 aturan proteksi global di `app/globals.css` pada blok `@media (max-width: 768px)`:
-  ```css
-  @media (max-width: 768px) {
-    /* Matikan backdrop-blur inline pada elemen non-modal di HP untuk menghemat 100% GPU fillrate */
-    [class*="backdrop-blur"]:not(.glass-modal):not([role="dialog"]) {
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-    }
-  }
+### [1] Fungsi RPC `purge_old_completed_tasks` di Database Supabase Masih Menggunakan Interval 14 Hari
+- **Lokasi Kode:** Database Supabase Live (`pg_proc.purge_old_completed_tasks`) vs [`supabase/schema.sql:L206-L210`](file:///c:/MY%20project%20Website/todowebb%20V2/supabase/schema.sql#L206-L210)
+- **Fungsi Kode:** Membersihkan tugas yang sudah selesai lebih dari periode retensi yang ditentukan.
+- **Akar Masalah (Root Cause):**
+  File SQL lokal di Git sudah diubah menjadi `interval '3 days'`, namun migration DDL belum pernah dieksekusi ke PostgreSQL Supabase live. Di database produksi, fungsinya masih:
+  ```sql
+  delete from public.tasks
+  where selesai = true
+    and selesai_pada is not null
+    and selesai_pada < (now() - interval '14 days');
   ```
-  *Dampak:* Di HP Infinix Smart 6, scrolling menjadi mulus 60 FPS instan tanpa GPU panas, sementara di laptop/desktop efek frosted glass tetap aktif 100%.
-
----
-
-### [2] Optimasi Kartu Carousel Snap Tugas Hari Ini di Dashboard
-- **Lokasi Berkas:** [app/(dashboard)/dashboard/page.js:545](file:///c:/MY%20project%20Website/todowebb%20V2/app/(dashboard)/dashboard/page.js#L545)
-- **Fungsi Kode:** Menampilkan daftar tugas hari ini dalam bentuk carousel geser horizontal pada mobile.
-- **Akar Masalah:**
-  Class kartu: `backdrop-blur-md glass-card hover:-translate-y-0.5`. Pada HP, efek `hover:-translate-y-0.5` tidak diperlukan (tidak ada kursor mouse), dan dapat mengacaukan akselerasi hardware touch scrolling jika tidak sengaja terpicu pointer event.
-- **Reality Check & Bukti Pemicu:** Saat jari menggeser carousel ke kiri/kanan, browser mendeteksi pointer down yang memicu hover pseudo-class sesaat.
+- **Reality Check & Bukti Pemicu:**
+  Kueri langsung ke database membuktikan tugas ID 34 ("Perbaiki form pendaftaran") selesai pada 28 Okt 2026. Karena 6 hari < 14 hari, fungsi ini melewatkan baris tugas tersebut.
+- **Blast Radius:** Seluruh tugas selesai di tabel `public.tasks`.
 - **Saran Perbaikan Minimal:**
-  Ganti `hover:-translate-y-0.5` menjadi `sm:hover:-translate-y-0.5`, dan hapus `backdrop-blur-md` yang redundan karena sudah di-handle oleh `.glass-card`.
+  Jalankan migrasi DDL via connection pooler untuk memperbarui fungsi menjadi `interval '3 days'`.
 
 ---
 
-## 💡 3. NICE TO HAVE (Lean & Battery Saving)
-
-### [3] Backdrop Modal di Mobile Layar Penuh
-- **Lokasi Berkas:** [components/ui/Modal.js:154](file:///c:/MY%20project%20Website/todowebb%20V2/components/ui/Modal.js#L154), [components/theme/ThemeModal.js:131](file:///c:/MY%20project%20Website/todowebb%20V2/components/theme/ThemeModal.js#L131)
-- **Temuan:**
-  Di layar desktop, modal backdrop menggunakan `backdrop-blur-[4px]`. Di mobile, `Modal.js` sudah memiliki `hidden lg:block` pada backdrop (karena modal di HP tampil *full-screen* native 100dvh).  
-  Namun di `ThemeModal.js`, backdrop masih memiliki `backdrop-blur-[6px]` di mobile. Mengubahnya menjadi `sm:backdrop-blur-[6px]` akan menghemat alokasi memori grafis saat modal tema dibuka.
+### [2] Ketiadaan Penjadwalan Otomatis (Automation Scheduler) di PostgreSQL Supabase
+- **Lokasi Kode:** Database Supabase Live (`cron.job`) dan [`scripts/setup-supabase-cron.js`](file:///c:/MY%20project%20Website/todowebb%20V2/scripts/setup-supabase-cron.js)
+- **Fungsi Kode:** Menjalankan pembersihan berkala secara otomatis di latar belakang tanpa campur tangan manusia.
+- **Akar Masalah (Root Cause):**
+  Ekstensi `pg_cron` di Supabase sudah aktif dan berhasil menjalankan job `dispatch-task-reminders`. Namun skrip pendaftaran cron (`setup-supabase-cron.js`) tidak mendaftarkan `purge_old_completed_tasks()`.
+  Sistem hanya mengandalkan GitHub Actions luar yang jika gagal atau tidak memiliki secret `SUPABASE_SERVICE_ROLE_KEY` maka tidak ada pembersihan yang pernah terjadi.
+- **Reality Check & Bukti Pemicu:**
+  Kueri `SELECT * FROM cron.job;` di Supabase hanya menghasilkan jobid 2 (`dispatch-task-reminders`). Nol cron job untuk pembersihan.
+- **Blast Radius:** Otomatisasi database jangka panjang.
+- **Saran Perbaikan Minimal:**
+  Daftarkan job penjadwalan harian ke `pg_cron`:
+  ```sql
+  SELECT cron.schedule('purge-completed-tasks-daily', '0 0 * * *', 'SELECT public.purge_old_completed_tasks();');
+  ```
 
 ---
 
-## 📊 KESIMPULAN AUDIT
+## ⚠️ 2. SHOULD FIX (Keandalan di Level Aplikasi & User Experience)
 
-- **Status Kode Saat Ini:** Sangat stabil, zero error di terminal, zero breaking changes.
-- **Kondisi HP Infinix Smart 6:**
-  - Kode animasi kanvas (`SoftAuroraBackground` & `AbyssalTealBackground`) **sudah memiliki mekanisme auto-pause saat scroll** dan downscaling resolusi 0.35x.
-  - Angka counter dashboard (`AnimatedCounter`) **sudah otomatis dimatikan animasinya di mobile** untuk membebaskan CPU.
-  - Satu-satunya titik potensi *lag* adalah **penumpukan CSS `backdrop-filter` inline pada elemen kartu saat scroll**.
-- **Solusi Terbaik:** Menerapkan 1 baris aturan penahan GPU di `app/globals.css` (Temuan [1]).
+### [3] Mekanisme Passive Cleanup di Endpoint Tugas
+- **Lokasi Kode:** [`app/api/tasks/route.js`](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/tasks/route.js) atau Server Data Loading
+- **Fungsi Kode:** Memastikan jika pengguna membuka aplikasi dan ada tugas yang sudah melewati 3 hari namun belum sempat dibersihkan oleh cron harian, sistem dapat membersihkannya atau menyaringnya secara otomatis.
+- **Akar Masalah:**
+  Jika cron hanya berjalan 1 kali sehari pada tengah malam, tugas yang genap 3 hari pada jam 10 pagi akan tetap terlihat hingga tengah malam berikutnya, kecuali ada trigger pembersihan pasif atau frekuensi cron diatur lebih sering (misal per 6 jam).
+- **Blast Radius:** Konsistensi tampilan antar pengguna.
+- **Saran Perbaikan Minimal:**
+  Bisa dijadwalkan cron per 6 jam atau per 1 hari di `pg_cron`, atau ditambahkan passive purge yang ringan.
+
+---
+
+## 📊 KESIMPULAN & HASIL EKSEKUSI FASE 2
+- **Fungsi SQL Database:** `public.purge_old_completed_tasks()` telah diperbarui ke `interval '3 days'` di server live PostgreSQL Supabase.
+- **Scheduler pg_cron:** Job `purge-completed-tasks-daily` berhasil didaftarkan di Supabase dengan jadwal harian `0 0 * * *` (00:00 UTC / 07:00 WIB).
+- **Pembersihan Instan:** Telah dieksekusi 1x pembersihan langsung: 2 tugas yang berumur > 3 hari (termasuk tugas ID 34 "Perbaiki form pendaftaran" dari 28 Okt) telah terhapus permanen dari basis data.
+- **Tugas Aktif:** Tugas ID 14 ("Belajar database dan security") tetap aman tersimpan karena baru diselesaikan hari ini (3 Nov 2026).
+- **Verifikasi Terminal:**
+  - `npm run build`: Lolos 100% (semua 11 rute terkompilasi sukses).
+  - PostgreSQL live audit: Fungsi aktif, pg_cron aktif, data terverifikasi.

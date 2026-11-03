@@ -142,7 +142,7 @@ async function setupSupabaseCron() {
       $$;
     `);
 
-    // 5. Daftarkan jadwal pg_cron setiap 1 menit
+    // 5. Daftarkan jadwal pg_cron
     console.log('[INFO] Mendaftarkan jadwal cron di pg_cron...');
     await client.query(`
       DO $$
@@ -150,9 +150,13 @@ async function setupSupabaseCron() {
         IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'dispatch-task-reminders') THEN
           PERFORM cron.unschedule('dispatch-task-reminders');
         END IF;
+        IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'purge-completed-tasks-daily') THEN
+          PERFORM cron.unschedule('purge-completed-tasks-daily');
+        END IF;
       END $$;
     `);
 
+    // Job A: Dispatch notifikasi pengingat & deadline setiap 1 menit
     await client.query(`
       SELECT cron.schedule(
         'dispatch-task-reminders',
@@ -161,17 +165,27 @@ async function setupSupabaseCron() {
       );
     `);
 
+    // Job B: Pembersihan otomatis tugas selesai > 3 hari setiap hari pukul 00:00 UTC (07:00 WIB)
+    await client.query(`
+      SELECT cron.schedule(
+        'purge-completed-tasks-daily',
+        '0 0 * * *',
+        'SELECT public.purge_old_completed_tasks();'
+      );
+    `);
+
     // 6. Verifikasi job di cron.job
     const verifyJob = await client.query(`
       SELECT jobid, schedule, command, nodename, nodeport, database, username, active, jobname
       FROM cron.job
-      WHERE jobname = 'dispatch-task-reminders';
+      WHERE jobname IN ('dispatch-task-reminders', 'purge-completed-tasks-daily')
+      ORDER BY jobid ASC;
     `);
 
-    if (verifyJob.rows.length > 0) {
-      console.log('[ALL PASS] Supabase pg_cron aktif 100%!', verifyJob.rows[0]);
+    if (verifyJob.rows.length >= 2) {
+      console.log('[ALL PASS] Supabase pg_cron aktif 100%!', verifyJob.rows);
     } else {
-      console.error('[FAIL] Job cron gagal terdaftar.');
+      console.error('[FAIL] Job cron gagal terdaftar lengkap.', verifyJob.rows);
       process.exit(1);
     }
 
