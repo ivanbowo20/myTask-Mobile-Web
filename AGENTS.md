@@ -28,12 +28,15 @@ Saat user meminta rekomendasi atau penambahan animasi, AI HARUS merujuk pada kat
 Untuk seluruh perancangan antarmuka, styling komponen, dan review visual:
 1. Gunakan skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine).
 2. Terapkan prinsip:
-   - **Banned AI Slop Tells**: Dilarang menggunakan 14 AI slop tells (gradien ungu default tanpa identitas brand, judul hero 6-baris, tombol pill berlebih pada semua elemen, bento berlubang/kosong, 3 kartu fitur simetris identik tanpa visual anchor, dual competing primary CTAs, shouty hype copy, dan chaotic ambient pulsing).
+   - **Banned AI Slop Tells**: Dilarang menggunakan 16 AI slop tells (gradien ungu default tanpa identitas brand, judul hero 6-baris, tombol pill berlebih pada semua elemen, bento berlubang/kosong, 3 kartu fitur simetris identik tanpa visual anchor, dual competing primary CTAs, shouty hype copy, chaotic ambient pulsing, *Card-in-Card Nesting Hell*, dan *Divider Line Clutter*).
+   - **Ruthless Visual Subtraction (oil-ui Protocol)**: Wajib menerapkan *The Subtraction Test* & *Card/Border Diet* — maksimal 1 tingkat elevation card per section, hapus 80% border pemisah, dan gunakan whitespace ritmis alih-alih garis mati.
+   - **Awwwards Design DNA & Kinetic Choreography**: Kontras skala tipografi ekstrem (*oversized headline clamp* dipadu *micro monospaced data*), *rhythmic color band-mapping*, dan koreografi motion 3-tier (*micro-tactile 80-120ms*, *staggered entrance 150-300ms*, dan *spatial kinetic*).
    - **The 9-Pass Unslopping Protocol**: Setiap audit & refactor UI wajib mengikuti urutan 9 lapis redline (Spacing -> Color -> Icons -> Copy -> Type -> Layout -> Details -> Visuals -> Motion).
    - **WWDC Fluid Springs**: Semua interaksi aktif wajib responsif seketika pada pointer-down (`:active scale(0.97)`) dengan spring physics interruptible.
    - **Gapless Bento Grid (Stageshow Protocol)**: Bento grid wajib menggunakan `grid-flow-dense` dengan perhitungan `col-span` & `row-span` presisi, serta dilarang kartu pasif hanya-teks (setiap kartu wajib memuat artefak micro-widget produk nyata).
    - **Phosphor Dynamic Iconography**: Navigasi utama desktop & mobile wajib menggunakan `@phosphor-icons/react` dengan transisi state dinamis (unselected `regular`, selected `fill`) untuk sensasi aplikasi native.
-   - **3-Direction Delivery**: Memberikan 3 opsi desain (Clean Apple Minimalist, Bold Editorial, Modern Fluid Bento) dan kode implementasi siap pakai tanpa placeholder.
+   - **3-Direction Delivery & Interactive Sandbox**: Memberikan 3 opsi desain (Clean Apple Minimalist, Bold Editorial, Modern Fluid Bento) dan file artefak HTML interaktif mandiri via `/siellomita compare` atau `/siellomita redesign`.
+   - **Agentic AI Cockpit & Composite Blocks (BoardUI & Watermelon Standard)**: Untuk fitur AI Copilot / Agent, wajib menggunakan reasoning accordion monospaced, multi-step pipeline status tracker, model selector compact, token heatmaps, dan arsitektur composite animated blocks via `/siellomita agentic`.
    - **Design Consultation & Plan Review**: Gunakan `/siellomita consult` untuk membangun identitas visual dari nol dan `/siellomita plan-review` untuk mengaudit rencana UI/UX (rating 0-10, 5 state interaksi: idle, loading, actionable empty, error recovery, success) sebelum kode ditulis.
 
 ## REKAYASA KODE BERTAHAP & DISIPLIN (DISIPLIN AI)

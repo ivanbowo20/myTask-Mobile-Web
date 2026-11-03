@@ -127,17 +127,17 @@ function AllTasksContent() {
         <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5 z-10">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-sky-100/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:text-sky-700 flex items-center justify-center text-[#FAFAFA] shadow-sm shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--theme-accent)] shadow-sm shrink-0">
                 <CheckSquareOffset weight="fill" className="w-4 h-4" />
               </div>
-              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
+              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 Semua Tugas
               </h1>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:text-slate-800 text-zinc-300 shadow-sm">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-secondary)] shadow-sm">
                 {filteredTasks.length} tugas
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-zinc-300 [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
               Kelola seluruh daftar tugas, filter kategori, dan atur prioritas kerja Anda.
             </p>
           </div>
@@ -147,7 +147,7 @@ function AllTasksContent() {
       {/* Status Filter Tabs with Arc UI Sliding Pill */}
       <AnimatedContent delay={0.08}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.04] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 backdrop-blur-sm sm:backdrop-blur-[16px] overflow-x-auto scrollbar-none w-full sm:w-fit shadow-sm">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-md overflow-x-auto scrollbar-none w-full sm:w-fit shadow-sm">
           {[
             { id: "pending", label: "Belum Selesai", count: tasks.filter((t) => !t.selesai).length },
             { id: "important", label: "Penting", count: tasks.filter((t) => t.prioritas && !t.selesai).length },
@@ -167,14 +167,14 @@ function AllTasksContent() {
                 className={cn(
                   "relative min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 shrink-0 flex items-center gap-2 select-none cursor-pointer active:scale-[0.97]",
                   isSelected
-                    ? "text-[#FAFAFA] font-semibold [html[data-theme='celestial-sky']_&]:text-sky-950"
-                    : "text-zinc-300 hover:text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-slate-600 [html[data-theme='celestial-sky']_&]:hover:text-slate-900"
+                    ? "text-[var(--text-primary)] font-semibold"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 )}
               >
                 {isSelected && (
                   <motion.div
                     layoutId="task-status-filter-pill"
-                    className="absolute inset-0 bg-white/[0.08] border border-white/[0.14] [html[data-theme='celestial-sky']_&]:bg-white [html[data-theme='celestial-sky']_&]:border-sky-200/80 rounded-lg shadow-sm pointer-events-none"
+                    className="absolute inset-0 bg-[var(--glass-border)] rounded-lg shadow-sm pointer-events-none"
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -183,8 +183,8 @@ function AllTasksContent() {
                   className={cn(
                     "relative z-10 text-[10px] px-1.5 py-0.5 rounded-full font-bold transition-colors duration-200",
                     isSelected
-                      ? "bg-white/[0.12] text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:bg-sky-100 [html[data-theme='celestial-sky']_&]:text-sky-800"
-                      : "bg-white/[0.08] text-zinc-300 [html[data-theme='celestial-sky']_&]:bg-slate-100 [html[data-theme='celestial-sky']_&]:text-slate-600"
+                      ? "bg-[var(--glass-border)] text-[var(--text-primary)]"
+                      : "bg-[var(--glass-bg)] text-[var(--text-muted)]"
                   )}
                 >
                   {tab.count}
@@ -211,16 +211,16 @@ function AllTasksContent() {
 
       {/* Filter and Search Bar */}
       <AnimatedContent delay={0.16} className="relative z-20">
-        <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 backdrop-blur-sm sm:backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] [html[data-theme='celestial-sky']_&]:shadow-sm flex flex-col md:flex-row items-center gap-3">
+        <div className="p-4 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-md shadow-sm flex flex-col md:flex-row items-center gap-3">
           {/* Search Input */}
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
             <input
               type="text"
               placeholder="Cari berdasarkan judul atau catatan tugas..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full min-h-[44px] pl-10 pr-4 py-2 rounded-xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.16] focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-white/20 text-base sm:text-sm text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:bg-white/90 [html[data-theme='celestial-sky']_&]:border-sky-200/80 [html[data-theme='celestial-sky']_&]:text-[#0F172A] [html[data-theme='celestial-sky']_&]:placeholder:text-slate-400 [html[data-theme='celestial-sky']_&]:focus:border-sky-500 [html[data-theme='celestial-sky']_&]:focus:ring-sky-200 placeholder:text-zinc-400 transition-all duration-200 backdrop-blur-sm"
+              className="w-full min-h-[44px] pl-10 pr-4 py-2 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] hover:border-[var(--glass-border)] focus:border-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--text-primary)]/20 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all duration-200 backdrop-blur-sm"
             />
           </div>
 
@@ -314,7 +314,7 @@ function AllTasksContent() {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/[0.08] [html[data-theme='celestial-sky']_&]:border-sky-200/60 text-xs text-[#A1A1AA] [html[data-theme='celestial-sky']_&]:text-slate-600">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--glass-border)] text-xs text-[var(--text-secondary)]">
                 <span>
                   Menampilkan {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
                   {Math.min(currentPage * ITEMS_PER_PAGE, filteredTasks.length)} dari{" "}
@@ -333,13 +333,13 @@ function AllTasksContent() {
                     whileTap={shouldReduceMotion || currentPage === 1 ? undefined : { scale: 0.96 }}
                     transition={{ duration: 0.15, ease: SNAPPY_EASING }}
                     aria-label="Halaman sebelumnya"
-                    className="inline-flex items-center justify-center font-medium rounded-lg min-h-[46px] px-3.5 py-2 text-xs gap-1.5 bg-[rgba(255,255,255,0.04)] [html[data-theme='celestial-sky']_&]:bg-white [html[data-theme='celestial-sky']_&]:border-sky-200/80 [html[data-theme='celestial-sky']_&]:text-slate-800 text-[#FAFAFA] border border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.16)] [html[data-theme='celestial-sky']_&]:hover:bg-sky-50 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA]"
+                    className="inline-flex items-center justify-center font-medium rounded-lg min-h-[46px] px-3.5 py-2 text-xs gap-1.5 bg-[var(--glass-bg)] text-[var(--text-primary)] border border-[var(--glass-border)] hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)]"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     Sebelumnya
                   </motion.button>
 
-                  <div className="flex items-center gap-1.5 px-2 font-medium text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-slate-900">
+                  <div className="flex items-center gap-1.5 px-2 font-medium text-[var(--text-primary)]">
                     <span>Halaman</span>
                     <div className="relative inline-flex items-center justify-center overflow-hidden min-w-[1.25rem] h-5">
                       <AnimatePresence mode="wait" initial={false}>
@@ -382,7 +382,7 @@ function AllTasksContent() {
                     whileTap={shouldReduceMotion || currentPage === totalPages ? undefined : { scale: 0.96 }}
                     transition={{ duration: 0.15, ease: SNAPPY_EASING }}
                     aria-label="Halaman selanjutnya"
-                    className="inline-flex items-center justify-center font-medium rounded-lg min-h-[46px] px-3.5 py-2 text-xs gap-1.5 bg-[rgba(255,255,255,0.04)] [html[data-theme='celestial-sky']_&]:bg-white [html[data-theme='celestial-sky']_&]:border-sky-200/80 [html[data-theme='celestial-sky']_&]:text-slate-800 text-[#FAFAFA] border border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.16)] [html[data-theme='celestial-sky']_&]:hover:bg-sky-50 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA]"
+                    className="inline-flex items-center justify-center font-medium rounded-lg min-h-[46px] px-3.5 py-2 text-xs gap-1.5 bg-[var(--glass-bg)] text-[var(--text-primary)] border border-[var(--glass-border)] hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)]"
                   >
                     Selanjutnya
                     <ChevronRight className="w-4 h-4" />

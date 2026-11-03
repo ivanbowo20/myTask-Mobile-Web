@@ -58,14 +58,14 @@ const TaskCard = memo(function TaskCard({
             whileTap={{ scale: 0.86 }}
             onClick={() => onToggleSelesai(task.id)}
             aria-label={task.selesai ? "Tandai belum selesai" : "Tandai selesai"}
-            className="min-h-[44px] min-w-[44px] -ml-1 inline-flex items-center justify-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA] rounded-full"
+            className="min-h-[44px] min-w-[44px] -ml-1 inline-flex items-center justify-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)] rounded-full"
           >
             <span
               className={cn(
                 "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-200",
                 task.selesai
                   ? "bg-[#8FB88F] border-[#8FB88F] text-[#0A0A0A]"
-                  : "border-zinc-500 hover:border-[#FAFAFA] bg-white/[0.02]"
+                  : "border-[var(--glass-border)] hover:border-[var(--text-primary)] bg-[var(--glass-bg)]"
               )}
             >
               {task.selesai && (
@@ -99,15 +99,15 @@ const TaskCard = memo(function TaskCard({
               className={cn(
                 "text-[13px] font-medium truncate transition-colors duration-200 leading-snug",
                 task.selesai
-                  ? "text-zinc-400 line-through decoration-zinc-500 [html[data-theme='celestial-sky']_&]:text-slate-400"
-                  : "text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]"
+                  ? "text-[var(--text-muted)] line-through decoration-[var(--text-muted)]"
+                  : "text-[var(--text-primary)]"
               )}
               title={task.judul}
             >
               {task.judul}
             </h3>
 
-            <div className="flex items-center gap-1.5 text-[11px] text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600 mt-0.5 truncate">
+            <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)] mt-0.5 truncate">
               {kategori ? (
                 <span
                   className="inline-flex items-center gap-1 font-medium shrink-0"
@@ -120,10 +120,10 @@ const TaskCard = memo(function TaskCard({
                   <span className="truncate max-w-[85px]">{kategori.nama}</span>
                 </span>
               ) : (
-                <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 shrink-0">Umum</span>
+                <span className="text-[var(--text-muted)] shrink-0">Umum</span>
               )}
 
-              <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-400 shrink-0">·</span>
+              <span className="text-[var(--text-muted)] shrink-0">·</span>
 
               {/* Deadline / Status inline */}
               {!task.selesai && status === "terlewat" ? (
@@ -139,11 +139,11 @@ const TaskCard = memo(function TaskCard({
                   <span>Selesai</span>
                 </span>
               ) : task.deadline ? (
-                <span className="text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600 truncate">
+                <span className="text-[var(--text-secondary)] truncate">
                   {formatTanggal(task.deadline).split(",")[1] || formatTanggal(task.deadline)}
                 </span>
               ) : (
-                <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 shrink-0">Tanpa deadline</span>
+                <span className="text-[var(--text-muted)] shrink-0">Tanpa deadline</span>
               )}
             </div>
           </div>
@@ -157,7 +157,7 @@ const TaskCard = memo(function TaskCard({
               onClick={() => onTogglePrioritas(task.id)}
               aria-label={task.prioritas ? "Hapus tanda penting" : "Tandai sebagai penting"}
               title={task.prioritas ? "Tugas penting" : "Tandai penting"}
-              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#F59E0B] transition-colors focus-visible:outline-none cursor-pointer"
+              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[#F59E0B] transition-colors focus-visible:outline-none cursor-pointer"
             >
               <Star
                 className={cn(
@@ -174,7 +174,7 @@ const TaskCard = memo(function TaskCard({
               aria-expanded={isExpanded}
               aria-label={isExpanded ? "Tutup detail tugas" : "Lihat selengkapnya"}
               title={isExpanded ? "Tutup detail" : "Lihat selengkapnya"}
-              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#FAFAFA] transition-colors focus-visible:outline-none cursor-pointer"
+              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors focus-visible:outline-none cursor-pointer"
             >
               <motion.div
                 animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -197,13 +197,13 @@ const TaskCard = memo(function TaskCard({
               transition={{ duration: 0.25, ease: "easeOut" }}
               className="overflow-hidden"
             >
-              <div className="pt-2.5 mt-2 border-t border-white/[0.06] [html[data-theme='celestial-sky']_&]:border-sky-200/60 space-y-2.5 text-xs">
+              <div className="pt-2.5 mt-2 border-t border-[var(--glass-border)] space-y-2.5 text-xs">
                 {/* Judul Lengkap */}
                 <div className="space-y-0.5">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 font-semibold">
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
                     Judul Tugas:
                   </span>
-                  <p className="text-xs font-semibold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] leading-snug break-words">
+                  <p className="text-xs font-semibold text-[var(--text-primary)] leading-snug break-words">
                     {task.judul}
                   </p>
                 </div>
@@ -211,28 +211,28 @@ const TaskCard = memo(function TaskCard({
                 {/* Deskripsi Catatan (jika ada) */}
                 {task.deskripsi && (
                   <div className="space-y-0.5">
-                    <span className="text-[10px] uppercase tracking-wider text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 font-semibold">
+                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
                       Catatan:
                     </span>
-                    <p className="text-xs text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700 leading-relaxed break-words bg-white/[0.02] [html[data-theme='celestial-sky']_&]:bg-slate-100/90 p-2 rounded-lg border border-white/[0.04] [html[data-theme='celestial-sky']_&]:border-sky-200/60">
+                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed break-words bg-[var(--glass-bg)] p-2 rounded-lg border border-[var(--glass-border)]">
                       {task.deskripsi}
                     </p>
                   </div>
                 )}
 
                 {/* Info Tenggat Waktu Lengkap */}
-                <div className="flex items-center gap-1.5 text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600 text-xs pt-0.5">
+                <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-xs pt-0.5">
                   <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)] shrink-0" />
                   <span className="text-[11px]">
                     {task.deadline ? (
                       <>
-                        <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">Tenggat: </span>
-                        <span className="font-medium text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
+                        <span className="text-[var(--text-muted)]">Tenggat: </span>
+                        <span className="font-medium text-[var(--text-primary)]">
                           {formatTanggal(task.deadline)}
                         </span>
                       </>
                     ) : (
-                      <span className="text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">Tanpa batas waktu</span>
+                      <span className="text-[var(--text-muted)]">Tanpa batas waktu</span>
                     )}
                   </span>
                 </div>
@@ -243,9 +243,9 @@ const TaskCard = memo(function TaskCard({
                     type="button"
                     onClick={() => onEdit(task)}
                     aria-label={`Ubah tugas ${task.judul}`}
-                    className="min-h-[44px] px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white [html[data-theme='celestial-sky']_&]:border-sky-200/80 [html[data-theme='celestial-sky']_&]:text-slate-800 border border-white/[0.08] hover:border-white/[0.16] text-[#FAFAFA] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
+                    className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--glass-bg)] hover:bg-[var(--glass-bg-hover)] border border-[var(--glass-border)] text-[var(--text-primary)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
                   >
-                    <Pencil className="w-3.5 h-3.5 text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-500" />
+                    <Pencil className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
                     Ubah Tugas
                   </button>
 
@@ -278,14 +278,14 @@ const TaskCard = memo(function TaskCard({
             whileTap={{ scale: 0.86 }}
             onClick={() => onToggleSelesai(task.id)}
             aria-label={task.selesai ? "Tandai belum selesai" : "Tandai selesai"}
-            className="min-h-[44px] min-w-[44px] -ml-2.5 -mt-2.5 inline-flex items-center justify-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA] rounded-full"
+            className="min-h-[44px] min-w-[44px] -ml-2.5 -mt-2.5 inline-flex items-center justify-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)] rounded-full"
           >
             <span
               className={cn(
                 "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-200",
                 task.selesai
                   ? "bg-[#8FB88F] border-[#8FB88F] text-[#0A0A0A]"
-                  : "border-zinc-500 hover:border-[#FAFAFA] bg-white/[0.02]"
+                  : "border-[var(--glass-border)] hover:border-[var(--text-primary)] bg-[var(--glass-bg)]"
               )}
             >
               {task.selesai && (
@@ -306,8 +306,8 @@ const TaskCard = memo(function TaskCard({
               className={cn(
                 "text-sm font-semibold line-clamp-2 break-words leading-snug transition-colors duration-200",
                 task.selesai
-                  ? "text-zinc-400 line-through decoration-zinc-500 [html[data-theme='celestial-sky']_&]:text-slate-400"
-                  : "text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]"
+                  ? "text-[var(--text-muted)] line-through decoration-[var(--text-muted)]"
+                  : "text-[var(--text-primary)]"
               )}
               title={task.judul}
             >
@@ -322,7 +322,7 @@ const TaskCard = memo(function TaskCard({
             onClick={() => onTogglePrioritas(task.id)}
             aria-label={task.prioritas ? "Hapus tanda penting" : "Tandai sebagai penting"}
             title={task.prioritas ? "Tugas penting (klik untuk batalkan)" : "Tandai sebagai penting"}
-            className="min-h-[44px] min-w-[44px] -mr-2 -mt-2 inline-flex items-center justify-center shrink-0 rounded-lg text-zinc-400 hover:text-[#F59E0B] hover:bg-white/[0.06] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B] cursor-pointer"
+            className="min-h-[44px] min-w-[44px] -mr-2 -mt-2 inline-flex items-center justify-center shrink-0 rounded-lg text-[var(--text-muted)] hover:text-[#F59E0B] hover:bg-[var(--glass-bg-hover)] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B] cursor-pointer"
           >
             <motion.div
               animate={task.prioritas ? { scale: [0.8, 1.25, 1], rotate: [0, 15, 0] } : { scale: 1, rotate: 0 }}
@@ -340,18 +340,18 @@ const TaskCard = memo(function TaskCard({
 
         {/* Deskripsi Tugas (Indentasi sejajar judul) */}
         {task.deskripsi && (
-          <p className="text-xs text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600 line-clamp-2 leading-relaxed pl-8 -mt-1">
+          <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed pl-8 -mt-1">
             {task.deskripsi}
           </p>
         )}
 
         {/* Footer Metadata & Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-white/[0.06] [html[data-theme='celestial-sky']_&]:border-sky-200/60 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-[var(--glass-border)] text-xs">
           {/* Left: Kategori & Status Pills */}
           <div className="flex flex-wrap items-center gap-1.5 min-w-0">
             {kategori ? (
               <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border border-white/[0.06] whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border border-[var(--glass-border)] whitespace-nowrap"
                 style={{
                   backgroundColor: `${kategori.warna}20`,
                   color: kategori.warna,
@@ -364,7 +364,7 @@ const TaskCard = memo(function TaskCard({
                 {kategori.nama}
               </span>
             ) : (
-              <span className="text-zinc-400 text-[11px]">Tanpa Kategori</span>
+              <span className="text-[var(--text-muted)] text-[11px]">Tanpa Kategori</span>
             )}
 
             {/* Status Pills: Terlewat / Hari Ini / Selesai */}
@@ -397,7 +397,7 @@ const TaskCard = memo(function TaskCard({
               onClick={() => onEdit(task)}
               aria-label={`Ubah tugas ${task.judul}`}
               title="Ubah tugas"
-              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#FAFAFA] hover:bg-white/[0.06] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA] cursor-pointer"
+              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)] cursor-pointer"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
@@ -407,12 +407,12 @@ const TaskCard = memo(function TaskCard({
               onClick={() => onDelete(task)}
               aria-label={`Hapus tugas ${task.judul}`}
               title="Hapus tugas"
-              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-400 hover:text-[#E88B8B] hover:bg-[#E88B8B]/10 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] cursor-pointer"
+              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[#E88B8B] hover:bg-[#E88B8B]/10 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
 
-            <div className="flex items-center gap-1.5 text-zinc-300 text-[11px] pl-1">
+            <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-[11px] pl-1">
               {task.deadline ? (
                 <span
                   className={cn(
@@ -425,7 +425,7 @@ const TaskCard = memo(function TaskCard({
                   {formatTanggal(task.deadline)}
                 </span>
               ) : (
-                <span className="text-zinc-400">Tanpa batas waktu</span>
+                <span className="text-[var(--text-muted)]">Tanpa batas waktu</span>
               )}
             </div>
           </div>

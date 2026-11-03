@@ -27,19 +27,19 @@ export default function NotificationsPage() {
     <div className="space-y-8">
       {/* Header */}
       <AnimatedContent delay={0}>
-        <div className="border-b border-white/[0.08] pb-5 space-y-1">
+        <div className="border-b border-[var(--glass-border)] pb-5 space-y-1">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#FAFAFA]">
+            <div className="w-8 h-8 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--theme-accent)] shadow-sm">
               <Bell className="w-4 h-4" />
             </div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] tracking-tight">
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               Pusat Notifikasi
             </h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[#A1A1AA]">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-secondary)] shadow-sm">
               {overdueList.length + todayList.length + upcomingList.length} jadwal aktif
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-[#A1A1AA]">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
             Ringkasan seluruh pengingat tenggat waktu tugas, terbagi dalam tiga tingkatan urgensi.
           </p>
         </div>
@@ -52,7 +52,7 @@ export default function NotificationsPage() {
 
       {/* Section 1: Tenggat Terlewat */}
       <AnimatedContent delay={0.08}>
-        <section className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm sm:backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] space-y-4">
+        <section className="p-5 sm:p-6 rounded-2xl glass-panel shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="relative flex h-3 w-3">
@@ -67,7 +67,7 @@ export default function NotificationsPage() {
           </div>
 
           {overdueList.length === 0 ? (
-            <p className="text-xs text-[#71717A] py-2">
+            <p className="text-xs text-[var(--text-muted)] py-2">
               Tidak ada deadline yang terlewat. Kerja bagus! 🎉
             </p>
           ) : (
@@ -90,7 +90,7 @@ export default function NotificationsPage() {
 
       {/* Section 2: Tenggat Hari Ini */}
       <AnimatedContent delay={0.16}>
-        <section className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm sm:backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] space-y-4">
+        <section className="p-5 sm:p-6 rounded-2xl glass-panel shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[var(--theme-accent,#D97706)]" />
@@ -102,7 +102,7 @@ export default function NotificationsPage() {
           </div>
 
           {todayList.length === 0 ? (
-            <p className="text-xs text-[#71717A] py-2">
+            <p className="text-xs text-[var(--text-muted)] py-2">
               Tidak ada tugas yang jatuh tempo hari ini.
             </p>
           ) : (
@@ -125,11 +125,11 @@ export default function NotificationsPage() {
 
       {/* Section 3: Tenggat Mendatang */}
       <AnimatedContent delay={0.24}>
-        <section className="p-5 sm:p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm sm:backdrop-blur-[16px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] space-y-4">
+        <section className="p-5 sm:p-6 rounded-2xl glass-panel shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#A1A1AA]" />
-              <h2 className="text-sm sm:text-base font-bold text-[#A1A1AA] flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--text-muted)]" />
+              <h2 className="text-sm sm:text-base font-bold text-[var(--text-secondary)] flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 Tenggat Waktu Mendatang ({upcomingList.length})
               </h2>
@@ -137,7 +137,7 @@ export default function NotificationsPage() {
           </div>
 
           {upcomingList.length === 0 ? (
-            <p className="text-xs text-[#71717A] py-2">
+            <p className="text-xs text-[var(--text-muted)] py-2">
               Tidak ada tugas mendatang.
             </p>
           ) : (

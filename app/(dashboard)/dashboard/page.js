@@ -266,7 +266,7 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="font-heading text-2xl sm:text-3xl font-bold text-[var(--text-primary,#FAFAFA)] tracking-tight"
+              className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--text-primary)] tracking-tight text-balance"
             >
               {greeting.headline}
             </motion.h1>
@@ -276,14 +276,14 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 2 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.04, ease: "easeOut" }}
-              className="text-xs sm:text-sm text-[var(--text-secondary,#A1A1AA)] leading-relaxed"
+              className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed"
             >
               {greeting.subtext}
             </motion.p>
           </div>
           <div
             suppressHydrationWarning={true}
-            className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary,#A1A1AA)] bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] px-3.5 py-2 rounded-xl shrink-0 self-start sm:self-auto z-10"
+            className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] bg-[var(--glass-bg)] border border-[var(--glass-border)] px-3.5 py-2 rounded-xl shrink-0 self-start sm:self-auto z-10 backdrop-blur-md"
           >
             <Calendar className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
             <span suppressHydrationWarning={true}>
@@ -299,23 +299,23 @@ export default function DashboardPage() {
       {/* Mobile-First Progress & Unified Focus Agenda (< 1024px) */}
       <div className="lg:hidden space-y-4">
         {/* Sleek 1-Row Progress Card */}
-        <div className="glass-card p-4 rounded-2xl border border-white/[0.08] [html[data-theme='celestial-sky']_&]:border-sky-200/60 space-y-2.5">
+        <div className="glass-card p-4 rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/30 text-[var(--theme-accent,#D97706)] flex items-center justify-center">
                 <CheckCircle2 className="w-3.5 h-3.5" />
               </div>
-              <span className="text-xs font-semibold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
+              <span className="text-xs font-semibold text-[var(--text-primary)]">
                 Progress Tugas
               </span>
             </div>
-            <span className="text-xs font-bold text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-600">
+            <span className="text-xs font-bold text-[var(--text-secondary)]">
               <span className="text-[var(--theme-accent,#D97706)]">{stats.completed}</span> dari {stats.total} tugas ({mobileProgressPercent}%)
             </span>
           </div>
 
           {/* Progress Bar Track */}
-          <div className="w-full h-2 rounded-full bg-white/[0.06] [html[data-theme='celestial-sky']_&]:bg-black/5 overflow-hidden p-0.5">
+          <div className="w-full h-2 rounded-full bg-[var(--glass-border)] overflow-hidden p-0.5">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${mobileProgressPercent}%` }}
@@ -336,16 +336,16 @@ export default function DashboardPage() {
                 onClick={() => setMobileFilter(chip.id)}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-200 border cursor-pointer active:scale-[0.96] select-none ${
                   isActive
-                    ? "bg-[var(--theme-accent,#D97706)] text-[#0A0A0A] border-[var(--theme-accent,#D97706)] shadow-sm font-bold"
-                    : "bg-white/[0.04] text-zinc-300 border-white/[0.08] hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:text-slate-700 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:hover:bg-white"
+                    ? "bg-[var(--theme-accent,#D97706)] text-black border-[var(--theme-accent,#D97706)] shadow-sm font-bold"
+                    : "bg-[var(--glass-bg)] text-[var(--text-secondary)] border-[var(--glass-border)] hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 <span>{chip.label}</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                     isActive
-                      ? "bg-black/20 text-[#0A0A0A]"
-                      : "bg-white/[0.08] text-zinc-400 [html[data-theme='celestial-sky']_&]:bg-slate-100 [html[data-theme='celestial-sky']_&]:text-slate-600"
+                      ? "bg-black/20 text-black"
+                      : "bg-[var(--glass-border)] text-[var(--text-muted)]"
                   }`}
                 >
                   {chip.count}
@@ -360,10 +360,10 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
-              <h2 className="font-heading text-sm font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
+              <h2 className="font-heading text-sm font-bold text-[var(--text-primary)]">
                 Agenda Fokus
               </h2>
-              <span className="text-[11px] font-medium text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">
+              <span className="text-[11px] font-medium text-[var(--text-muted)]">
                 ({mobileAgendaTasks.length})
               </span>
             </div>
@@ -371,7 +371,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsClearCompletedOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-400 dark:text-rose-400 [html[data-theme='celestial-sky']_&]:text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 [html[data-theme='celestial-sky']_&]:bg-rose-50 [html[data-theme='celestial-sky']_&]:hover:bg-rose-100 border border-rose-500/20 hover:border-rose-500/30 [html[data-theme='celestial-sky']_&]:border-rose-200 transition-all duration-200 cursor-pointer select-none active:scale-[0.97]"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 transition-all duration-200 cursor-pointer select-none active:scale-[0.97]"
                 aria-label="Hapus semua tugas selesai"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -381,7 +381,7 @@ export default function DashboardPage() {
               <Link
                 href="/tugas"
                 prefetch={true}
-                className="text-xs font-semibold text-zinc-400 hover:text-[#FAFAFA] inline-flex items-center gap-1 transition-colors"
+                className="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] inline-flex items-center gap-1 transition-colors"
               >
                 Semua
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -445,14 +445,14 @@ export default function DashboardPage() {
             className="glass-card h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl min-h-[44px]"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[#FAFAFA] tracking-tight">
+              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
                 <AnimatedCounter value={stats.total} />
               </span>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[#FAFAFA] flex items-center justify-center">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] flex items-center justify-center">
                 <CheckSquareOffset weight="fill" className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-[11px] sm:text-sm text-zinc-300 font-medium">Total Tugas</p>
+            <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Total Tugas</p>
           </motion.div>
         </motion.div>
 
@@ -463,14 +463,14 @@ export default function DashboardPage() {
             className="glass-card h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl min-h-[44px]"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[#FAFAFA] tracking-tight">
+              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
                 <AnimatedCounter value={stats.today} />
               </span>
               <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/25 text-[var(--theme-accent,#D97706)] flex items-center justify-center">
                 <Calendar className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-[11px] sm:text-sm text-zinc-300 font-medium">Hari Ini</p>
+            <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Hari Ini</p>
           </motion.div>
         </motion.div>
 
@@ -481,14 +481,14 @@ export default function DashboardPage() {
             className="glass-card h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl min-h-[44px]"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[#FAFAFA] tracking-tight">
+              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
                 <AnimatedCounter value={stats.important} />
               </span>
               <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/25 text-[#F59E0B] flex items-center justify-center">
                 <Star className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-[11px] sm:text-sm text-zinc-300 font-medium">Penting</p>
+            <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Penting</p>
           </motion.div>
         </motion.div>
 
@@ -499,14 +499,14 @@ export default function DashboardPage() {
             className="glass-card h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl min-h-[44px]"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[#FAFAFA] tracking-tight">
+              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
                 <AnimatedCounter value={stats.completed} />
               </span>
               <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#8FB88F]/15 border border-[#8FB88F]/25 text-[#8FB88F] flex items-center justify-center">
                 <CheckCircle2 className="w-3.5 h-3.5" />
               </div>
             </div>
-            <p className="text-[11px] sm:text-sm text-zinc-300 font-medium">Selesai</p>
+            <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Selesai</p>
           </motion.div>
         </motion.div>
       </motion.div>
@@ -518,17 +518,17 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
-              <h2 className="font-heading text-base font-bold text-[#FAFAFA]">
+              <h2 className="font-heading text-base font-bold text-[var(--text-primary)]">
                 Tenggat Waktu Terdekat
               </h2>
             </div>
-            <span className="text-xs text-zinc-400">
+            <span className="text-xs text-[var(--text-muted)]">
               Maksimal 5 tugas terdekat
             </span>
           </div>
 
           {upcomingDeadlines.length === 0 ? (
-            <div className="py-8 text-center text-xs text-zinc-400">
+            <div className="py-8 text-center text-xs text-[var(--text-muted)]">
               Tidak ada deadline terdekat saat ini. ✨
             </div>
           ) : (
@@ -542,22 +542,22 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={task.id}
-                    className={`w-[85%] min-w-[85%] flex-shrink-0 snap-center sm:w-auto sm:min-w-0 sm:flex-shrink p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition-all duration-200 hover:-translate-y-0.5 backdrop-blur-md glass-card ${
+                    className={`w-[85%] min-w-[85%] flex-shrink-0 snap-center sm:w-auto sm:min-w-0 sm:flex-shrink p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition-all duration-200 sm:hover:-translate-y-0.5 glass-card ${
                       isOverdue
-                        ? "border-l-4 border-l-[#E88B8B] bg-[#E88B8B]/10 hover:border-white/[0.2]"
+                        ? "border-l-4 border-l-[#E88B8B] bg-[#E88B8B]/10 hover:border-[var(--glass-border-hover)]"
                         : isToday
-                        ? "border-l-4 border-l-[var(--theme-accent,#D97706)] bg-[var(--theme-accent,#D97706)]/10 hover:border-white/[0.2]"
-                        : "hover:border-white/[0.2]"
+                        ? "border-l-4 border-l-[var(--theme-accent,#D97706)] bg-[var(--theme-accent,#D97706)]/10 hover:border-[var(--glass-border-hover)]"
+                        : "hover:border-[var(--glass-border-hover)]"
                     }`}
                   >
                     <div className="space-y-1.5 min-w-0">
-                      <p className="text-xs font-semibold text-[#FAFAFA] truncate" title={task.judul}>
+                      <p className="text-xs font-semibold text-[var(--text-primary)] truncate" title={task.judul}>
                         {task.judul}
                       </p>
                       <div className="flex items-center gap-1.5">
                         {kat && (
                           <span
-                            className="text-[10px] px-2 py-0.5 rounded-full font-medium border border-white/[0.06]"
+                            className="text-[10px] px-2 py-0.5 rounded-full font-medium border border-[var(--glass-border)]"
                             style={{
                               backgroundColor: `${kat.warna}20`,
                               color: kat.warna,
@@ -572,7 +572,7 @@ export default function DashboardPage() {
                               ? "text-[#E88B8B]"
                               : isToday
                               ? "text-[var(--theme-accent,#D97706)]"
-                              : "text-zinc-300"
+                              : "text-[var(--text-secondary)]"
                           }`}
                         >
                           {hitungSisaWaktu(task.deadline)}
@@ -580,14 +580,14 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
-                      <span className="text-[10px] text-zinc-400">
+                    <div className="flex items-center justify-between pt-2 border-t border-[var(--glass-border)]">
+                      <span className="text-[10px] text-[var(--text-muted)]">
                         {formatTanggal(task.deadline).split(",")[1] || ""}
                       </span>
                       <button
                         type="button"
                         onClick={() => toggleComplete(task.id)}
-                        className="min-h-[44px] min-w-[44px] -mr-2 -my-2 inline-flex items-center justify-center text-xs font-semibold text-[#8FB88F] hover:text-[#FAFAFA] transition-colors"
+                        className="min-h-[44px] min-w-[44px] -mr-2 -my-2 inline-flex items-center justify-center text-xs font-semibold text-[#8FB88F] hover:text-[var(--text-primary)] transition-colors"
                         title="Tandai Selesai"
                       >
                         <Check className="w-3.5 h-3.5 mr-1" />
@@ -608,10 +608,10 @@ export default function DashboardPage() {
         {/* Kolom Kiri: Tugas Hari Ini */}
         <AnimatedContent delay={0.28} className="h-full">
           <div className="glass-panel h-full p-5 sm:p-6 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
-                <h2 className="font-heading text-base font-bold text-[#FAFAFA]">Tugas Hari Ini</h2>
+                <h2 className="font-heading text-base font-bold text-[var(--text-primary)]">Tugas Hari Ini</h2>
                 {todayTasksList.length > 0 && (
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)]/15 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/30">
                     {todayTasksList.length}
@@ -621,7 +621,7 @@ export default function DashboardPage() {
               <Link
                 href="/tugas/hari-ini"
                 prefetch={true}
-                className="text-xs font-semibold text-zinc-300 hover:text-[#FAFAFA] inline-flex items-center gap-1 transition-colors"
+                className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex items-center gap-1 transition-colors"
               >
                 Lihat Semua
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -655,15 +655,15 @@ export default function DashboardPage() {
         {/* Kolom Kanan: Tugas Terbaru */}
         <AnimatedContent delay={0.34} className="h-full">
           <div className="glass-panel h-full p-5 sm:p-6 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#FAFAFA]" />
-                <h2 className="font-heading text-base font-bold text-[#FAFAFA]">Tugas Terbaru</h2>
+                <Sparkles className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
+                <h2 className="font-heading text-base font-bold text-[var(--text-primary)]">Tugas Terbaru</h2>
               </div>
               <Link
                 href="/tugas"
                 prefetch={true}
-                className="text-xs font-semibold text-zinc-300 hover:text-[#FAFAFA] inline-flex items-center gap-1 transition-colors"
+                className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] inline-flex items-center gap-1 transition-colors"
               >
                 Lihat Semua
                 <ArrowRight className="w-3.5 h-3.5" />

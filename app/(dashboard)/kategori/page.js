@@ -61,17 +61,17 @@ export default function CategoriesPage() {
         <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5 z-10">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-sky-100/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:text-sky-700 flex items-center justify-center text-[#FAFAFA] shadow-sm shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--theme-accent)] shadow-sm shrink-0">
                 <FolderSimple weight="fill" className="w-4 h-4" />
               </div>
-              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
+              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
                 Kategori Tugas
               </h1>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 [html[data-theme='celestial-sky']_&]:text-slate-800 text-zinc-300 shadow-sm">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-secondary)] shadow-sm">
                 {categories.length} kategori
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-zinc-300 [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
               Kelompokkan tugas berdasarkan bidang pekerjaan, prioritas hidup, atau kegiatan kuliah.
             </p>
           </div>
@@ -85,8 +85,8 @@ export default function CategoriesPage() {
 
       {/* Quick Add Inline Card */}
       <AnimatedContent delay={0.08}>
-        <div className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4 [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 shadow-sm">
-          <h2 className="font-heading text-sm font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] flex items-center gap-2">
+        <div className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4 shadow-sm">
+          <h2 className="font-heading text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
             <Plus weight="bold" className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
             Tambah Kategori Cepat
           </h2>
@@ -110,7 +110,7 @@ export default function CategoriesPage() {
                 type="color"
                 value={warnaBaru}
                 onChange={(e) => setWarnaBaru(e.target.value)}
-                className="w-11 h-11 rounded-xl bg-transparent border border-white/[0.16] [html[data-theme='celestial-sky']_&]:border-sky-300 cursor-pointer shrink-0"
+                className="w-11 h-11 rounded-xl bg-transparent border border-[var(--glass-border)] cursor-pointer shrink-0"
                 title="Pilih warna kategori"
               />
 

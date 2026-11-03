@@ -144,21 +144,21 @@ export default function ThemeModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-            className="relative w-full max-w-4xl glass-modal rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-7 z-10 border-t sm:border border-white/[0.12] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)] max-h-[92vh] sm:max-h-[90vh] overflow-y-auto focus:outline-none"
+            className="relative w-full max-w-4xl glass-modal rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-7 z-10 border-t sm:border border-[var(--glass-border)] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)] max-h-[92vh] sm:max-h-[90vh] overflow-y-auto focus:outline-none"
           >
             {/* Mobile Bottom Sheet Grab Handle */}
-            <div className="w-12 h-1 rounded-full bg-white/20 mx-auto mb-4 sm:hidden theme-modal-handle" aria-hidden="true" />
+            <div className="w-12 h-1 rounded-full bg-[var(--text-muted)]/30 mx-auto mb-4 sm:hidden theme-modal-handle" aria-hidden="true" />
             {/* Header */}
-            <div className="flex items-start justify-between pb-5 border-b border-white/[0.08]">
+            <div className="flex items-start justify-between pb-5 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/[0.06] border border-white/[0.12] flex items-center justify-center text-[var(--theme-accent,#D97706)] shadow-inner">
+                <div className="w-10 h-10 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--theme-accent,#D97706)] shadow-inner">
                   <Shirt className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2
                       id="theme-modal-title"
-                      className="font-heading text-lg sm:text-xl font-bold text-[#FAFAFA] tracking-tight"
+                      className="font-heading text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight"
                     >
                       Pilih Tema Tampilan
                     </h2>
@@ -166,7 +166,7 @@ export default function ThemeModal() {
                       PRO
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-[#A1A1AA] mt-0.5">
+                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-0.5">
                     Ubah atmosfer visual workspace sesuai suasana fokus Anda.
                   </p>
                 </div>
@@ -176,7 +176,7 @@ export default function ThemeModal() {
                 type="button"
                 onClick={closeThemeModal}
                 aria-label="Tutup pemilih tema"
-                className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[#71717A] hover:text-[#FAFAFA] hover:bg-white/[0.08] transition-colors cursor-pointer"
+                className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg)] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -200,12 +200,12 @@ export default function ThemeModal() {
                       'relative flex flex-col text-left rounded-2xl p-4 transition-all duration-200 cursor-pointer group',
                       isActive
                         ? 'border-2 border-[var(--theme-accent,#D97706)] bg-[var(--theme-glow-subtle,rgba(217,119,6,0.12))] shadow-[0_0_24px_rgba(0,0,0,0.5),0_0_12px_var(--theme-glow,rgba(217,119,6,0.3))]'
-                        : 'border border-white/[0.08] bg-white/[0.02] hover:border-white/[0.2] hover:bg-white/[0.05]'
+                        : 'border border-[var(--glass-border)] bg-[var(--glass-bg)] hover:border-[var(--glass-border)] hover:brightness-105'
                     )}
                   >
                     {/* Active Checkmark Badge */}
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#A1A1AA]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                         {t.badge}
                       </span>
                       {isActive ? (
@@ -214,7 +214,7 @@ export default function ThemeModal() {
                           Aktif
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[#71717A] opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity">
                           Klik untuk aktifkan
                         </span>
                       )}
@@ -271,21 +271,21 @@ export default function ThemeModal() {
 
                     {/* Theme Info */}
                     <div className="space-y-1 flex-1">
-                      <h3 className="font-heading text-sm font-bold text-[#FAFAFA] flex items-center justify-between">
+                      <h3 className="font-heading text-sm font-bold text-[var(--text-primary)] flex items-center justify-between">
                         {t.name}
                         {t.isDefault && (
-                          <span className="text-[9px] font-normal text-[#71717A]">
+                          <span className="text-[9px] font-normal text-[var(--text-muted)]">
                             (Bawaan)
                           </span>
                         )}
                       </h3>
-                      <p className="text-xs text-[#A1A1AA] line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
                         {t.description}
                       </p>
                     </div>
 
                     {/* Palette Swatches */}
-                    <div className="flex items-center gap-1.5 pt-3 mt-3 border-t border-white/[0.06]">
+                    <div className="flex items-center gap-1.5 pt-3 mt-3 border-t border-[var(--glass-border)]">
                       {t.swatchColors.map((color, idx) => (
                         <span
                           key={idx}
@@ -301,7 +301,7 @@ export default function ThemeModal() {
             </div>
 
             {/* Footer / Contrast Guarantee Notice */}
-            <div className="pt-4 mt-4 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#71717A]">
+            <div className="pt-4 mt-4 border-t border-[var(--glass-border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)] shrink-0" />
                 <span>
@@ -311,7 +311,7 @@ export default function ThemeModal() {
               <button
                 type="button"
                 onClick={closeThemeModal}
-                className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-[#FAFAFA] font-medium transition-colors cursor-pointer self-end sm:self-auto"
+                className="px-4 py-2 rounded-xl bg-[var(--glass-bg)] hover:bg-white/[0.12] text-[var(--text-primary)] border border-[var(--glass-border)] font-medium transition-colors cursor-pointer self-end sm:self-auto"
               >
                 Selesai
               </button>

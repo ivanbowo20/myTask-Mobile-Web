@@ -44,14 +44,14 @@ export default function TodayTasksPage() {
             <div className="w-8 h-8 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/30 flex items-center justify-center text-[var(--theme-accent,#D97706)]">
               <Calendar className="w-4 h-4" />
             </div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               Tugas Hari Ini
             </h1>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/30 text-[var(--theme-accent,#D97706)]">
               {pendingCount} belum selesai
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-[#A1A1AA] [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
             {formatTanggalSederhana(new Date().toISOString())} — Fokus selesaikan target hari ini.
           </p>
           </div>

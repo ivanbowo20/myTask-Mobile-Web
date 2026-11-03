@@ -17,12 +17,15 @@
 
 ## Frontend Design & Anti-AI Slop (SielloMita Design)
 - Menggunakan standar skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine):
-  - **Anti-AI Slop Enforcement**: Melarang 14 AI slop tells (gradien generik ungu, judul hero membungkus 6 baris, pill shapes di semua tombol/kartu, glassmorphism kabur berlebih, bento berlubang, 3 kartu fitur simetris tanpa visual anchor, dual competing primary CTAs, shouty hype copy, dan chaotic ambient pulsing).
+  - **Anti-AI Slop Enforcement**: Melarang 16 AI slop tells (gradien generik ungu, judul hero membungkus 6 baris, pill shapes di semua tombol/kartu, glassmorphism kabur berlebih, bento berlubang, 3 kartu fitur simetris tanpa visual anchor, dual competing primary CTAs, shouty hype copy, chaotic ambient pulsing, *Card-in-Card Nesting Hell*, dan *Divider Line Clutter*).
+  - **Ruthless Visual Subtraction (oil-ui Protocol)**: Wajib menerapkan *The Subtraction Test* & *Card/Border Diet* — maksimal 1 tingkat elevation card per section, pangkas 80% border pemisah, dan prioritaskan whitespace/ritme tonal.
+  - **Awwwards Design DNA & Kinetic Choreography**: Kontras skala tipografi dinamis (*oversized clamp headline* dipadu *micro monospaced data*), *rhythmic color band-mapping*, dan orkestrasi motion 3-tier (*micro-tactile 80-120ms*, *staggered entrance 150-300ms*, dan *spatial kinetic*).
   - **The 9-Pass Unslopping Protocol**: Audit & refactor wajib mengikuti 9 lapis redline (Spacing -> Color -> Icons -> Copy -> Type -> Layout -> Details -> Visuals -> Motion).
   - **Apple WWDC Fluid Motion**: Interaksi aktif wajib responsif seketika (`:active scale(0.97)`), interruptible springs.
   - **Gapless Dense Grid (Stageshow Protocol)**: Wajib menggunakan `grid-flow-dense` dan dilarang kartu pasif hanya-teks (wajib artefak micro-widget produk nyata).
   - **Phosphor Dynamic Iconography**: Navigasi utama desktop & mobile wajib menggunakan `@phosphor-icons/react` dengan transisi state dinamis (unselected `regular`, selected `fill`).
-  - **Triage 3 Arah**: Analisa slop diagnostic + 3 arah alternatif desain + kode implementasi siap pakai.
+  - **Triage 3 Arah & Interactive Sandbox**: Analisa slop diagnostic + 3 arah alternatif desain + file artefak HTML interaktif mandiri (`/siellomita compare`) + kode implementasi siap pakai.
+  - **Agentic AI Cockpit & Composite Blocks (BoardUI & Watermelon Standard)**: Fitur AI agent wajib menyertakan reasoning accordion, multi-step pipeline tracker, model switchers, token metrics, dan arsitektur composite animated blocks via `/siellomita agentic`.
   - **Design Consultation & Plan Review**: Gunakan `/siellomita consult` untuk konsultasi sistem desain dari nol dan `/siellomita plan-review` untuk audit rencana UI/UX (rating 0-10, 5 state interaksi wajib) sebelum penulisan kode.
 
 ## Rekayasa Kode Bertahap & Disiplin (Disiplin AI)

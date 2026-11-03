@@ -58,16 +58,16 @@ export default function SettingsPage() {
     <div className="space-y-8 max-w-4xl">
       {/* Header */}
       <AnimatedContent delay={0}>
-        <div className="border-b border-white/[0.08] pb-5 space-y-1">
+        <div className="border-b border-[var(--glass-border)] pb-5 space-y-1">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[#FAFAFA]">
+            <div className="w-8 h-8 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--theme-accent)] shadow-sm">
               <GearSix weight="fill" className="w-4 h-4" />
             </div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] tracking-tight">
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
               Pengaturan
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-[#A1A1AA]">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
             Informasi profil pengguna, detail spesifikasi aplikasi, dan manajemen sesi.
           </p>
         </div>
@@ -76,9 +76,9 @@ export default function SettingsPage() {
       {/* Card 1: Profil Pengguna */}
       <AnimatedContent delay={0.08}>
         <section className="glass-panel p-5 sm:p-6 rounded-2xl space-y-5">
-          <div className="flex items-center gap-2 pb-3 border-b border-white/[0.08]">
-            <User className="w-4 h-4 text-[#A1A1AA]" />
-            <h2 className="font-heading text-sm font-bold text-[#FAFAFA]">Profil Pengguna</h2>
+          <div className="flex items-center gap-2 pb-3 border-b border-[var(--glass-border)]">
+            <User className="w-4 h-4 text-[var(--text-secondary)]" />
+            <h2 className="font-heading text-sm font-bold text-[var(--text-primary)]">Profil Pengguna</h2>
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -86,25 +86,25 @@ export default function SettingsPage() {
               <img
                 src={avatarUrl}
                 alt={displayName}
-                className="w-16 h-16 rounded-full object-cover border-2 border-white/[0.2] shrink-0 shadow-lg"
+                className="w-16 h-16 rounded-full object-cover border-2 border-[var(--glass-border)] shrink-0 shadow-lg"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-white/[0.06] border-2 border-white/[0.16] flex items-center justify-center text-2xl font-bold text-[#FAFAFA] shrink-0 shadow-inner">
+              <div className="w-16 h-16 rounded-full bg-[var(--glass-bg)] border-2 border-[var(--glass-border)] flex items-center justify-center text-2xl font-bold text-[var(--text-primary)] shrink-0 shadow-inner">
                 {(displayName || "U").charAt(0).toUpperCase()}
               </div>
             )}
             <div className="space-y-1">
-              <h3 className="text-base font-semibold text-[#FAFAFA]">
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
                 {displayName}
               </h3>
-              <div className="flex flex-wrap items-center gap-4 text-xs text-[#A1A1AA]">
+              <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-secondary)]">
                 <span className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-[#71717A]" />
+                  <Mail className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                   {displayEmail}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#71717A]" />
+                  <Calendar className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                   Bergabung sejak {joinedDate}
                 </span>
               </div>
@@ -116,10 +116,10 @@ export default function SettingsPage() {
       {/* Card 2: Tema & Tampilan */}
       <AnimatedContent delay={0.14}>
         <section className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--glass-border)]">
             <div className="flex items-center gap-2">
-              <Palette weight="fill" className="w-4 h-4 text-[#A1A1AA]" />
-              <h2 className="font-heading text-sm font-bold text-[#FAFAFA]">Tema & Tampilan</h2>
+              <Palette weight="fill" className="w-4 h-4 text-[var(--text-secondary)]" />
+              <h2 className="font-heading text-sm font-bold text-[var(--text-primary)]">Tema & Tampilan</h2>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)]/15 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/30">
               PRO
@@ -129,14 +129,14 @@ export default function SettingsPage() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2.5">
-                <span className="text-sm font-semibold text-[#FAFAFA]">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">
                   {currentTheme?.name || "Dark Chocolate"}
                 </span>
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/[0.06] text-[#A1A1AA] border border-white/[0.08]">
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--glass-bg)] text-[var(--text-secondary)] border border-[var(--glass-border)]">
                   {currentTheme?.badge || "Espresso Obsidian"}
                 </span>
               </div>
-              <p className="text-xs text-[#A1A1AA]">
+              <p className="text-xs text-[var(--text-secondary)]">
                 {currentTheme?.description || "Nuansa obsidian espresso hangat dengan pendaran orbs amber gold yang mewah."}
               </p>
               {currentTheme?.swatchColors && (
@@ -168,23 +168,23 @@ export default function SettingsPage() {
       {/* Card 3: Informasi Aplikasi */}
       <AnimatedContent delay={0.20}>
         <section className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-white/[0.08]">
-            <Info className="w-4 h-4 text-[#A1A1AA]" />
-            <h2 className="font-heading text-sm font-bold text-[#FAFAFA]">Informasi Aplikasi</h2>
+          <div className="flex items-center gap-2 pb-3 border-b border-[var(--glass-border)]">
+            <Info className="w-4 h-4 text-[var(--text-secondary)]" />
+            <h2 className="font-heading text-sm font-bold text-[var(--text-primary)]">Informasi Aplikasi</h2>
           </div>
 
-          <div className="divide-y divide-white/[0.06] text-xs">
+          <div className="divide-y divide-[var(--glass-border)] text-xs">
             <div className="py-3 flex items-center justify-between">
-              <span className="text-[#A1A1AA]">Nama Aplikasi</span>
-              <span className="font-semibold text-[#FAFAFA]">MyTask</span>
+              <span className="text-[var(--text-secondary)]">Nama Aplikasi</span>
+              <span className="font-semibold text-[var(--text-primary)]">MyTask</span>
             </div>
             <div className="py-3 flex items-center justify-between">
-              <span className="text-[#A1A1AA]">Versi Aplikasi</span>
-              <span className="font-mono font-semibold text-[#FAFAFA]">v1.3.0</span>
+              <span className="text-[var(--text-secondary)]">Versi Aplikasi</span>
+              <span className="font-mono font-semibold text-[var(--text-primary)]">v1.3.0</span>
             </div>
             <div className="py-3 flex items-start sm:items-center justify-between gap-4">
-              <span className="text-[#A1A1AA] shrink-0">Catatan Rilis</span>
-              <span className="font-medium text-[#FAFAFA] text-right">
+              <span className="text-[var(--text-secondary)] shrink-0">Catatan Rilis</span>
+              <span className="font-medium text-[var(--text-primary)] text-right">
                 Fitur Baru Catatan Materi (Notebook), Pembaruan Tema Celestial Sky &amp; Aurora
               </span>
             </div>
@@ -195,15 +195,15 @@ export default function SettingsPage() {
       {/* Card 4: Zona Bahaya & Logout */}
       <AnimatedContent delay={0.26}>
         <section className="glass-panel p-5 sm:p-6 rounded-2xl border-l-4 border-l-[#E88B8B] space-y-4">
-          <div className="flex items-center gap-2 pb-3 border-b border-white/[0.08]">
+          <div className="flex items-center gap-2 pb-3 border-b border-[var(--glass-border)]">
             <ShieldAlert className="w-4 h-4 text-[#E88B8B]" />
             <h2 className="font-heading text-sm font-bold text-[#E88B8B]">Zona Bahaya</h2>
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-[#FAFAFA]">Keluar dari Akun</p>
-              <p className="text-xs text-[#A1A1AA]">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Keluar dari Akun</p>
+              <p className="text-xs text-[var(--text-secondary)]">
                 Mengakhiri sesi saat ini. Anda perlu masuk kembali untuk mengakses daftar tugas Anda.
               </p>
             </div>

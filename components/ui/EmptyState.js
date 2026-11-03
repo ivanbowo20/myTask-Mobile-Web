@@ -9,13 +9,13 @@ export default function EmptyState({
   onAction,
 }) {
   return (
-    <div className="w-full py-14 px-6 rounded-2xl bg-[rgba(255,255,255,0.03)] backdrop-blur-[16px] backdrop-saturate-[120%] border border-[rgba(255,255,255,0.08)] text-center flex flex-col items-center justify-center space-y-4">
-      <div className="w-14 h-14 rounded-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] flex items-center justify-center text-[#71717A]">
+    <div className="w-full py-14 px-6 rounded-2xl bg-[var(--glass-bg)] backdrop-blur-[16px] backdrop-saturate-[120%] border border-[var(--glass-border)] text-center flex flex-col items-center justify-center space-y-4">
+      <div className="w-14 h-14 rounded-full bg-[var(--glass-border)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--text-muted)]">
         <Icon className="w-7 h-7" />
       </div>
       <div className="space-y-1 max-w-sm">
-        <h3 className="text-base font-semibold text-[#FAFAFA]">{title}</h3>
-        <p className="text-xs text-[#A1A1AA] leading-relaxed">{description}</p>
+        <h3 className="text-base font-semibold text-[var(--text-primary)] font-heading">{title}</h3>
+        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{description}</p>
       </div>
       {actionLabel && onAction && (
         <div className="pt-2">

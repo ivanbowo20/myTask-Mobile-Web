@@ -114,14 +114,14 @@ export default function Navbar({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               autoFocus
-              className="w-full min-h-[44px] pl-9 pr-4 py-2 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.16)] focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-[#FAFAFA]/40 text-base text-[#FAFAFA] placeholder:text-zinc-400"
+              className="w-full min-h-[44px] pl-9 pr-4 py-2 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] focus:border-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--text-primary)]/40 text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
             />
           </form>
           <button
             type="button"
             onClick={() => setIsMobileSearchOpen(false)}
             aria-label="Tutup pencarian"
-            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+            className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg)] transition-colors"
           >
             <ChevronDown className="w-5 h-5 rotate-90" />
           </button>
@@ -133,12 +133,12 @@ export default function Navbar({
             <Link
               href="/dashboard"
               prefetch={true}
-              className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA] rounded-lg p-1"
+              className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)] rounded-lg p-1"
             >
-              <div className="w-8 h-8 rounded-lg bg-[#FAFAFA] text-[#0A0A0A] flex items-center justify-center font-bold shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-[var(--theme-accent,#D97706)] text-white flex items-center justify-center font-bold shadow-sm">
                 <CheckSquare className="w-5 h-5 stroke-[2.5]" />
               </div>
-              <span className="font-heading text-base sm:text-lg font-bold text-[#FAFAFA] tracking-tight">
+              <span className="font-heading text-base sm:text-lg font-bold text-[var(--text-primary)] tracking-tight">
                 MyTask
               </span>
             </Link>
@@ -147,13 +147,13 @@ export default function Navbar({
           {/* Center: Desktop Search Form */}
           <div suppressHydrationWarning={true} className="hidden sm:block flex-1 max-w-md mx-3 sm:mx-6 min-w-0">
             <form onSubmit={handleSearchSubmit} className="relative w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
               <input
                 type="text"
                 placeholder="Cari tugas..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full min-h-[44px] pl-10 pr-4 py-2 rounded-lg bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.16)] focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-[#FAFAFA]/40 focus:bg-[rgba(255,255,255,0.04)] text-base sm:text-sm text-[#FAFAFA] placeholder:text-zinc-400 transition-all duration-200"
+                className="w-full min-h-[44px] pl-10 pr-4 py-2 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] hover:border-[var(--glass-border-hover)] focus:border-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--text-primary)]/40 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all duration-200"
               />
             </form>
           </div>
@@ -165,7 +165,7 @@ export default function Navbar({
               type="button"
               onClick={() => setIsMobileSearchOpen(true)}
               aria-label="Cari tugas"
-              className="sm:hidden min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-zinc-300 hover:text-[#FAFAFA] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
+              className="sm:hidden min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg)] transition-colors"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -199,34 +199,34 @@ export default function Navbar({
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               aria-label="Menu pengguna"
               aria-expanded={isUserMenuOpen}
-              className="min-h-[44px] inline-flex items-center gap-2 pl-2 pr-2.5 py-1.5 rounded-lg hover:bg-[rgba(255,255,255,0.06)] border border-transparent hover:border-[rgba(255,255,255,0.08)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAFAFA]"
+              className="min-h-[44px] inline-flex items-center gap-2 pl-2 pr-2.5 py-1.5 rounded-lg hover:bg-[var(--glass-bg)] border border-transparent hover:border-[var(--glass-border)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)]"
             >
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
                   alt={displayName}
-                  className="w-8 h-8 rounded-full object-cover border border-white/20 shadow-sm"
+                  className="w-8 h-8 rounded-full object-cover border border-[var(--glass-border)] shadow-sm"
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.14)] text-[#FAFAFA] text-xs font-bold flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] text-xs font-bold flex items-center justify-center">
                   {userInitial}
                 </div>
               )}
-              <span className="text-xs font-medium text-[#FAFAFA] hidden lg:inline-block">
+              <span className="text-xs font-medium text-[var(--text-primary)] hidden lg:inline-block">
                 {displayName}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#71717A] hidden lg:block" />
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)] hidden lg:block" />
             </button>
 
             {/* Dropdown Menu */}
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--theme-nav-bg,#1A130E)] backdrop-blur-[20px] backdrop-saturate-[130%] border border-[var(--glass-border-hover,rgba(255,255,255,0.12))] shadow-2xl z-50 p-1.5 space-y-1 animate-in fade-in duration-150">
-                <div className="px-3 py-2 border-b border-[rgba(255,255,255,0.08)]">
-                  <p className="text-xs font-semibold text-[#FAFAFA] truncate">
+                <div className="px-3 py-2 border-b border-[var(--glass-border)]">
+                  <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
                     {displayName}
                   </p>
-                  <p className="text-[11px] text-[#71717A] truncate">
+                  <p className="text-[11px] text-[var(--text-muted)] truncate">
                     {displayEmail}
                   </p>
                 </div>
@@ -234,7 +234,7 @@ export default function Navbar({
                 <Link
                   href="/pengaturan"
                   onClick={() => setIsUserMenuOpen(false)}
-                  className="flex items-center gap-2.5 w-full min-h-[44px] px-3 py-2 rounded-lg text-xs font-medium text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[rgba(255,255,255,0.06)] transition-all duration-200"
+                  className="flex items-center gap-2.5 w-full min-h-[44px] px-3 py-2 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)] transition-all duration-200"
                 >
                   <Settings className="w-4 h-4" />
                   Pengaturan

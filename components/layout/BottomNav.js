@@ -82,7 +82,7 @@ export default function BottomNav({ onOpenAddTask }) {
           'relative flex flex-col items-center justify-center min-w-0 w-full min-h-[48px] py-1 px-0.5 rounded-xl transition-all duration-200 group select-none cursor-pointer active:scale-[0.94]',
           active
             ? 'text-[var(--theme-accent,#D97706)]'
-            : 'text-zinc-400 hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:text-slate-500 [html[data-theme="celestial-sky"]_&]:hover:text-slate-800'
+            : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
         )}
       >
         {/* Active background pill */}
@@ -104,7 +104,7 @@ export default function BottomNav({ onOpenAddTask }) {
           <span
             className={cn(
               'text-[10px] font-medium tracking-tight truncate max-w-full text-center transition-colors duration-200 px-0.5',
-              active ? 'font-semibold text-[var(--theme-accent,#D97706)]' : 'text-zinc-400 group-hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:text-slate-500 [html[data-theme="celestial-sky"]_&]:group-hover:text-slate-800'
+              active ? 'font-semibold text-[var(--theme-accent,#D97706)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-primary)]'
             )}
           >
             {item.label}
