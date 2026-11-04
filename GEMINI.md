@@ -26,6 +26,8 @@
   - **Phosphor Dynamic Iconography**: Navigasi utama desktop & mobile wajib menggunakan `@phosphor-icons/react` dengan transisi state dinamis (unselected `regular`, selected `fill`).
   - **Triage 3 Arah & Interactive Sandbox**: Analisa slop diagnostic + 3 arah alternatif desain + file artefak HTML interaktif mandiri (`/siellomita compare`) + kode implementasi siap pakai.
   - **Agentic AI Cockpit & Composite Blocks (BoardUI & Watermelon Standard)**: Fitur AI agent wajib menyertakan reasoning accordion, multi-step pipeline tracker, model switchers, token metrics, dan arsitektur composite animated blocks via `/siellomita agentic`.
+  - **Cinematic Scroll & Signature Move (Scroll-Craft & GSAP Standard)**: Memperlakukan scroll sebagai timeline sinematik dengan 8 Page Grammars, The Feeling Curve (Peak-End Rule: tepat 1 puncak emosional visual utama), tepat 1 Signature Move interaktif per landing page, kepatuhan Next.js `useGSAP` lifecycle guard, dan larangan mutlak *layout thrashing* (hanya menganimasikan GPU transforms: `xPercent`, `yPercent`, `scale`, `rotation`, `opacity`).
+  - **Real Materiality & Anti-Default Assets (Craftwork Protocol)**: Larangan placeholder teks dummy (*Lorem Ipsum*), avatar kartun generik, atau ikon melayang sendirian; wajib menggunakan data domain nyata, razor-thin 1px rim highlight, dan kanvas *warm bone ivory* / *obsidian ink*.
   - **Design Consultation & Plan Review**: Gunakan `/siellomita consult` untuk konsultasi sistem desain dari nol dan `/siellomita plan-review` untuk audit rencana UI/UX (rating 0-10, 5 state interaksi wajib) sebelum penulisan kode.
 
 ## Rekayasa Kode Bertahap & Disiplin (Disiplin AI)

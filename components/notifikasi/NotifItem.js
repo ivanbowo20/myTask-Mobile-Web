@@ -1,16 +1,21 @@
 'use client';
 
-import { Check, Clock, AlertTriangle, Calendar } from "lucide-react";
+import { Check, Clock, AlertTriangle, Calendar, Sparkles } from "lucide-react";
 import { hitungSisaWaktu, cn } from "@/lib/utils";
 
 export default function NotifItem({ task, type, kategori, onMarkDone }) {
-  const sisa = hitungSisaWaktu(task.deadline);
+  const isReengagement = type === "reengagement";
+  const sisa = task.deadline ? hitungSisaWaktu(task.deadline) : null;
 
   let icon = <Clock className="w-3.5 h-3.5 text-zinc-400" />;
   let statusText = "Mendatang";
   let statusColor = "text-zinc-400";
 
-  if (type === "terlewat") {
+  if (isReengagement) {
+    icon = <Sparkles className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />;
+    statusText = "Ajakan Pekan";
+    statusColor = "text-[var(--theme-accent,#D97706)] font-medium";
+  } else if (type === "terlewat") {
     icon = <AlertTriangle className="w-3.5 h-3.5 text-[#E88B8B]" />;
     statusText = "Terlewat";
     statusColor = "text-[#E88B8B] font-medium";
@@ -39,8 +44,14 @@ export default function NotifItem({ task, type, kategori, onMarkDone }) {
 
           <div className="flex items-center gap-1.5 text-[11px] leading-none flex-wrap">
             <span className={statusColor}>
-              {statusText} • {sisa}
+              {statusText}{sisa ? ` • ${sisa}` : ""}
             </span>
+
+            {isReengagement && (task.pesan || task.deskripsi) && (
+              <span className="text-zinc-400 truncate max-w-[200px] sm:max-w-[260px] before:content-['•'] before:text-zinc-600 before:mr-0.5">
+                {task.pesan || task.deskripsi}
+              </span>
+            )}
 
             {kategori && (
               <span className="flex items-center gap-1 text-zinc-400 before:content-['•'] before:text-zinc-600 before:mr-0.5">
@@ -56,7 +67,7 @@ export default function NotifItem({ task, type, kategori, onMarkDone }) {
       </div>
 
       {/* Tombol Aksi: Lingkaran Checkmark Minimalis (Apple Reminders / Linear style) */}
-      {onMarkDone && !task.selesai && (
+      {onMarkDone && !task.selesai && !isReengagement && (
         <button
           type="button"
           onClick={() => onMarkDone(task.id)}

@@ -4,10 +4,105 @@ import webpush from "web-push";
 import { query } from "@/lib/db";
 import { formatTanggal } from "@/lib/utils";
 import { auth } from "@/lib/auth";
+import {
+  isReengagementScheduleWindow,
+  getReengagementMessage,
+} from "@/lib/notifications/reengagement";
 
 export const dynamic = "force-dynamic";
 
-export async function handleDispatch() {
+async function dispatchReengagementNotifications({ force = false } = {}) {
+  const shouldRun = force || isReengagementScheduleWindow(new Date());
+  if (!shouldRun) {
+    return { triggered: false, sent: 0, message: null };
+  }
+
+  const msg = getReengagementMessage(new Date());
+
+  // Idempotency check: hanya kirim ke pengguna yang belum menerima ajakan hari ini (WIB)
+  const eligibleUsersSql = `
+    SELECT DISTINCT ps.user_id 
+    FROM public.push_subscriptions ps
+    WHERE NOT EXISTS (
+      SELECT 1 FROM public.notifications n
+      WHERE n.user_id = ps.user_id
+        AND n.tipe = 'reengagement'
+        AND n.dibuat_pada >= date_trunc('day', NOW() AT TIME ZONE 'Asia/Jakarta')
+    );
+  `;
+
+  const eligibleResult = await query(eligibleUsersSql);
+  const eligibleUsers = eligibleResult.rows;
+
+  let totalReengageSent = 0;
+
+  const payload = JSON.stringify({
+    title: msg.title,
+    body: msg.body,
+    url: "/dashboard",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: `reengagement-${msg.id}`,
+  });
+
+  await Promise.allSettled(
+    eligibleUsers.map(async (row) => {
+      try {
+        const subsResult = await query(
+          `SELECT id, endpoint, p256dh, auth 
+           FROM public.push_subscriptions 
+           WHERE user_id = $1;`,
+          [row.user_id]
+        );
+
+        await Promise.allSettled(
+          subsResult.rows.map(async (sub) => {
+            const pushSubscription = {
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dh,
+                auth: sub.auth,
+              },
+            };
+
+            try {
+              await webpush.sendNotification(pushSubscription, payload);
+              totalReengageSent++;
+            } catch (pushErr) {
+              console.error(`[DISPATCH-REENGAGE] Gagal kirim ke sub ${sub.id}:`, pushErr.message);
+              if (pushErr.statusCode === 404 || pushErr.statusCode === 410) {
+                await query(`DELETE FROM public.push_subscriptions WHERE id = $1;`, [sub.id]).catch(() => {});
+              }
+            }
+          })
+        );
+
+        // Catat riwayat ke in-app notification center
+        try {
+          await query(
+            `INSERT INTO public.notifications (user_id, task_id, tipe, judul, pesan, dibuat_pada)
+             VALUES ($1, NULL, 'reengagement', $2, $3, NOW());`,
+            [row.user_id, msg.title, msg.body]
+          );
+        } catch (notifErr) {
+          console.warn(`[DISPATCH-REENGAGE] Gagal insert log notifications:`, notifErr.message);
+        }
+      } catch (userErr) {
+        console.error(`[DISPATCH-REENGAGE] Error saat memproses user ${row.user_id}:`, userErr);
+      }
+    })
+  );
+
+  return {
+    triggered: true,
+    sent: totalReengageSent,
+    messageId: msg.id,
+    title: msg.title,
+    eligibleUsers: eligibleUsers.length,
+  };
+}
+
+export async function handleDispatch(request) {
   try {
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -21,6 +116,17 @@ export async function handleDispatch() {
 
     const subject = "mailto:admin@mytask.local";
     webpush.setVapidDetails(subject, publicKey, privateKey);
+
+    // Parse parameter query jika ada
+    let forceReengage = false;
+    if (request?.url) {
+      try {
+        const parsedUrl = new URL(request.url);
+        forceReengage = parsedUrl.searchParams.get("force_reengage") === "true";
+      } catch {
+        // Abaikan jika URL tidak valid
+      }
+    }
 
     // 1. Kunci dan tandai tugas secara atomik (Two-Phase Notification: Reminder & Deadline Habis)
     const reserveTasksSql = `
@@ -172,10 +278,19 @@ export async function handleDispatch() {
       })
     );
 
+    // Jalankan sub-rutin notifikasi ajakan berkala (Senin/Kamis 08:00 WIB)
+    let reengageResult = { triggered: false, sent: 0 };
+    try {
+      reengageResult = await dispatchReengagementNotifications({ force: forceReengage });
+    } catch (reengageErr) {
+      console.error("[DISPATCH] Gagal memproses re-engagement notifications:", reengageErr);
+    }
+
     return NextResponse.json({
       success: true,
-      sent: totalSent,
+      sent: totalSent + (reengageResult.sent || 0),
       processed: processedTaskIds.length,
+      reengagement: reengageResult,
     });
   } catch (error) {
     console.error("[DISPATCH] Terjadi kesalahan pada dispatcher notifikasi:", error);
@@ -240,7 +355,7 @@ export async function POST(request) {
       return new Response("Unauthorized", { status: 401 });
     }
   }
-  return handleDispatch();
+  return handleDispatch(request);
 }
 
 export async function GET(request) {
@@ -253,5 +368,5 @@ export async function GET(request) {
       return new Response("Unauthorized", { status: 401 });
     }
   }
-  return handleDispatch();
+  return handleDispatch(request);
 }

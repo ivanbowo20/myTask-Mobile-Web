@@ -14,6 +14,7 @@ import {
   Loader2,
   ChevronDown,
   Info,
+  Sparkles,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { toast } from "@/lib/use-toast";
@@ -21,6 +22,7 @@ import {
   getNotificationPermission,
   subscribeToPush,
   sendTestPush,
+  sendTestReengagementPush,
 } from "@/lib/pwa";
 
 export default function NotificationBanner({ dismissible = false, className = "" }) {
@@ -29,6 +31,8 @@ export default function NotificationBanner({ dismissible = false, className = ""
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testSuccess, setTestSuccess] = useState(false);
+  const [isTestingReengagement, setIsTestingReengagement] = useState(false);
+  const [testReengageSuccess, setTestReengageSuccess] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const timerRef = useRef(null);
@@ -121,6 +125,27 @@ export default function NotificationBanner({ dismissible = false, className = ""
     }
   }
 
+  async function handleSendTestReengagement() {
+    setIsTestingReengagement(true);
+    try {
+      const res = await sendTestReengagementPush();
+      if (res?.ok) {
+        setTestReengageSuccess(true);
+        toast.success(res?.message || "Notifikasi ajakan berhasil dikirim ke perangkat Anda!");
+        timerRef.current = setTimeout(() => {
+          setTestReengageSuccess(false);
+        }, 3500);
+      } else {
+        toast.error(res?.error || "Gagal mengirim tes notifikasi ajakan.");
+      }
+    } catch (err) {
+      console.error("Gagal mengirim tes ajakan:", err);
+      toast.error("Terjadi kendala saat memicu notifikasi ajakan.");
+    } finally {
+      setIsTestingReengagement(false);
+    }
+  }
+
   function handleDismiss() {
     if (!dismissible) return;
     setIsDismissed(true);
@@ -163,7 +188,7 @@ export default function NotificationBanner({ dismissible = false, className = ""
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-auto">
             <button
               type="button"
               onClick={handleSendTest}
@@ -185,8 +210,35 @@ export default function NotificationBanner({ dismissible = false, className = ""
                 {isTesting
                   ? "Mengirim..."
                   : testSuccess
-                  ? "✓ Tes Berhasil!"
-                  : "Kirim Tes Notifikasi"}
+                  ? "✓ Tes Deadline Terkirim"
+                  : "Tes Deadline"}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSendTestReengagement}
+              disabled={isTestingReengagement || testReengageSuccess}
+              title="Kirim contoh notifikasi ajakan berkala (Senin/Kamis) ke perangkat ini"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-accent,#D97706)] cursor-pointer disabled:cursor-default ${
+                testReengageSuccess
+                  ? "bg-[var(--theme-accent,#D97706)]/25 border border-[var(--theme-accent,#D97706)]/50 text-[var(--theme-accent,#D97706)]"
+                  : "bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.12] text-[#FAFAFA]"
+              }`}
+            >
+              {isTestingReengagement ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : testReengageSuccess ? (
+                <Check className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />
+              )}
+              <span>
+                {isTestingReengagement
+                  ? "Mengirim..."
+                  : testReengageSuccess
+                  ? "✓ Ajakan Terkirim"
+                  : "Tes Notif Ajakan"}
               </span>
             </button>
 
