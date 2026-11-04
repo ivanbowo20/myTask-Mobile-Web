@@ -27,7 +27,7 @@ async function dispatchReengagementNotifications({ force = false } = {}) {
       SELECT 1 FROM public.notifications n
       WHERE n.user_id = ps.user_id
         AND n.tipe = 'reengagement'
-        AND n.dibuat_pada >= date_trunc('day', NOW() AT TIME ZONE 'Asia/Jakarta')
+        AND n.dibuat_pada >= (date_trunc('day', NOW() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta')
     );
   `;
 
