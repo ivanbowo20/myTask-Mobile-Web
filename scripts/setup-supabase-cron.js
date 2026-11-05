@@ -90,6 +90,9 @@ async function setupSupabaseCron() {
       AS $$
       DECLARE
         task_count int;
+        reengage_count int := 0;
+        wib_dow int;
+        wib_hour int;
         cfg record;
         target_endpoint text;
       BEGIN
@@ -130,8 +133,24 @@ async function setupSupabaseCron() {
             )
           );
 
-        -- 3. HANYA bila ada tugas (task_count > 0), tembak panggilan HTTP via pg_net ke Vercel!
-        IF task_count > 0 THEN
+        -- 3. Cek apakah saat ini hari Senin (dow=1) atau Kamis (dow=4) pukul 08:00 WIB
+        -- Dan ada push subscriptions aktif yang belum menerima notifikasi ajakan hari ini
+        wib_dow := EXTRACT(DOW FROM NOW() AT TIME ZONE 'Asia/Jakarta');
+        wib_hour := EXTRACT(HOUR FROM NOW() AT TIME ZONE 'Asia/Jakarta');
+
+        IF (wib_dow IN (1, 4)) AND (wib_hour = 8) THEN
+          SELECT count(DISTINCT ps.user_id) INTO reengage_count
+          FROM public.push_subscriptions ps
+          WHERE NOT EXISTS (
+            SELECT 1 FROM public.notifications n
+            WHERE n.user_id = ps.user_id
+              AND n.tipe = 'reengagement'
+              AND n.dibuat_pada >= (date_trunc('day', NOW() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta')
+          );
+        END IF;
+
+        -- 4. HANYA bila ada tugas deadline (task_count > 0) ATAU ada target ajakan (reengage_count > 0), tembak ke Vercel!
+        IF (task_count > 0) OR (reengage_count > 0) THEN
           target_endpoint := rtrim(cfg.app_url, '/') || '/api/notifications/dispatch?key=' || cfg.cron_secret;
           PERFORM net.http_post(
             url := target_endpoint,
