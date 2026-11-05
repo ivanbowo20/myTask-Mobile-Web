@@ -30,7 +30,52 @@ self.addEventListener('push', function (event) {
     renotify: true,
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Cek platform perangkat (Khusus HP vs Desktop/Laptop)
+  const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    (self.navigator && self.navigator.userAgent) || ''
+  );
+
+  // Pada HP: Selalu tampilkan notifikasi push secara normal tanpa batasan
+  if (isMobile) {
+    event.waitUntil(self.registration.showNotification(title, options));
+    return;
+  }
+
+  // Khusus PC / Laptop (Desktop):
+  // Cegah benturan banner pop-up OS Windows jika jendela aplikasi sedang aktif & fokus di depan mata
+  event.waitUntil(
+    (async () => {
+      try {
+        const windowClients = await clients.matchAll({
+          type: 'window',
+          includeUncontrolled: true,
+        });
+
+        const isDesktopAppFocused = windowClients.some(
+          (c) => c.focused && (c.visibilityState === 'visible' || c.visibilityState === undefined)
+        );
+
+        if (isDesktopAppFocused) {
+          // Jendela desktop sedang aktif: informasikan tab secara tenang tanpa spam pop-up OS Windows
+          windowClients.forEach((client) => {
+            try {
+              client.postMessage({
+                type: 'TASKFLOW_PUSH_ACTIVE_SILENT',
+                payload: data,
+              });
+            } catch (_) {}
+          });
+          return;
+        }
+
+        // Jika desktop dalam keadaan minimize / background / app tertutup, munculkan banner OS Windows
+        return await self.registration.showNotification(title, options);
+      } catch (err) {
+        // Fallback aman jika API clients gagal
+        return await self.registration.showNotification(title, options);
+      }
+    })()
+  );
 });
 
 self.addEventListener('notificationclick', function (event) {

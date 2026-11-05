@@ -132,38 +132,57 @@ export default function DashboardPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Notifikasi sambutan login satu kali per sesi browser
+  // Notifikasi sambutan login satu kali per sesi browser (stagger lembut 600ms agar halaman siap terlebih dahulu)
   useEffect(() => {
-    if (currentUser?.name) {
-      const welcomeKey = `welcomed_${currentUser.id || currentUser.email || currentUser.name}`;
-      if (typeof window !== "undefined" && !sessionStorage.getItem(welcomeKey)) {
-        sessionStorage.setItem(welcomeKey, "true");
+    if (!currentUser?.name || typeof window === "undefined") return;
+
+    const welcomeKey = `welcomed_${currentUser.id || currentUser.email || currentUser.name}`;
+    if (!sessionStorage.getItem(welcomeKey)) {
+      sessionStorage.setItem(welcomeKey, "true");
+      const timer = setTimeout(() => {
         toast.success(`Selamat datang kembali, ${currentUser.name}!`);
-      }
+      }, 600);
+      return () => clearTimeout(timer);
     }
   }, [currentUser]);
 
   // Alert (Toast) otomatis saat membuka dashboard jika ada tugas terlewat belum lama (< 30 menit)
+  // Diringkas menjadi 1 digest toast dan diberi jeda (stagger 2400ms) agar tidak bertabrakan dengan sapaan
   useEffect(() => {
     if (typeof window === "undefined" || !stats?.overdueList || stats.overdueList.length === 0) return;
 
     const now = Date.now();
     const THIRTY_MINUTES_MS = 30 * 60 * 1000;
 
-    stats.overdueList.forEach((task) => {
-      if (!task?.deadline) return;
+    // Filter tugas yang terlewat belum lama ini dan belum dialert di sesi ini
+    const newlyOverdue = stats.overdueList.filter((task) => {
+      if (!task?.deadline) return false;
       const deadlineTime = new Date(task.deadline).getTime();
       const diffMs = now - deadlineTime;
-
-      // Jika statusnya terlewat belum lama ini (< 30 menit) dan belum dialert di sesi ini
       if (diffMs >= 0 && diffMs <= THIRTY_MINUTES_MS) {
         const sessionKey = `overdue_alert_${task.id}`;
-        if (!sessionStorage.getItem(sessionKey)) {
-          sessionStorage.setItem(sessionKey, "true");
-          toast.error(`Tugas "${task.judul}" terlewat!`);
-        }
+        return !sessionStorage.getItem(sessionKey);
       }
+      return false;
     });
+
+    if (newlyOverdue.length === 0) return;
+
+    // Tandai seluruh tugas yang dialert di sessionStorage agar tidak berulang
+    newlyOverdue.forEach((task) => {
+      sessionStorage.setItem(`overdue_alert_${task.id}`, "true");
+    });
+
+    // Munculkan 1 toast ringkasan terorkestrasi setelah jeda 2.4 detik (setelah toast sapaan selesai)
+    const timer = setTimeout(() => {
+      if (newlyOverdue.length === 1) {
+        toast.warning(`Tugas "${newlyOverdue[0].judul}" telah melewati batas waktu!`);
+      } else {
+        toast.warning(`Ada ${newlyOverdue.length} tugas yang telah melewati batas waktu!`);
+      }
+    }, 2400);
+
+    return () => clearTimeout(timer);
   }, [stats?.overdueList]);
 
   const greeting = useMemo(() => {
