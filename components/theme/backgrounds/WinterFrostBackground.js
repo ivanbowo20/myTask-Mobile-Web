@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, createContext, useContext } from 'react';
+import React, { useMemo, useState, useEffect, useRef, createContext, useContext } from 'react';
 
 /**
  * BUILT-IN REMOTION COMPATIBLE RUNTIME & HOOKS
@@ -860,15 +860,29 @@ const DimIceBlueSnowfieldsLayer = React.memo(function DimIceBlueSnowfieldsLayer(
  *   baik pada Mobile 9:16 maupun Desktop 16:9, membingkai puncak gunung es di sisi tengah-kanan).
  */
 export default function WinterFrostBackground({ children, className = '' }) {
-  const frame = useCurrentFrame();
-  const { width, height } = useVideoConfig();
+  const canvasRef = useRef(null);
+  const [dimensions, setDimensions] = useState(() => ({
+    width: typeof window !== 'undefined' ? window.innerWidth || 1920 : 1920,
+    height: typeof window !== 'undefined' ? window.innerHeight || 1080 : 1080,
+  }));
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth || 1920,
+        height: window.innerHeight || 1080,
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const { width, height } = dimensions;
   const isMobile = height > width;
   const pixelUnit = isMobile
     ? Math.max(3, Math.round(width / 180))
     : Math.max(4, Math.round(width / 320));
-
-  const loopProgress = (frame % LOOP_FRAMES) / LOOP_FRAMES;
 
   /**
    * 1. KONFIGURASI PEGUNUNGAN ES (Terbuka & Megah di Tengah hingga Kanan)
@@ -964,7 +978,6 @@ export default function WinterFrostBackground({ children, className = '' }) {
 
   /**
    * 2. KONFIGURASI SATU POHON CEMARA MEGAH DI UJUNG KIRI (Left-Anchored Lone Pine)
-   * Menjulang gagah di sisi kiri layar untuk membingkai pemandangan pegunungan.
    */
   const lonePine = useMemo(() => {
     if (isMobile) {
@@ -991,50 +1004,7 @@ export default function WinterFrostBackground({ children, className = '' }) {
   }, [isMobile, width, height]);
 
   /**
-   * 3. PARTIKEL HUJAN SALJU PIXEL ART (60FPS SEAMLESS LOOP 1800 FRAMES)
-   */
-  const snowflakes = useMemo(() => {
-    // 96 partikel di layar ponsel memberikan efek salju lebat & indah tanpa membebani GPU HP kentang
-    const count = isMobile ? 96 : 145;
-    return Array.from({ length: count }).map((_, idx) => {
-      const r1 = seededRandom(idx * 11 + 1);
-      const r2 = seededRandom(idx * 23 + 2);
-      const r3 = seededRandom(idx * 37 + 3);
-      const r4 = seededRandom(idx * 53 + 4);
-
-      const fallCycles = r3 > 0.7 ? 3 : r3 > 0.3 ? 2 : 1;
-      const swayCycles = r4 > 0.5 ? 4 : 2;
-      const depthLayer = r3 > 0.74 ? 'near' : r3 > 0.36 ? 'mid' : 'far';
-
-      return {
-        id: idx,
-        initialX: r1,
-        initialY: r2,
-        fallCycles,
-        swayCycles,
-        swayRadius:
-          depthLayer === 'near'
-            ? width * 0.032
-            : depthLayer === 'mid'
-            ? width * 0.02
-            : width * 0.011,
-        windDriftCycles: 1,
-        size:
-          depthLayer === 'near'
-            ? pixelUnit * 1.35
-            : depthLayer === 'mid'
-            ? pixelUnit * 1.0
-            : pixelUnit * 0.7,
-        opacity:
-          depthLayer === 'near' ? 0.88 : depthLayer === 'mid' ? 0.68 : 0.42,
-        isCrossFlake: idx % 7 === 0 && depthLayer === 'near',
-        phase: r4 * Math.PI * 2,
-      };
-    });
-  }, [isMobile, width, pixelUnit]);
-
-  /**
-   * 4. AWAN ES MALAM/SENJA LOOPING HALUS
+   * 3. AWAN ES MALAM/SENJA
    */
   const clouds = useMemo(() => {
     const count = isMobile ? 4 : 6;
@@ -1051,12 +1021,168 @@ export default function WinterFrostBackground({ children, className = '' }) {
 
   const horizonY = isMobile ? height * 0.56 : height * 0.68;
 
-  // Kabut lembah tipis yang sangat teduh (tidak silau)
-  const mistOpacity = interpolate(
-    Math.sin(loopProgress * Math.PI * 2 * 2),
-    [-1, 1],
-    [0.12, 0.24]
-  );
+  /**
+   * 4. CANVAS 2D SNOW ENGINE (0% React State Re-renders)
+   * Menggambar salju langsung di Canvas 2D via native requestAnimationFrame.
+   * - Menghilangkan 100% Virtual DOM diffing (setState = 0).
+   * - Auto-pause saat modal (Tambah Tugas / Catatan) terbuka, memberi 100% CPU/GPU ke modal.
+   * - Auto-pause saat scrolling di HP kentang (Infinix Smart 6).
+   */
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return undefined;
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const isMobileDevice = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+    const count = isMobileDevice ? 80 : 135;
+
+    // Generate deterministic snowflake pool
+    const flakes = Array.from({ length: count }).map((_, idx) => {
+      const r1 = seededRandom(idx * 11 + 1);
+      const r2 = seededRandom(idx * 23 + 2);
+      const r3 = seededRandom(idx * 37 + 3);
+      const r4 = seededRandom(idx * 53 + 4);
+
+      const depthLayer = r3 > 0.74 ? 'near' : r3 > 0.36 ? 'mid' : 'far';
+      const fallSpeed =
+        depthLayer === 'near'
+          ? (height / 11) * (0.85 + r2 * 0.3)
+          : depthLayer === 'mid'
+          ? (height / 15) * (0.8 + r2 * 0.4)
+          : (height / 20) * (0.75 + r2 * 0.5);
+
+      const swayRadius =
+        depthLayer === 'near'
+          ? width * 0.026
+          : depthLayer === 'mid'
+          ? width * 0.016
+          : width * 0.009;
+
+      const size =
+        depthLayer === 'near'
+          ? pixelUnit * 1.35
+          : depthLayer === 'mid'
+          ? pixelUnit * 1.0
+          : pixelUnit * 0.7;
+
+      const opacity =
+        depthLayer === 'near' ? 0.88 : depthLayer === 'mid' ? 0.68 : 0.42;
+
+      return {
+        x: r1 * width,
+        y: r2 * height,
+        baseX: r1 * width,
+        fallSpeed,
+        swayRadius,
+        swaySpeed: 1.2 + r4 * 1.4,
+        phase: r4 * Math.PI * 2,
+        size,
+        opacity,
+        isCrossFlake: idx % 7 === 0 && depthLayer === 'near',
+      };
+    });
+
+    let rafId;
+    let lastTime = performance.now();
+    let isScrolling = false;
+    let scrollTimer = null;
+
+    // Deteksi modal terbuka (saat modal open, lockBodyScroll menambahkan class 'overflow-hidden' ke body)
+    let isModalOpen =
+      typeof document !== 'undefined' &&
+      document.body.classList.contains('overflow-hidden');
+
+    const observer =
+      typeof MutationObserver !== 'undefined' && typeof document !== 'undefined'
+        ? new MutationObserver(() => {
+            isModalOpen = document.body.classList.contains('overflow-hidden');
+          })
+        : null;
+
+    if (observer && typeof document !== 'undefined') {
+      observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    const handleScroll = () => {
+      if (!isMobileDevice) return;
+      isScrolling = true;
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        isScrolling = false;
+        lastTime = performance.now();
+      }, 100);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+    }
+
+    const minDelta = isMobileDevice ? 32 : 16; // ~30 FPS on mobile, 60 FPS on desktop
+
+    function render(now) {
+      if (document.hidden || isModalOpen || (isScrolling && isMobileDevice)) {
+        lastTime = now;
+        rafId = requestAnimationFrame(render);
+        return;
+      }
+
+      const elapsed = now - lastTime;
+      if (elapsed < minDelta) {
+        rafId = requestAnimationFrame(render);
+        return;
+      }
+
+      const deltaSeconds = Math.min(elapsed / 1000, 0.1);
+      lastTime = now;
+
+      ctx.clearRect(0, 0, width, height);
+      const timeSec = now / 1000;
+
+      for (let i = 0; i < flakes.length; i++) {
+        const flake = flakes[i];
+
+        flake.y += flake.fallSpeed * deltaSeconds;
+        if (flake.y > height + 8) {
+          flake.y = -8;
+          flake.baseX = Math.random() * width;
+        }
+
+        const sway = Math.sin(timeSec * flake.swaySpeed + flake.phase) * flake.swayRadius;
+        const currentX = (flake.baseX + sway + width) % width;
+        const s = flake.size;
+
+        ctx.fillStyle = `rgba(248, 250, 252, ${flake.opacity})`;
+
+        if (flake.isCrossFlake) {
+          ctx.fillRect(currentX - s * 0.5, flake.y - s * 1.5, s, s * 3);
+          ctx.fillRect(currentX - s * 1.5, flake.y - s * 0.5, s * 3, s);
+        } else {
+          ctx.fillRect(currentX, flake.y, s, s);
+        }
+      }
+
+      if (!prefersReducedMotion) {
+        rafId = requestAnimationFrame(render);
+      }
+    }
+
+    render(performance.now());
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (scrollTimer) clearTimeout(scrollTimer);
+      if (observer) observer.disconnect();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [width, height, pixelUnit]);
 
   return (
     <AbsoluteFill
@@ -1078,9 +1204,7 @@ export default function WinterFrostBackground({ children, className = '' }) {
           imageRendering: 'pixelated',
         }}
       >
-        {/* =================================================================
-            LAYER 1: LANGIT BIRU NAVY ES PEKAT (#121E36 -> #1E3254) & AWAN REDUP
-        ================================================================== */}
+        {/* LAYER 1: LANGIT BIRU NAVY ES PEKAT & AWAN */}
         <g id="deep-glacial-sky-bands">
           <rect
             x={0}
@@ -1100,26 +1224,18 @@ export default function WinterFrostBackground({ children, className = '' }) {
         </g>
 
         <g id="drifting-glacial-clouds">
-          {clouds.map((c) => {
-            const wrapWidth = width + 320;
-            const currentX =
-              ((c.baseX + loopProgress) % 1) * wrapWidth - 160;
-            return (
-              <PixelCloudCluster
-                key={c.id}
-                x={Math.round(currentX / pixelUnit) * pixelUnit}
-                y={c.y}
-                scale={c.scale}
-                variant={c.variant}
-              />
-            );
-          })}
+          {clouds.map((c) => (
+            <PixelCloudCluster
+              key={c.id}
+              x={c.baseX * width}
+              y={c.y}
+              scale={c.scale}
+              variant={c.variant}
+            />
+          ))}
         </g>
 
-        {/* =================================================================
-            LAYER 2: PUNCAK PEGUNUNGAN ES (#334155 / #475569 & KRISTAL TAJAM)
-            (Di-memoize penuh: 0 overhead CPU saat salju turun)
-        ================================================================== */}
+        {/* LAYER 2: PUNCAK PEGUNUNGAN ES (Zero CPU Virtual DOM Overhead) */}
         <FrostedSlateMountainsLayer mountains={mountains} pixelUnit={pixelUnit} />
 
         {/* Kabut Lembah Es Redup di Kaki Pegunungan */}
@@ -1129,12 +1245,10 @@ export default function WinterFrostBackground({ children, className = '' }) {
           width={width}
           height={height * 0.05}
           fill={PALETTE.mountainIceShadow}
-          opacity={mistOpacity}
+          opacity={0.18}
         />
 
-        {/* =================================================================
-            LAYER 3: SILUET BARISAN PINUS RENDAH DI KEJAUHAN KAKI GUNUNG
-        ================================================================== */}
+        {/* LAYER 3: SILUET BARISAN PINUS RENDAH DI KEJAUHAN KAKI GUNUNG */}
         <DistantPixelTreeline
           startX={0}
           endX={width}
@@ -1143,10 +1257,7 @@ export default function WinterFrostBackground({ children, className = '' }) {
           seed={42}
         />
 
-        {/* =================================================================
-            LAYER 4: HAMPARAN TANAH SALJU BERGRADASI BIRU ES REDUP
-            (Di-memoize penuh: bebas garis putih silau, nyaman di mata)
-        ================================================================== */}
+        {/* LAYER 4: HAMPARAN TANAH SALJU BERGRADASI BIRU ES REDUP */}
         <DimIceBlueSnowfieldsLayer
           width={width}
           height={height}
@@ -1155,81 +1266,30 @@ export default function WinterFrostBackground({ children, className = '' }) {
           isMobile={isMobile}
         />
 
-        {/* =================================================================
-            LAYER 5: SATU POHON CEMARA MEGAH DI UJUNG KIRI (Left-Anchored Lone Pine)
-            Menjulang gagah di sisi kiri layar (#0E2419 dengan salju putih bersih)
-        ================================================================== */}
+        {/* LAYER 5: SATU POHON CEMARA MEGAH DI UJUNG KIRI (Left-Anchored Lone Pine) */}
         <g id="left-anchored-lone-pine">
           <PixelPineTree
             x={lonePine.x}
             y={lonePine.y}
             scale={lonePine.scale}
             tiers={lonePine.tiers}
-            frame={frame}
+            frame={0}
             phaseOffset={lonePine.phase}
             swayAmplitude={lonePine.sway}
           />
         </g>
-
-        {/* =================================================================
-            LAYER 6: PARTIKEL HUJAN SALJU PIXEL ART (60FPS LOOPING HALUS)
-        ================================================================== */}
-        <g id="falling-pixel-snowflakes" style={{ willChange: 'transform' }}>
-          {snowflakes.map((flake) => {
-            const verticalProgress =
-              (flake.initialY + loopProgress * flake.fallCycles) % 1;
-            const yPos = verticalProgress * height;
-
-            const swayAngle =
-              loopProgress * Math.PI * 2 * flake.swayCycles + flake.phase;
-            const swayOffset = Math.sin(swayAngle) * flake.swayRadius;
-
-            const baseDrift =
-              ((flake.initialX + loopProgress * flake.windDriftCycles * 0.14) %
-                1) *
-              width;
-            const xPos = (baseDrift + swayOffset + width) % width;
-            const s = flake.size;
-
-            if (flake.isCrossFlake) {
-              return (
-                <g
-                  key={flake.id}
-                  transform={`translate(${xPos}, ${yPos})`}
-                  opacity={flake.opacity}
-                >
-                  <rect
-                    x={-s * 0.5}
-                    y={-s * 1.5}
-                    width={s}
-                    height={s * 3}
-                    fill={PALETTE.treeSnowPure}
-                  />
-                  <rect
-                    x={-s * 1.5}
-                    y={-s * 0.5}
-                    width={s * 3}
-                    height={s}
-                    fill={PALETTE.treeSnowPure}
-                  />
-                </g>
-              );
-            }
-
-            return (
-              <rect
-                key={flake.id}
-                x={xPos}
-                y={yPos}
-                width={s}
-                height={s}
-                fill={PALETTE.treeSnowPure}
-                opacity={flake.opacity}
-              />
-            );
-          })}
-        </g>
       </svg>
+
+      {/* LAYER 6: CANVAS 2D HUJAN SALJU KRISTAL (Zero React State Re-renders) */}
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{
+          imageRendering: 'pixelated',
+        }}
+      />
 
       {children && (
         <div className="relative z-10 w-full h-full pointer-events-auto">

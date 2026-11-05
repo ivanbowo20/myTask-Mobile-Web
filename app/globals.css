@@ -1296,9 +1296,18 @@ html[data-theme="abyssal-teal"] .glass-modal {
     -webkit-backdrop-filter: none !important;
   }
 
-  /* Hardware acceleration hints for fixed navigation bars */
-  header,
+  /* Mobile Navigation Bar Zero-Jank Optimization:
+     Nonaktifkan backdrop-filter pada BottomNav di mobile (< 768px) agar tab switching
+     dan scrolling di HP kentang (Infinix Smart 6 / PowerVR GPU) berjalan 60 FPS tanpa lag. */
   nav[aria-label="Navigasi bawah mobile"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--theme-nav-bg, rgba(16, 12, 10, 0.96)) !important;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  header {
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
   }
