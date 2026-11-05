@@ -5,6 +5,7 @@ import DarkChocolateBackground from './backgrounds/DarkChocolateBackground';
 import SoftAuroraBackground from './backgrounds/SoftAuroraBackground';
 import AbyssalTealBackground from './backgrounds/AbyssalTealBackground';
 import CelestialSkyBackground from './backgrounds/CelestialSkyBackground';
+import WinterFrostBackground from './backgrounds/WinterFrostBackground';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function ThemeBackground() {
@@ -14,7 +15,7 @@ export default function ThemeBackground() {
   if (!isMounted) {
     return (
       <div
-        className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='abyssal-teal']_&]:bg-[#021013] [html[data-theme='soft-aurora']_&]:bg-[#060810]"
+        className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='winter-frost']_&]:bg-[#121E36] [html[data-theme='abyssal-teal']_&]:bg-[#021013] [html[data-theme='soft-aurora']_&]:bg-[#060810]"
         aria-hidden="true"
       />
     );
@@ -24,7 +25,7 @@ export default function ThemeBackground() {
 
   return (
     <div
-      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] isolate [transform:translate3d(0,0,0)]"
+      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='winter-frost']_&]:bg-[#121E36] isolate [transform:translate3d(0,0,0)]"
       aria-hidden="true"
     >
       {/* Dynamic Background Switcher with Fluid Simultaneous Cross-fade (initial={false} untuk 0ms first paint) */}
@@ -37,6 +38,7 @@ export default function ThemeBackground() {
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
         >
+          {activeThemeId === 'winter-frost' && <WinterFrostBackground />}
           {activeThemeId === 'celestial-sky' && <CelestialSkyBackground />}
           {activeThemeId === 'soft-aurora' && <SoftAuroraBackground />}
           {activeThemeId === 'abyssal-teal' && <AbyssalTealBackground />}
@@ -44,10 +46,10 @@ export default function ThemeBackground() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Adaptive scrim mask: Dinonaktifkan pada celestial-sky agar langit biru cerah alami & kontras teks terjaga */}
+      {/* Adaptive scrim mask: Dinonaktifkan pada celestial-sky & winter-frost agar langit biru & panorama es alami & kontras teks terjaga */}
       <div
         className={`absolute inset-0 pointer-events-none transition-all duration-500 ${
-          activeThemeId === 'celestial-sky'
+          activeThemeId === 'celestial-sky' || activeThemeId === 'winter-frost'
             ? 'bg-transparent backdrop-blur-none'
             : activeThemeId === 'abyssal-teal'
             ? 'bg-black/55 backdrop-blur-none sm:backdrop-blur-[1.5px]'
@@ -57,7 +59,7 @@ export default function ThemeBackground() {
       />
 
       {/* Subtle noise texture for frosted crystal refraction (Desktop only, hemat GPU HP) */}
-      {activeThemeId !== 'celestial-sky' && (
+      {activeThemeId !== 'celestial-sky' && activeThemeId !== 'winter-frost' && (
         <div
           className="hidden sm:block absolute inset-0 opacity-[0.025] mix-blend-overlay pointer-events-none"
           style={{

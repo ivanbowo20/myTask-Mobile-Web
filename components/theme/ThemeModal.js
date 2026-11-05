@@ -144,7 +144,7 @@ export default function ThemeModal() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-            className="relative w-full max-w-4xl glass-modal rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-7 z-10 border-t sm:border border-[var(--glass-border)] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)] max-h-[92vh] sm:max-h-[90vh] overflow-y-auto focus:outline-none"
+            className="relative w-full max-w-5xl glass-modal rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pb-7 z-10 border-t sm:border border-[var(--glass-border)] shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)] max-h-[92vh] sm:max-h-[90vh] overflow-y-auto focus:outline-none"
           >
             {/* Mobile Bottom Sheet Grab Handle */}
             <div className="w-12 h-1 rounded-full bg-[var(--text-muted)]/30 mx-auto mb-4 sm:hidden theme-modal-handle" aria-hidden="true" />
@@ -182,8 +182,8 @@ export default function ThemeModal() {
               </button>
             </div>
 
-            {/* Theme Swatch Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-5 pb-2">
+            {/* Theme Swatch Cards Grid (Responsif 1 kolom mobile, 2 tablet, 3 laptop, 5 desktop) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 pt-5 pb-2">
               {themes.map((t) => {
                 const isActive = theme === t.id;
 
@@ -251,6 +251,35 @@ export default function ThemeModal() {
                           <div className="absolute top-1 left-2 w-20 h-10 rounded-full bg-white/75 filter blur-[7px]" />
                           <div className="absolute top-6 right-1 w-24 h-12 rounded-full bg-white/85 filter blur-[8px]" />
                           <div className="absolute -bottom-2 left-1/3 w-28 h-14 rounded-full bg-white/70 filter blur-[8px]" />
+                        </div>
+                      )}
+
+                      {t.id === 'winter-frost' && (
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#121E36] via-[#1E3254] to-[#253D64] overflow-hidden">
+                          {/* Pegunungan salju di background */}
+                          <div
+                            className="absolute bottom-2 right-0 w-24 h-16 bg-[#334155] opacity-90"
+                            style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}
+                          />
+                          <div
+                            className="absolute bottom-1 right-6 w-16 h-12 bg-[#475569] opacity-95"
+                            style={{ clipPath: 'polygon(45% 0%, 0% 100%, 100% 100%)' }}
+                          />
+                          {/* Satu pohon cemara bersalju di kiri */}
+                          <div
+                            className="absolute bottom-1 left-2 w-9 h-16 bg-[#0E2419] shadow-sm"
+                            style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}
+                          >
+                            <div
+                              className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-3 bg-[#F8FAFC] opacity-95"
+                              style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}
+                            />
+                          </div>
+                          {/* Butiran salju */}
+                          <div className="absolute top-2 left-6 w-1 h-1 rounded-full bg-white opacity-90 animate-pulse" />
+                          <div className="absolute top-5 left-14 w-1 h-1 rounded-full bg-white opacity-80" />
+                          <div className="absolute top-3 right-8 w-1.5 h-1.5 rounded-full bg-white opacity-95" />
+                          <div className="absolute top-7 right-16 w-1 h-1 rounded-full bg-white opacity-70" />
                         </div>
                       )}
 

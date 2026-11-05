@@ -88,7 +88,7 @@ export default function NotebookSortDropdown({ value = 'newest', onChange, class
           '[html[data-theme="celestial-sky"]_&]:text-slate-800 [html[data-theme="celestial-sky"]_&]:hover:bg-white',
           '[html[data-theme="celestial-sky"]_&]:shadow-sm',
           'active:scale-[0.98] transition-all duration-150',
-          isOpen && 'ring-1 ring-amber-500/50 border-amber-500/40 [html[data-theme="celestial-sky"]_&]:ring-sky-400 [html[data-theme="celestial-sky"]_&]:border-sky-400'
+          isOpen && 'ring-1 ring-[var(--theme-glow,rgba(217,119,6,0.4))] border-[var(--theme-accent,#D97706)]'
         )}
       >
         <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 shrink-0" />
@@ -137,7 +137,7 @@ export default function NotebookSortDropdown({ value = 'newest', onChange, class
                   className={cn(
                     'w-full flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg text-xs font-medium text-left cursor-pointer select-none transition-colors duration-150',
                     isSelected
-                      ? 'bg-amber-500/15 text-amber-300 font-semibold [html[data-theme="celestial-sky"]_&]:bg-sky-100 [html[data-theme="celestial-sky"]_&]:text-sky-900'
+                      ? 'bg-[var(--theme-accent,#D97706)]/15 text-[var(--text-primary)] font-semibold border border-[var(--theme-accent,#D97706)]/30'
                       : 'text-zinc-300 [html[data-theme="celestial-sky"]_&]:text-slate-700 hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-100'
                   )}
                 >
@@ -146,7 +146,7 @@ export default function NotebookSortDropdown({ value = 'newest', onChange, class
                       className={cn(
                         'w-4 h-4 shrink-0',
                         isSelected
-                          ? 'text-amber-400 [html[data-theme="celestial-sky"]_&]:text-sky-600'
+                          ? 'text-[var(--theme-accent,#D97706)]'
                           : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-500'
                       )}
                     />
@@ -159,7 +159,7 @@ export default function NotebookSortDropdown({ value = 'newest', onChange, class
                   </div>
 
                   {isSelected && (
-                    <Check className="w-3.5 h-3.5 text-amber-400 [html[data-theme='celestial-sky']_&]:text-sky-600 shrink-0" />
+                    <Check className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)] shrink-0" />
                   )}
                 </button>
               );

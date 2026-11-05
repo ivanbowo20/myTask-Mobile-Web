@@ -164,14 +164,14 @@ export default function AddNotebookModal({ isOpen, onClose }) {
               htmlFor="notebook-title-input"
               className="text-xs font-semibold text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-800"
             >
-              Judul Catatan Materi <span className="text-amber-500">*</span>
+              Judul Catatan Materi <span className="text-[var(--theme-accent,#D97706)]">*</span>
             </label>
 
             {/* Auto-save status indicator */}
             <span className="text-[11px] text-zinc-500 flex items-center gap-1">
               {autoSaveStatus === 'saving' && (
                 <>
-                  <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
+                  <Loader2 className="w-3 h-3 animate-spin text-[var(--theme-accent,#D97706)]" />
                   <span>Menyimpan draf...</span>
                 </>
               )}
@@ -196,8 +196,8 @@ export default function AddNotebookModal({ isOpen, onClose }) {
             maxLength={255}
             className={cn(
               'w-full px-3.5 py-2.5 rounded-xl text-sm font-medium',
-              'bg-white/[0.04] [html[data-theme="celestial-sky"]_&]:bg-white/90 border border-white/[0.12] [html[data-theme="celestial-sky"]_&]:border-sky-200/80 text-zinc-100 [html[data-theme="celestial-sky"]_&]:text-slate-900 placeholder:text-zinc-500 [html[data-theme="celestial-sky"]_&]:placeholder:text-slate-500',
-              'focus:outline-none focus:border-amber-500/70 focus:ring-1 focus:ring-amber-500/50 [html[data-theme="celestial-sky"]_&]:focus:border-sky-500',
+              'bg-white/[0.04] [html[data-theme="celestial-sky"]_&]:bg-white/90 border border-white/[0.12] hover:border-[var(--glass-border-hover,rgba(255,255,255,0.22))] [html[data-theme="celestial-sky"]_&]:border-sky-200/80 text-zinc-100 [html[data-theme="celestial-sky"]_&]:text-slate-900 placeholder:text-zinc-500 [html[data-theme="celestial-sky"]_&]:placeholder:text-slate-500',
+              'focus:outline-none focus:border-[var(--theme-accent,#D97706)] focus:ring-1 focus:ring-[var(--theme-glow,rgba(217,119,6,0.4))]',
               'transition-all duration-150',
               errorJudul && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/50'
             )}

@@ -13,7 +13,12 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { CheckSquareOffset } from "@phosphor-icons/react";
+import {
+  CheckSquareOffset,
+  CalendarCheck,
+  Star as StarPhosphor,
+  CheckCircle as CheckCirclePhosphor,
+} from "@phosphor-icons/react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
@@ -486,7 +491,7 @@ export default function DashboardPage() {
                 <AnimatedCounter value={stats.today} />
               </span>
               <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/25 text-[var(--theme-accent,#D97706)] flex items-center justify-center">
-                <Calendar className="w-3.5 h-3.5" />
+                <CalendarCheck weight="fill" className="w-3.5 h-3.5" />
               </div>
             </div>
             <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Hari Ini</p>
@@ -504,7 +509,7 @@ export default function DashboardPage() {
                 <AnimatedCounter value={stats.important} />
               </span>
               <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/25 text-[#F59E0B] flex items-center justify-center">
-                <Star className="w-3.5 h-3.5" />
+                <StarPhosphor weight="fill" className="w-3.5 h-3.5" />
               </div>
             </div>
             <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Penting</p>
@@ -522,7 +527,7 @@ export default function DashboardPage() {
                 <AnimatedCounter value={stats.completed} />
               </span>
               <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#8FB88F]/15 border border-[#8FB88F]/25 text-[#8FB88F] flex items-center justify-center">
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <CheckCirclePhosphor weight="fill" className="w-3.5 h-3.5" />
               </div>
             </div>
             <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Selesai</p>

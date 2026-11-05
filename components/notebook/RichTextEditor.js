@@ -274,7 +274,7 @@ export default function RichTextEditor({
           className={cn(
             'p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95',
             activeStates.bold
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm [html[data-theme="celestial-sky"]_&]:bg-amber-100 [html[data-theme="celestial-sky"]_&]:text-amber-800 [html[data-theme="celestial-sky"]_&]:border-amber-300'
+              ? 'bg-[var(--theme-accent,#D97706)]/20 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/40 shadow-sm'
               : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-white [html[data-theme="celestial-sky"]_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-200/60'
           )}
         >
@@ -290,7 +290,7 @@ export default function RichTextEditor({
           className={cn(
             'p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95',
             activeStates.italic
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm [html[data-theme="celestial-sky"]_&]:bg-amber-100 [html[data-theme="celestial-sky"]_&]:text-amber-800 [html[data-theme="celestial-sky"]_&]:border-amber-300'
+              ? 'bg-[var(--theme-accent,#D97706)]/20 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/40 shadow-sm'
               : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-white [html[data-theme="celestial-sky"]_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-200/60'
           )}
         >
@@ -306,7 +306,7 @@ export default function RichTextEditor({
           className={cn(
             'p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95',
             activeStates.underline
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm [html[data-theme="celestial-sky"]_&]:bg-amber-100 [html[data-theme="celestial-sky"]_&]:text-amber-800 [html[data-theme="celestial-sky"]_&]:border-amber-300'
+              ? 'bg-[var(--theme-accent,#D97706)]/20 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/40 shadow-sm'
               : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-white [html[data-theme="celestial-sky"]_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-200/60'
           )}
         >
@@ -335,7 +335,7 @@ export default function RichTextEditor({
           className={cn(
             'p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95',
             activeStates.unorderedList
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm [html[data-theme="celestial-sky"]_&]:bg-amber-100 [html[data-theme="celestial-sky"]_&]:text-amber-800 [html[data-theme="celestial-sky"]_&]:border-amber-300'
+              ? 'bg-[var(--theme-accent,#D97706)]/20 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/40 shadow-sm'
               : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-white [html[data-theme="celestial-sky"]_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-200/60'
           )}
         >
@@ -351,7 +351,7 @@ export default function RichTextEditor({
           className={cn(
             'p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer active:scale-95',
             activeStates.orderedList
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm [html[data-theme="celestial-sky"]_&]:bg-amber-100 [html[data-theme="celestial-sky"]_&]:text-amber-800 [html[data-theme="celestial-sky"]_&]:border-amber-300'
+              ? 'bg-[var(--theme-accent,#D97706)]/20 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/40 shadow-sm'
               : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-white [html[data-theme="celestial-sky"]_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-200/60'
           )}
         >
@@ -377,7 +377,7 @@ export default function RichTextEditor({
           {...handleButtonAction(handleSelectAll)}
           title="Pilih Semua Teks (Ctrl+A)"
           aria-label="Pilih semua isi teks"
-          className="p-1.5 rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-amber-300 [html[data-theme='celestial-sky']_&]:hover:text-sky-700 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-sky-100 active:scale-95 transition-all cursor-pointer"
+          className="p-1.5 rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-[var(--theme-accent,#D97706)] hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-sky-100 active:scale-95 transition-all cursor-pointer"
         >
           <TextSelect className="w-3.5 h-3.5" />
         </button>
