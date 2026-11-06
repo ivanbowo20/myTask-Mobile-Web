@@ -12,6 +12,7 @@ import {
 import { formatTanggal, hitungSisaWaktu, hitungStatusDeadline, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { triggerConfettiBurst, triggerStarBurst } from "@/lib/dopamine-fx";
+import { useDesktopMotion } from "@/lib/use-desktop-motion";
 
 const TaskCard = memo(function TaskCard({
   task,
@@ -22,6 +23,16 @@ const TaskCard = memo(function TaskCard({
   onDelete,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const isDesktop = useDesktopMotion();
+  const CardContainer = isDesktop ? motion.div : "div";
+  const containerMotionProps = isDesktop
+    ? {
+        initial: { opacity: 0, y: 6 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, scale: 0.96 },
+        transition: { duration: 0.18, ease: "easeOut" },
+      }
+    : {};
 
   const status = hitungStatusDeadline(task);
   const sisaWaktu = hitungSisaWaktu(task.deadline);
@@ -37,11 +48,8 @@ const TaskCard = memo(function TaskCard({
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
+    <CardContainer
+      {...containerMotionProps}
       className={cn(
         "group relative rounded-xl glass-card transition-all duration-200 lg:hover:-translate-y-0.5 lg:hover:shadow-md",
         containerStyles
@@ -54,12 +62,11 @@ const TaskCard = memo(function TaskCard({
         {/* Header Baris Utama (Collapsed View) */}
         <div className="flex items-center justify-between gap-2.5">
           {/* 1. Checkbox Bulat Selesai (Tap Target >= 44px) */}
-          <motion.button
+          <button
             type="button"
-            whileTap={{ scale: 0.86 }}
             onClick={() => onToggleSelesai(task.id)}
             aria-label={task.selesai ? "Tandai belum selesai" : "Tandai selesai"}
-            className="min-h-[44px] min-w-[44px] -ml-1 inline-flex items-center justify-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)] rounded-full"
+            className="min-h-[44px] min-w-[44px] -ml-1 inline-flex items-center justify-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)] rounded-full active:scale-[0.86] transition-transform duration-100"
           >
             <span
               className={cn(
@@ -70,16 +77,10 @@ const TaskCard = memo(function TaskCard({
               )}
             >
               {task.selesai && (
-                <motion.div
-                  initial={{ scale: 0, rotate: -45 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                >
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
-                </motion.div>
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
               )}
             </span>
-          </motion.button>
+          </button>
 
           {/* 2. Kolom Tengah: Judul Tugas & Sub-info inline */}
           <div
@@ -152,13 +153,12 @@ const TaskCard = memo(function TaskCard({
           {/* 3. Aksi Kanan: Star & Chevron Accordion (Tap Target >= 44px) */}
           <div className="flex items-center -mr-1 shrink-0">
             {/* Star Button */}
-            <motion.button
+            <button
               type="button"
-              whileTap={{ scale: 0.84 }}
               onClick={() => onTogglePrioritas(task.id)}
               aria-label={task.prioritas ? "Hapus tanda penting" : "Tandai sebagai penting"}
               title={task.prioritas ? "Tugas penting" : "Tandai penting"}
-              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[#F59E0B] transition-colors focus-visible:outline-none cursor-pointer"
+              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[#F59E0B] transition-colors focus-visible:outline-none cursor-pointer active:scale-[0.84] transition-transform duration-100"
             >
               <Star
                 className={cn(
@@ -166,7 +166,7 @@ const TaskCard = memo(function TaskCard({
                   task.prioritas && "text-[#F59E0B] fill-[#F59E0B]"
                 )}
               />
-            </motion.button>
+            </button>
 
             {/* Chevron Accordion Button */}
             <button
@@ -177,93 +177,84 @@ const TaskCard = memo(function TaskCard({
               title={isExpanded ? "Tutup detail" : "Lihat selengkapnya"}
               className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors focus-visible:outline-none cursor-pointer"
             >
-              <motion.div
-                animate={{ rotate: isExpanded ? 180 : 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-              >
-                <ChevronDown className="w-4 h-4" />
-              </motion.div>
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 transition-transform duration-200",
+                  isExpanded && "rotate-180"
+                )}
+              />
             </button>
           </div>
         </div>
 
-        {/* Expanded Content Section (Animasi Height Auto) */}
-        <AnimatePresence initial={false}>
-          {isExpanded && (
-            <motion.div
-              key="mobile-expanded-details"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="overflow-hidden"
-            >
-              <div className="pt-2.5 mt-2 border-t border-[var(--glass-border)] space-y-2.5 text-xs">
-                {/* Judul Lengkap */}
+        {/* Expanded Content Section (Zero-Framer Motion on mobile) */}
+        {isExpanded && (
+          <div className="overflow-hidden">
+            <div className="pt-2.5 mt-2 border-t border-[var(--glass-border)] space-y-2.5 text-xs">
+              {/* Judul Lengkap */}
+              <div className="space-y-0.5">
+                <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
+                  Judul Tugas:
+                </span>
+                <p className="text-xs font-semibold text-[var(--text-primary)] leading-snug break-words">
+                  {task.judul}
+                </p>
+              </div>
+
+              {/* Deskripsi Catatan (jika ada) */}
+              {task.deskripsi && (
                 <div className="space-y-0.5">
                   <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-                    Judul Tugas:
+                    Catatan:
                   </span>
-                  <p className="text-xs font-semibold text-[var(--text-primary)] leading-snug break-words">
-                    {task.judul}
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed break-words bg-[var(--glass-bg)] p-2 rounded-lg border border-[var(--glass-border)]">
+                    {task.deskripsi}
                   </p>
                 </div>
+              )}
 
-                {/* Deskripsi Catatan (jika ada) */}
-                {task.deskripsi && (
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-                      Catatan:
-                    </span>
-                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed break-words bg-[var(--glass-bg)] p-2 rounded-lg border border-[var(--glass-border)]">
-                      {task.deskripsi}
-                    </p>
-                  </div>
-                )}
-
-                {/* Info Tenggat Waktu Lengkap */}
-                <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-xs pt-0.5">
-                  <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)] shrink-0" />
-                  <span className="text-[11px]">
-                    {task.deadline ? (
-                      <>
-                        <span className="text-[var(--text-muted)]">Tenggat: </span>
-                        <span className="font-medium text-[var(--text-primary)]">
-                          {formatTanggal(task.deadline)}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-[var(--text-muted)]">Tanpa batas waktu</span>
-                    )}
-                  </span>
-                </div>
-
-                {/* Tombol Aksi: Ubah & Hapus (Tap Target >= 44px) */}
-                <div className="grid grid-cols-2 gap-2 pt-1.5">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(task)}
-                    aria-label={`Ubah tugas ${task.judul}`}
-                    className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--glass-bg)] hover:bg-[var(--glass-bg-hover)] border border-[var(--glass-border)] text-[var(--text-primary)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
-                  >
-                    <Pencil className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-                    Ubah Tugas
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => onDelete(task)}
-                    aria-label={`Hapus tugas ${task.judul}`}
-                    className="min-h-[44px] px-3 py-2 rounded-xl bg-[#E88B8B]/10 hover:bg-[#E88B8B]/20 border border-[#E88B8B]/20 hover:border-[#E88B8B]/40 text-[#E88B8B] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Hapus Tugas
-                  </button>
-                </div>
+              {/* Info Tenggat Waktu Lengkap */}
+              <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-xs pt-0.5">
+                <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)] shrink-0" />
+                <span className="text-[11px]">
+                  {task.deadline ? (
+                    <>
+                      <span className="text-[var(--text-muted)]">Tenggat: </span>
+                      <span className="font-medium text-[var(--text-primary)]">
+                        {formatTanggal(task.deadline)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-[var(--text-muted)]">Tanpa batas waktu</span>
+                  )}
+                </span>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+              {/* Tombol Aksi: Ubah & Hapus (Tap Target >= 44px) */}
+              <div className="grid grid-cols-2 gap-2 pt-1.5">
+                <button
+                  type="button"
+                  onClick={() => onEdit(task)}
+                  aria-label={`Ubah tugas ${task.judul}`}
+                  className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--glass-bg)] hover:bg-[var(--glass-bg-hover)] border border-[var(--glass-border)] text-[var(--text-primary)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+                  Ubah Tugas
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onDelete(task)}
+                  aria-label={`Hapus tugas ${task.judul}`}
+                  className="min-h-[44px] px-3 py-2 rounded-xl bg-[#E88B8B]/10 hover:bg-[#E88B8B]/20 border border-[#E88B8B]/20 hover:border-[#E88B8B]/40 text-[#E88B8B] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Hapus Tugas
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ============================================================ */}
@@ -446,7 +437,7 @@ const TaskCard = memo(function TaskCard({
           </div>
         </div>
       </div>
-    </motion.div>
+    </CardContainer>
   );
 });
 

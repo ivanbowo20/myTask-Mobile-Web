@@ -9,14 +9,14 @@ import { motion, useReducedMotion } from 'framer-motion';
  */
 function subscribeMobile(callback) {
   if (typeof window === 'undefined') return () => {};
-  const mql = window.matchMedia('(max-width: 767px)');
+  const mql = window.matchMedia('(max-width: 1023px)');
   mql.addEventListener('change', callback);
   return () => mql.removeEventListener('change', callback);
 }
 
 function getMobileSnapshot() {
   if (typeof window === 'undefined') return false;
-  return window.matchMedia('(max-width: 767px)').matches;
+  return window.matchMedia('(max-width: 1023px)').matches;
 }
 
 function getServerSnapshot() {
@@ -199,6 +199,16 @@ const AnimatedContent = forwardRef(function AnimatedContent(
     },
     [forwardedRef]
   );
+
+  // Zero-animation mobile hardening: di mobile (< 1024px) atau reduced-motion, render DOM standar murni
+  if (isMobile || shouldReduceMotion) {
+    const TagComponent = tag || 'div';
+    return (
+      <TagComponent ref={handleRef} className={className} {...rest}>
+        {children}
+      </TagComponent>
+    );
+  }
 
   return (
     <MotionComponent

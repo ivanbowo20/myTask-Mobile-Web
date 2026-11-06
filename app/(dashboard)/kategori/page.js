@@ -9,6 +9,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import AnimatedContent from "@/components/ui/AnimatedContent";
+import { useDesktopMotion } from "@/lib/use-desktop-motion";
 import { useTasks } from "@/lib/task-context";
 import { detectIconByCategoryName } from "@/lib/constants";
 
@@ -45,6 +46,7 @@ export default function CategoriesPage() {
     openAddCategory,
   } = useTasks();
 
+  const isDesktop = useDesktopMotion();
   const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   // Quick inline add form state
@@ -156,7 +158,7 @@ export default function CategoriesPage() {
             actionLabel="Tambah Kategori Baru"
             onAction={openAddCategory}
           />
-        ) : (
+        ) : isDesktop ? (
           <motion.div
             variants={cascadeContainerVariants}
             initial="hidden"
@@ -174,6 +176,19 @@ export default function CategoriesPage() {
               </motion.div>
             ))}
           </motion.div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
+            {categories.map((cat) => (
+              <div key={cat.id} className="h-full">
+                <CategoryCard
+                  kategori={cat}
+                  jumlahTugas={taskCountMap[cat.id] || 0}
+                  onEdit={openEditCategory}
+                  onDelete={(c) => setCategoryToDelete(c)}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </AnimatedContent>
 

@@ -253,8 +253,8 @@ export default function DashboardPage() {
       {/* Header Greeting Dinamis — SielloMita Frosted Hero Surface */}
       <AnimatedContent delay={0} blur={0}>
         <div className="glass-card p-5 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {/* Soft Ambient Light Shimmer Overlay (Contextual Time Glow) */}
-          <div className="pointer-events-none absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-[var(--theme-accent,rgba(217,119,6,0.06))] via-transparent to-[var(--theme-accent,rgba(217,119,6,0.04))] opacity-70 blur-xl animate-pulse [animation-duration:8s]" />
+          {/* Soft Ambient Light Shimmer Overlay (Contextual Time Glow — Desktop Only) */}
+          <div className="hidden lg:block pointer-events-none absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-[var(--theme-accent,rgba(217,119,6,0.06))] via-transparent to-[var(--theme-accent,rgba(217,119,6,0.04))] opacity-70 blur-xl animate-pulse [animation-duration:8s]" />
 
           <div className="space-y-1.5 z-10">
             <motion.h1

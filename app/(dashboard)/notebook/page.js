@@ -18,6 +18,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import NotebookCard from '@/components/notebook/NotebookCard';
 import NotebookSortDropdown from '@/components/notebook/NotebookSortDropdown';
 import { useNotebooks } from '@/lib/notebook-context';
+import { useDesktopMotion } from '@/lib/use-desktop-motion';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -72,6 +73,7 @@ export default function NotebookPage() {
   } = useNotebooks();
 
   const searchInputRef = useRef(null);
+  const isDesktop = useDesktopMotion();
   const [localSearch, setLocalSearch] = useState(searchQuery);
 
   // Sinkronkan input lokal saat searchQuery di context berubah (misal tombol reset filter ditekan)
@@ -260,18 +262,28 @@ export default function NotebookPage() {
                 <Star className="w-3.5 h-3.5 fill-[var(--theme-accent,#0284C7)]" />
                 <span>Materi Penting Dipin ({pinnedNotebooks.length})</span>
               </div>
-              <motion.div
-                variants={cascadeContainerVariants}
-                initial="hidden"
-                animate="visible"
-                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-              >
-                {pinnedNotebooks.map((nb) => (
-                  <motion.div key={nb.id} variants={cascadeItemVariants} className="h-full">
-                    <NotebookCard notebook={nb} />
-                  </motion.div>
-                ))}
-              </motion.div>
+              {isDesktop ? (
+                <motion.div
+                  variants={cascadeContainerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                >
+                  {pinnedNotebooks.map((nb) => (
+                    <motion.div key={nb.id} variants={cascadeItemVariants} className="h-full">
+                      <NotebookCard notebook={nb} />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {pinnedNotebooks.map((nb) => (
+                    <div key={nb.id} className="h-full">
+                      <NotebookCard notebook={nb} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
 
@@ -284,18 +296,28 @@ export default function NotebookPage() {
                   <span>Catatan Lainnya ({otherNotebooks.length})</span>
                 </div>
               )}
-              <motion.div
-                variants={cascadeContainerVariants}
-                initial="hidden"
-                animate="visible"
-                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-              >
-                {otherNotebooks.map((nb) => (
-                  <motion.div key={nb.id} variants={cascadeItemVariants} className="h-full">
-                    <NotebookCard notebook={nb} />
-                  </motion.div>
-                ))}
-              </motion.div>
+              {isDesktop ? (
+                <motion.div
+                  variants={cascadeContainerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                >
+                  {otherNotebooks.map((nb) => (
+                    <motion.div key={nb.id} variants={cascadeItemVariants} className="h-full">
+                      <NotebookCard notebook={nb} />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {otherNotebooks.map((nb) => (
+                    <div key={nb.id} className="h-full">
+                      <NotebookCard notebook={nb} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
         </div>

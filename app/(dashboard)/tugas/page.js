@@ -16,6 +16,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import AnimatedList from "@/components/ui/AnimatedList";
 import AnimatedContent from "@/components/ui/AnimatedContent";
+import { useDesktopMotion } from "@/lib/use-desktop-motion";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { useTasks } from "@/lib/task-context";
 import { getKategoriById, cn } from "@/lib/utils";
@@ -44,20 +45,10 @@ function AllTasksContent() {
   const [direction, setDirection] = useState(0);
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [isClearCompletedOpen, setIsClearCompletedOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isDesktop = useDesktopMotion();
   const shouldReduceMotion = useReducedMotion();
 
   const ITEMS_PER_PAGE = 6;
-
-  // Viewport mobile check (< 640px)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mql = window.matchMedia("(max-width: 639px)");
-    setIsMobile(mql.matches);
-    const handler = (e) => setIsMobile(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
 
   // Sync with URL query parameter
   useEffect(() => {
@@ -270,24 +261,9 @@ function AllTasksContent() {
           />
         ) : (
           <div className="space-y-6">
-            <AnimatePresence mode="wait" custom={direction}>
-              <div key={`${currentPage}-${selectedStatus}-${selectedCategory}`}>
-                {isMobile ? (
-                  <div className="grid grid-cols-1 gap-4">
-                    {paginatedTasks.map((task) => (
-                      <div key={task.id} className="h-full w-full">
-                        <TaskCard
-                          task={task}
-                          kategori={getKategoriById(categories, task.kategoriId)}
-                          onToggleSelesai={toggleComplete}
-                          onTogglePrioritas={toggleImportant}
-                          onEdit={openEditTask}
-                          onDelete={(t) => setTaskToDelete(t)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
+            {isDesktop ? (
+              <AnimatePresence mode="wait" custom={direction}>
+                <div key={`${currentPage}-${selectedStatus}-${selectedCategory}`}>
                   <AnimatedList
                     items={paginatedTasks}
                     gap={16}
@@ -308,9 +284,24 @@ function AllTasksContent() {
                       </div>
                     )}
                   />
-                )}
+                </div>
+              </AnimatePresence>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {paginatedTasks.map((task) => (
+                  <div key={task.id} className="h-full w-full">
+                    <TaskCard
+                      task={task}
+                      kategori={getKategoriById(categories, task.kategoriId)}
+                      onToggleSelesai={toggleComplete}
+                      onTogglePrioritas={toggleImportant}
+                      onEdit={openEditTask}
+                      onDelete={(t) => setTaskToDelete(t)}
+                    />
+                  </div>
+                ))}
               </div>
-            </AnimatePresence>
+            )}
 
             {/* Pagination Controls */}
             {totalPages > 1 && (

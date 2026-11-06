@@ -113,7 +113,7 @@ export default function AnimatedList({
     if (!root || !viewport || !track || !indicator || !ring) return;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isMobile = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
+    const isMobile = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches;
     const springEase = CSS.supports?.('transition-timing-function', 'linear(0, 1)')
       ? SPRING
       : 'cubic-bezier(0.34, 1.4, 0.64, 1)';

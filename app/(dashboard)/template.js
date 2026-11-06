@@ -16,25 +16,9 @@ export default function DashboardTemplate({ children }) {
   const shouldReduceMotion = useReducedMotion();
   const isDesktop = useDesktopMotion();
 
-  if (shouldReduceMotion) {
+  // Di mobile (< 1024px) atau reduced-motion: bypass 100% Framer Motion agar HP bebas lag & 60-120 FPS instan
+  if (shouldReduceMotion || !isDesktop) {
     return <div className="w-full">{children}</div>;
-  }
-
-  // Di mobile, gunakan transisi ringan tanpa filter blur
-  if (!isDesktop) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 0.2,
-          ease: [0.23, 1, 0.32, 1],
-        }}
-        className="w-full"
-      >
-        {children}
-      </motion.div>
-    );
   }
 
   // Desktop Apple Spatial Cascade
