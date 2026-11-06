@@ -1,0 +1,13 @@
+title = "Todoweb Gitleaks Security Guardrail"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist for lock files, build artifacts, and mock configurations"
+paths = [
+    '''node_modules''',
+    '''package-lock\.json''',
+    '''\.next''',
+    '''\.git'''
+]

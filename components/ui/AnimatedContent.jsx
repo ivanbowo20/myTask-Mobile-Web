@@ -62,12 +62,18 @@ const AnimatedContent = forwardRef(function AnimatedContent(
   const internalRef = useRef(null);
   const [scrollContainer, setScrollContainer] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [forceVisible, setForceVisible] = useState(false);
   const scrollContainerRef = useRef(null);
   const isMobile = useSyncExternalStore(subscribeMobile, getMobileSnapshot, getServerSnapshot);
   const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     setMounted(true);
+    // Anti-blank watchdog: ensure content is never stuck at opacity 0 even if IntersectionObserver delays
+    const timer = setTimeout(() => {
+      setForceVisible(true);
+    }, 350);
+    return () => clearTimeout(timer);
   }, []);
 
   // Container auto-detection: find nearest scrollable parent if autoDetectContainer is requested
@@ -198,10 +204,11 @@ const AnimatedContent = forwardRef(function AnimatedContent(
     <MotionComponent
       ref={handleRef}
       initial={skipAnimation ? false : "hidden"}
-      whileInView="visible"
+      animate={forceVisible ? "visible" : undefined}
+      whileInView={forceVisible ? undefined : "visible"}
       viewport={{
         once,
-        amount: skipAnimation ? 0 : activeThreshold,
+        amount: skipAnimation ? 0 : 0.01,
         ...(effectiveRoot ? { root: effectiveRoot } : {}),
       }}
       variants={variants}

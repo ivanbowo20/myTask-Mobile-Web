@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { FolderSimple, Plus } from "@phosphor-icons/react";
 import CategoryCard from "@/components/kategori/CategoryCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -10,6 +11,29 @@ import Input from "@/components/ui/Input";
 import AnimatedContent from "@/components/ui/AnimatedContent";
 import { useTasks } from "@/lib/task-context";
 import { detectIconByCategoryName } from "@/lib/constants";
+
+const cascadeContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.02,
+    },
+  },
+};
+
+const cascadeItemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.35,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
 
 export default function CategoriesPage() {
   const {
@@ -133,18 +157,23 @@ export default function CategoriesPage() {
             onAction={openAddCategory}
           />
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
+          <motion.div
+            variants={cascadeContainerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4"
+          >
             {categories.map((cat) => (
-              <div key={cat.id} className="h-full">
+              <motion.div key={cat.id} variants={cascadeItemVariants} className="h-full">
                 <CategoryCard
                   kategori={cat}
                   jumlahTugas={taskCountMap[cat.id] || 0}
                   onEdit={openEditCategory}
                   onDelete={(c) => setCategoryToDelete(c)}
                 />
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </AnimatedContent>
 

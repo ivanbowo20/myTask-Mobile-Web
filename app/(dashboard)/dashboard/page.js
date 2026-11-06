@@ -20,6 +20,9 @@ import {
   CheckCircle as CheckCirclePhosphor,
 } from "@phosphor-icons/react";
 import TaskCard from "@/components/tugas/TaskCard";
+import DesktopInteractiveCard from "@/components/ui/DesktopInteractiveCard";
+import NumberTicker from "@/components/ui/NumberTicker";
+import BlurText from "@/components/ui/BlurText";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import { getContextualGreeting } from "@/lib/greeting";
@@ -28,15 +31,18 @@ import NotificationBanner from "@/components/notifikasi/NotificationBanner";
 import { useTasks } from "@/lib/task-context";
 import { useSession } from "@/lib/auth-client";
 import { toast } from "@/lib/use-toast";
+import { useDesktopMotion } from "@/lib/use-desktop-motion";
 import {
   formatTanggal,
   formatTanggalSederhana,
   hitungSisaWaktu,
   hitungStatusDeadline,
   getKategoriById,
+  cn,
 } from "@/lib/utils";
 
-const containerVariants = {
+// 4 Stat Cards: Asymmetric Left-to-Right Cascade with Scale-Pop Spring
+const statContainerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -44,56 +50,20 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
+const statItemVariants = {
+  hidden: { opacity: 0, y: 18, scale: 0.95 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.23, 1, 0.32, 1] },
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 380,
+      damping: 24,
+      mass: 0.8,
+    },
   },
 };
-
-function AnimatedCounter({ value }) {
-  const shouldReduceMotion = useReducedMotion();
-  const [count, setCount] = useState(0);
-  const prevRef = useRef(0);
-
-  useEffect(() => {
-    const target = Number(value) || 0;
-    const startVal = prevRef.current;
-    prevRef.current = target;
-
-    // Di layar mobile (< 768px), langsung tampilkan angka target untuk mengeliminasi 200+
-    // React state updates saat cold-start, membebaskan CPU Infinix Smart 6 sepenuhnya
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
-    if (shouldReduceMotion || isMobile || target === startVal) {
-      setCount(target);
-      return;
-    }
-    let frameId;
-    let startTime = null;
-    const duration = 650;
-
-    function step(currentTime) {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-      setCount(Math.round(startVal + (target - startVal) * ease));
-
-      if (progress < 1) {
-        frameId = requestAnimationFrame(step);
-      }
-    }
-
-    frameId = requestAnimationFrame(step);
-    return () => {
-      if (frameId) cancelAnimationFrame(frameId);
-    };
-  }, [value, shouldReduceMotion]);
-
-  return <span>{count}</span>;
-}
 
 export default function DashboardPage() {
   const {
@@ -283,23 +253,26 @@ export default function DashboardPage() {
       {/* Header Greeting Dinamis — SielloMita Frosted Hero Surface */}
       <AnimatedContent delay={0} blur={0}>
         <div className="glass-card p-5 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Soft Ambient Light Shimmer Overlay (Contextual Time Glow) */}
+          <div className="pointer-events-none absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-[var(--theme-accent,rgba(217,119,6,0.06))] via-transparent to-[var(--theme-accent,rgba(217,119,6,0.04))] opacity-70 blur-xl animate-pulse [animation-duration:8s]" />
+
           <div className="space-y-1.5 z-10">
             <motion.h1
               suppressHydrationWarning={true}
               key={greeting.headline}
-              initial={{ opacity: 0, y: 4 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--text-primary)] tracking-tight text-balance"
             >
-              {greeting.headline}
+              <BlurText text={greeting.headline} delay={0.06} />
             </motion.h1>
             <motion.p
               suppressHydrationWarning={true}
               key={greeting.subtext}
-              initial={{ opacity: 0, y: 2 }}
+              initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: 0.04, ease: "easeOut" }}
+              transition={{ duration: 0.4, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
               className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed"
             >
               {greeting.subtext}
@@ -307,7 +280,7 @@ export default function DashboardPage() {
           </div>
           <div
             suppressHydrationWarning={true}
-            className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] bg-[var(--glass-bg)] border border-[var(--glass-border)] px-3.5 py-2 rounded-xl shrink-0 self-start sm:self-auto z-10 backdrop-blur-md"
+            className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] bg-[var(--glass-bg)] border border-[var(--glass-border)] px-3.5 py-2 rounded-xl shrink-0 self-start sm:self-auto z-10 backdrop-blur-md transition-all duration-200 hover:scale-[1.02] hover:border-[var(--glass-border-hover)]"
           >
             <Calendar className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
             <span suppressHydrationWarning={true}>
@@ -455,89 +428,77 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 4 Stat Cards */}
+      {/* 4 Stat Cards with 3D Tilt, Rim Glow, Slot Odometer & Micro-Icon Pop (Desktop Only) */}
       <motion.div
-        variants={containerVariants}
+        variants={statContainerVariants}
         initial="hidden"
         animate="visible"
         className="hidden lg:grid lg:grid-cols-4 gap-4"
       >
         {/* Total Tugas */}
-        <motion.div variants={itemVariants} className="h-full">
-          <motion.div
-            whileHover={{ y: -3, scale: 1.01, transition: { type: "spring", stiffness: 400, damping: 25 } }}
-            className="glass-card h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl min-h-[44px]"
-          >
+        <motion.div variants={statItemVariants} className="h-full">
+          <DesktopInteractiveCard className="h-full p-3.5 sm:p-5 min-h-[44px]">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                <AnimatedCounter value={stats.total} />
+              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight transition-transform duration-300 group-hover:translate-x-0.5">
+                <NumberTicker value={stats.total} />
               </span>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] flex items-center justify-center">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] flex items-center justify-center transition-all duration-300 group-hover:scale-115 group-hover:rotate-6 group-hover:shadow-sm">
                 <CheckSquareOffset weight="fill" className="w-3.5 h-3.5" />
               </div>
             </div>
             <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Total Tugas</p>
-          </motion.div>
+          </DesktopInteractiveCard>
         </motion.div>
 
         {/* Hari Ini */}
-        <motion.div variants={itemVariants} className="h-full">
-          <motion.div
-            whileHover={{ y: -3, scale: 1.01, transition: { type: "spring", stiffness: 400, damping: 25 } }}
-            className="glass-card h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl min-h-[44px]"
-          >
+        <motion.div variants={statItemVariants} className="h-full">
+          <DesktopInteractiveCard className="h-full p-3.5 sm:p-5 min-h-[44px]">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                <AnimatedCounter value={stats.today} />
+              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight transition-transform duration-300 group-hover:translate-x-0.5">
+                <NumberTicker value={stats.today} />
               </span>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/25 text-[var(--theme-accent,#D97706)] flex items-center justify-center">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/25 text-[var(--theme-accent,#D97706)] flex items-center justify-center transition-all duration-300 group-hover:scale-115 group-hover:rotate-6 group-hover:shadow-sm">
                 <CalendarCheck weight="fill" className="w-3.5 h-3.5" />
               </div>
             </div>
             <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Hari Ini</p>
-          </motion.div>
+          </DesktopInteractiveCard>
         </motion.div>
 
         {/* Penting */}
-        <motion.div variants={itemVariants} className="h-full">
-          <motion.div
-            whileHover={{ y: -3, scale: 1.01, transition: { type: "spring", stiffness: 400, damping: 25 } }}
-            className="glass-card h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl min-h-[44px]"
-          >
+        <motion.div variants={statItemVariants} className="h-full">
+          <DesktopInteractiveCard className="h-full p-3.5 sm:p-5 min-h-[44px]">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                <AnimatedCounter value={stats.important} />
+              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight transition-transform duration-300 group-hover:translate-x-0.5">
+                <NumberTicker value={stats.important} />
               </span>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/25 text-[#F59E0B] flex items-center justify-center">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/25 text-[#F59E0B] flex items-center justify-center transition-all duration-300 group-hover:scale-115 group-hover:rotate-6 group-hover:shadow-sm">
                 <StarPhosphor weight="fill" className="w-3.5 h-3.5" />
               </div>
             </div>
             <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Penting</p>
-          </motion.div>
+          </DesktopInteractiveCard>
         </motion.div>
 
         {/* Selesai */}
-        <motion.div variants={itemVariants} className="h-full">
-          <motion.div
-            whileHover={{ y: -3, scale: 1.01, transition: { type: "spring", stiffness: 400, damping: 25 } }}
-            className="glass-card h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl min-h-[44px]"
-          >
+        <motion.div variants={statItemVariants} className="h-full">
+          <DesktopInteractiveCard className="h-full p-3.5 sm:p-5 min-h-[44px]">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                <AnimatedCounter value={stats.completed} />
+              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight transition-transform duration-300 group-hover:translate-x-0.5">
+                <NumberTicker value={stats.completed} />
               </span>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#8FB88F]/15 border border-[#8FB88F]/25 text-[#8FB88F] flex items-center justify-center">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#8FB88F]/15 border border-[#8FB88F]/25 text-[#8FB88F] flex items-center justify-center transition-all duration-300 group-hover:scale-115 group-hover:rotate-6 group-hover:shadow-sm">
                 <CheckCirclePhosphor weight="fill" className="w-3.5 h-3.5" />
               </div>
             </div>
             <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Selesai</p>
-          </motion.div>
+          </DesktopInteractiveCard>
         </motion.div>
       </motion.div>
 
       {/* Section: Tenggat Waktu Terdekat (Upcoming Deadlines Carousel / Grid - Desktop Only) */}
       <div className="hidden lg:block">
-        <AnimatedContent delay={0.22}>
+        <AnimatedContent delay={0.16} direction="up" distance={14}>
         <div className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -627,10 +588,10 @@ export default function DashboardPage() {
       </AnimatedContent>
       </div>
 
-      {/* Two Column Section: Tugas Hari Ini & Tugas Terbaru */}
+      {/* Two Column Section: Tugas Hari Ini & Tugas Terbaru (Wave Lateral Slide) */}
       <div className="hidden lg:grid lg:grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Kolom Kiri: Tugas Hari Ini */}
-        <AnimatedContent delay={0.28} className="h-full">
+        {/* Kolom Kiri: Tugas Hari Ini (Wave Slide from Left) */}
+        <AnimatedContent delay={0.22} direction="horizontal" reverse={true} distance={14} className="h-full">
           <div className="glass-panel h-full p-5 sm:p-6 rounded-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
@@ -676,8 +637,8 @@ export default function DashboardPage() {
           </div>
         </AnimatedContent>
 
-        {/* Kolom Kanan: Tugas Terbaru */}
-        <AnimatedContent delay={0.34} className="h-full">
+        {/* Kolom Kanan: Tugas Terbaru (Wave Slide from Right) */}
+        <AnimatedContent delay={0.28} direction="horizontal" distance={14} className="h-full">
           <div className="glass-panel h-full p-5 sm:p-6 rounded-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">

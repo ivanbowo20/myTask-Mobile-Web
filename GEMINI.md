@@ -36,10 +36,11 @@
   - **Systematic Debugging**: Lacak akar masalah dan data flow; dilarang menebak-nebak (*no shotgun debugging*).
   - **Evidence Before Assertions**: Wajib validasi terminal (`npm run build`, lint, test) sebelum mengklaim selesai.
 
-## Wawancara Kebutuhan & Anti-Halusinasi (Grill-Me)
-- Menggunakan standar skill `grill-me` (Peleburan Gstack YC Office Hours + interview-me):
-  - Ajukan 1 pertanyaan per giliran dengan tebakan/hipotesis awal AI untuk mengonfirmasi: target pengguna, masalah nyata saat ini, wedge terkecil, kriteria sukses, batasan teknis, dan non-goals.
-  - Dilarang membuat asumsi liar atau menulis kode sebelum Statement of Intent disetujui user.
+## Wawancara Kebutuhan & Anti-Halusinasi (/super-grill & /grill-me)
+- Menggunakan standar skill `super-grill` (Super Grill-Me Harness):
+  - **Bebas Bertanya Banyak (Hingga 10 Pertanyaan):** AI diizinkan dan diwajibkan bertanya secara mendalam (sampai 10 pertanyaan) untuk membedah penambahan fitur dan perbaikan bug tanpa batasan 1-pertanyaan kaku.
+  - **Proaktif dengan `ask_question`:** Gunakan tool `ask_question` untuk interaksi langsung dengan pilihan opsi rekomendasi `(Recommended)`.
+  - **Zero-Hallucination Policy:** Dilarang berasumsi sepihak atau menulis kode sebelum Statement of Intent dikonfirmasi oleh user dengan kata "Ya" atau "Setuju".
 
 ## Keamanan Backend & Database (Aegis Backend Skill)
 - Menggunakan standar skill `aegis-backend` (Unified Cloudflare 6-Phase Harness + Standar OWASP Top 10:2025 Final + Database Shield):

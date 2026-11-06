@@ -19,6 +19,7 @@ import NotebookCard from '@/components/notebook/NotebookCard';
 import NotebookSortDropdown from '@/components/notebook/NotebookSortDropdown';
 import { useNotebooks } from '@/lib/notebook-context';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const DATE_FILTER_OPTIONS = [
   { label: 'Semua', value: 'all' },
@@ -26,6 +27,29 @@ const DATE_FILTER_OPTIONS = [
   { label: 'Minggu Ini', value: 'week' },
   { label: 'Bulan Ini', value: 'month' },
 ];
+
+const cascadeContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.02,
+    },
+  },
+};
+
+const cascadeItemVariants = {
+  hidden: { opacity: 0, y: 14 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.38,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
 
 export default function NotebookPage() {
   const {
@@ -152,23 +176,33 @@ export default function NotebookPage() {
 
         {/* Date Filter Pills & Sort Selector */}
         <div className="flex items-center flex-wrap gap-2">
-          {/* Date Filter Pills */}
+          {/* Date Filter Pills with Apple Sliding Pill */}
           <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.08] glass-card [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 shadow-sm">
-            {DATE_FILTER_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setDateFilter(opt.value)}
-                className={cn(
-                  'px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer active:scale-[0.97]',
-                  dateFilter === opt.value
-                    ? 'bg-[var(--theme-accent,#0284C7)] text-white [html[data-theme="abyssal-teal"]_&]:text-slate-950 [html[data-theme="soft-aurora"]_&]:text-slate-950 [html[data-theme="dark-chocolate"]_&]:text-slate-950 font-semibold shadow-sm'
-                    : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:hover:text-slate-900 hover:bg-white/[0.04] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-100/60'
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
+            {DATE_FILTER_OPTIONS.map((opt) => {
+              const isSelected = dateFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setDateFilter(opt.value)}
+                  className={cn(
+                    'relative px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.97] select-none',
+                    isSelected
+                      ? 'text-white [html[data-theme="abyssal-teal"]_&]:text-slate-950 [html[data-theme="soft-aurora"]_&]:text-slate-950 [html[data-theme="dark-chocolate"]_&]:text-slate-950 font-semibold shadow-sm'
+                      : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:hover:text-slate-900'
+                  )}
+                >
+                  {isSelected && (
+                    <motion.div
+                      layoutId="notebook-date-filter-pill"
+                      className="absolute inset-0 bg-[var(--theme-accent,#0284C7)] rounded-lg pointer-events-none z-0"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{opt.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Custom Apple Glass Sort Dropdown */}
@@ -226,11 +260,18 @@ export default function NotebookPage() {
                 <Star className="w-3.5 h-3.5 fill-[var(--theme-accent,#0284C7)]" />
                 <span>Materi Penting Dipin ({pinnedNotebooks.length})</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <motion.div
+                variants={cascadeContainerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+              >
                 {pinnedNotebooks.map((nb) => (
-                  <NotebookCard key={nb.id} notebook={nb} />
+                  <motion.div key={nb.id} variants={cascadeItemVariants} className="h-full">
+                    <NotebookCard notebook={nb} />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </section>
           )}
 
@@ -243,11 +284,18 @@ export default function NotebookPage() {
                   <span>Catatan Lainnya ({otherNotebooks.length})</span>
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <motion.div
+                variants={cascadeContainerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+              >
                 {otherNotebooks.map((nb) => (
-                  <NotebookCard key={nb.id} notebook={nb} />
+                  <motion.div key={nb.id} variants={cascadeItemVariants} className="h-full">
+                    <NotebookCard notebook={nb} />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </section>
           )}
         </div>

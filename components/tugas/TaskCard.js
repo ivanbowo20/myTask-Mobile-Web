@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { formatTanggal, hitungSisaWaktu, hitungStatusDeadline, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { triggerConfettiBurst, triggerStarBurst } from "@/lib/dopamine-fx";
 
 const TaskCard = memo(function TaskCard({
   task,
@@ -42,7 +43,7 @@ const TaskCard = memo(function TaskCard({
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.18, ease: "easeOut" }}
       className={cn(
-        "group relative rounded-xl glass-card transition-colors duration-200",
+        "group relative rounded-xl glass-card transition-all duration-200 lg:hover:-translate-y-0.5 lg:hover:shadow-md",
         containerStyles
       )}
     >
@@ -275,8 +276,15 @@ const TaskCard = memo(function TaskCard({
           {/* 1. Checkbox Bulat Selesai */}
           <motion.button
             type="button"
-            whileTap={{ scale: 0.86 }}
-            onClick={() => onToggleSelesai(task.id)}
+            whileTap={{ scale: 0.82 }}
+            whileHover={{ scale: 1.08 }}
+            transition={{ type: "spring", stiffness: 450, damping: 22 }}
+            onClick={(e) => {
+              if (!task.selesai) {
+                triggerConfettiBurst(e.currentTarget);
+              }
+              onToggleSelesai(task.id);
+            }}
             aria-label={task.selesai ? "Tandai belum selesai" : "Tandai selesai"}
             className="min-h-[44px] min-w-[44px] -ml-2.5 -mt-2.5 inline-flex items-center justify-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)] rounded-full"
           >
@@ -319,7 +327,14 @@ const TaskCard = memo(function TaskCard({
           <motion.button
             type="button"
             whileTap={{ scale: 0.84 }}
-            onClick={() => onTogglePrioritas(task.id)}
+            whileHover={{ scale: 1.12 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            onClick={(e) => {
+              if (!task.prioritas) {
+                triggerStarBurst(e.currentTarget);
+              }
+              onTogglePrioritas(task.id);
+            }}
             aria-label={task.prioritas ? "Hapus tanda penting" : "Tandai sebagai penting"}
             title={task.prioritas ? "Tugas penting (klik untuk batalkan)" : "Tandai sebagai penting"}
             className="min-h-[44px] min-w-[44px] -mr-2 -mt-2 inline-flex items-center justify-center shrink-0 rounded-lg text-[var(--text-muted)] hover:text-[#F59E0B] hover:bg-[var(--glass-bg-hover)] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F59E0B] cursor-pointer"

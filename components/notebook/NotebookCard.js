@@ -15,6 +15,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import { toast } from '@/lib/use-toast';
 import { useNotebooks } from '@/lib/notebook-context';
 import { cn, formatTanggal, htmlToChatFormattedText } from '@/lib/utils';
+import { triggerStarBurst } from '@/lib/dopamine-fx';
 
 function NotebookCard({ notebook }) {
   const { openPreviewNotebook, openEditNotebook, openDeleteConfirm, toggleImportant } = useNotebooks();
@@ -86,6 +87,9 @@ function NotebookCard({ notebook }) {
 
   function handleTogglePin(e) {
     e.stopPropagation();
+    if (!notebook.penting) {
+      triggerStarBurst(e.currentTarget);
+    }
     toggleImportant(notebook.id);
   }
 
@@ -120,7 +124,7 @@ function NotebookCard({ notebook }) {
         'bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-white/[0.16]',
         '[html[data-theme="celestial-sky"]_&]:bg-white/85 [html[data-theme="celestial-sky"]_&]:hover:bg-white/95 [html[data-theme="celestial-sky"]_&]:border-sky-200/60',
         'sm:backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.18)] [html[data-theme="celestial-sky"]_&]:shadow-[0_8px_24px_rgba(2,132,199,0.12)]',
-        'transition-all duration-200 active:scale-[0.985] will-change-transform select-none',
+        'transition-all duration-200 active:scale-[0.985] lg:hover:-translate-y-1 lg:hover:shadow-xl will-change-transform select-none',
         notebook.penting && 'ring-1 ring-[var(--theme-accent,#0284C7)]/30 border-[var(--theme-accent,#0284C7)]/20 bg-[var(--theme-accent,#0284C7)]/[0.03] [html[data-theme="celestial-sky"]_&]:bg-sky-50/70 [html[data-theme="celestial-sky"]_&]:border-sky-300'
       )}
     >

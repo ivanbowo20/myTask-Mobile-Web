@@ -61,11 +61,14 @@ Untuk pembuatan dan perbaikan kode:
    - Sebelum memberi laporan "COMPLETED", AI WAJIB menjalankan `git diff <nama_file>` untuk membaca ulang baris yang berubah.
    - Pastikan setiap komponen baru di JSX benar-benar ada di bagian `import` atas file.
 
-## INTERVIEW & INTENT EXTRACTION (GRILL-ME)
-Sebelum coding ketika fitur masih abstrak atau ambigu:
-1. Jalankan `/grill-me` (peleburan Gstack YC Office Hours + interview-me).
-2. AI wajib menanyakan 1 pertanyaan per giliran disertai hipotesis/tebakan awal AI untuk mengonfirmasi: target pengguna, masalah nyata saat ini, wedge terkecil, kriteria sukses, batasan teknis, dan non-goals (out-of-scope).
-3. AI dilarang menulis kode sebelum Statement of Intent dikonfirmasi oleh user dengan eksplisit "Ya".
+## SUPER GRILL-ME: INTERVIEW & DEEP INTENT EXTRACTION (/super-grill & /grill-me)
+Sebelum coding, merancang arsitektur, atau membuat prompt pada setiap penambahan fitur dan perbaikan bug:
+1. **Mandat Wawancara Mendalam (Boleh Hingga 10 Pertanyaan):** AI DIIZINKAN dan DIWAJIBKAN banyak bertanya (bisa sampai 10 pertanyaan terarah) menggunakan skill `/super-grill` atau slash command `/grill-me` baik saat penambahan fitur baru maupun perbaikan bug. DILARANG berasumsi, mengira-ngira, atau mengeksekusi secara diam-diam.
+2. **Prioritas Tool `ask_question`:** Gunakan tool `ask_question` secara proaktif untuk menyajikan pilihan terstruktur dan opsi rekomendasi sehingga user dapat merespons cepat.
+3. **Cakupan Investigasi Ganda:**
+   - *Fitur Baru:* Target persona, masalah nyata, wedge terkecil, kriteria sukses, batasan performa (desktop vs mobile), dan non-goals.
+   - *Bug Fix:* Kronologi error, pemicu/state reproduksi, device/viewport terdampak, ekspektasi visual vs kenyataan, dan batas blast-radius.
+4. **Kunci Statement of Intent:** AI dilarang menulis kode sebelum Statement of Intent atau ruang lingkup disetujui user dengan kata "Ya" atau "Setuju".
 
 ## SECURITY & DATABASE AUDIT (AEGIS BACKEND)
 Untuk keamanan backend, API, dan database:
