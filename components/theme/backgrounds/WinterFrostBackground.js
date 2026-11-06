@@ -50,8 +50,6 @@ export const useCurrentFrame = () => {
 
     let rafId;
     let isPaused = false;
-    let isScrolling = false;
-    let scrollTimer = null;
     let lastTime = performance.now();
     let accumulatedTime = 0;
 
@@ -70,26 +68,12 @@ export const useCurrentFrame = () => {
       }
     };
 
-    // Yield 100% thread CPU ke touch scrolling di HP kentang agar scroll daftar tugas 60fps tanpa jank
-    const onScroll = () => {
-      if (!isMobile) return;
-      isScrolling = true;
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => {
-        isScrolling = false;
-        lastTime = performance.now();
-      }, 120);
-    };
-
     document.addEventListener('visibilitychange', onVisibilityChange);
-    if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', onScroll, { passive: true });
-    }
 
     const tick = (now) => {
       const elapsed = now - lastTime;
 
-      if (!isPaused && (!isScrolling || !isMobile)) {
+      if (!isPaused) {
         if (elapsed >= minFrameInterval) {
           const delta = elapsed / 1000;
           accumulatedTime += delta;
@@ -107,11 +91,7 @@ export const useCurrentFrame = () => {
 
     return () => {
       cancelAnimationFrame(rafId);
-      if (scrollTimer) clearTimeout(scrollTimer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('scroll', onScroll);
-      }
     };
   }, [ctx]);
 
@@ -1040,7 +1020,8 @@ export default function WinterFrostBackground({ children, className = '' }) {
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const isMobileDevice = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
-    const count = isMobileDevice ? 80 : 135;
+    // 55 partikel di mobile (Infinix Smart 6) memberikan efek salju lebat & elegan tanpa membebani GPU/CPU saat scroll
+    const count = isMobileDevice ? 55 : 135;
 
     // Generate deterministic snowflake pool
     const flakes = Array.from({ length: count }).map((_, idx) => {
@@ -1090,8 +1071,6 @@ export default function WinterFrostBackground({ children, className = '' }) {
 
     let rafId;
     let lastTime = performance.now();
-    let isScrolling = false;
-    let scrollTimer = null;
 
     // Deteksi modal terbuka (saat modal open, lockBodyScroll menambahkan class 'overflow-hidden' ke body)
     let isModalOpen =
@@ -1109,24 +1088,10 @@ export default function WinterFrostBackground({ children, className = '' }) {
       observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     }
 
-    const handleScroll = () => {
-      if (!isMobileDevice) return;
-      isScrolling = true;
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => {
-        isScrolling = false;
-        lastTime = performance.now();
-      }, 100);
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', handleScroll, { passive: true });
-    }
-
     const minDelta = isMobileDevice ? 32 : 16; // ~30 FPS on mobile, 60 FPS on desktop
 
     function render(now) {
-      if (document.hidden || isModalOpen || (isScrolling && isMobileDevice)) {
+      if (document.hidden || isModalOpen) {
         lastTime = now;
         rafId = requestAnimationFrame(render);
         return;
@@ -1176,11 +1141,7 @@ export default function WinterFrostBackground({ children, className = '' }) {
 
     return () => {
       cancelAnimationFrame(rafId);
-      if (scrollTimer) clearTimeout(scrollTimer);
       if (observer) observer.disconnect();
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('scroll', handleScroll);
-      }
     };
   }, [width, height, pixelUnit]);
 
