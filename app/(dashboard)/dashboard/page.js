@@ -15,12 +15,8 @@ import {
 } from "lucide-react";
 import {
   CheckSquareOffset,
-  CalendarCheck,
-  Star as StarPhosphor,
-  CheckCircle as CheckCirclePhosphor,
 } from "@phosphor-icons/react";
 import TaskCard from "@/components/tugas/TaskCard";
-import DesktopInteractiveCard from "@/components/ui/DesktopInteractiveCard";
 import NumberTicker from "@/components/ui/NumberTicker";
 import BlurText from "@/components/ui/BlurText";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -40,30 +36,6 @@ import {
   getKategoriById,
   cn,
 } from "@/lib/utils";
-
-// 4 Stat Cards: Asymmetric Left-to-Right Cascade with Scale-Pop Spring
-const statContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.04 },
-  },
-};
-
-const statItemVariants = {
-  hidden: { opacity: 0, y: 18, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 380,
-      damping: 24,
-      mass: 0.8,
-    },
-  },
-};
 
 export default function DashboardPage() {
   const {
@@ -250,45 +222,130 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header Greeting Dinamis — SielloMita Frosted Hero Surface */}
-      <AnimatedContent delay={0} blur={0}>
-        <div className="glass-card p-5 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {/* Soft Ambient Light Shimmer Overlay (Contextual Time Glow — Desktop Only) */}
-          <div className="hidden lg:block pointer-events-none absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-[var(--theme-accent,rgba(217,119,6,0.06))] via-transparent to-[var(--theme-accent,rgba(217,119,6,0.04))] opacity-70 blur-xl animate-pulse [animation-duration:8s]" />
+      {/* Header Greeting Dinamis — Mobile View (< 1024px) */}
+      <div className="lg:hidden">
+        <AnimatedContent delay={0} blur={0}>
+          <div className="glass-card p-5 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1.5 z-10">
+              <motion.h1
+                suppressHydrationWarning={true}
+                key={greeting.headline}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="font-heading text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight text-balance"
+              >
+                <BlurText text={greeting.headline} delay={0.06} />
+              </motion.h1>
+              <motion.p
+                suppressHydrationWarning={true}
+                key={greeting.subtext}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
+                className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed"
+              >
+                {greeting.subtext}
+              </motion.p>
+            </div>
+            <div
+              suppressHydrationWarning={true}
+              className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] bg-[var(--glass-bg)] border border-[var(--glass-border)] px-3.5 py-2 rounded-xl shrink-0 self-start sm:self-auto z-10 backdrop-blur-md transition-all duration-200 hover:scale-[1.02] hover:border-[var(--glass-border-hover)]"
+            >
+              <Calendar className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
+              <span suppressHydrationWarning={true}>
+                {formatTanggalSederhana(new Date().toISOString())}
+              </span>
+            </div>
+          </div>
+        </AnimatedContent>
+      </div>
 
-          <div className="space-y-1.5 z-10">
-            <motion.h1
-              suppressHydrationWarning={true}
-              key={greeting.headline}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--text-primary)] tracking-tight text-balance"
-            >
-              <BlurText text={greeting.headline} delay={0.06} />
-            </motion.h1>
-            <motion.p
-              suppressHydrationWarning={true}
-              key={greeting.subtext}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
-              className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed"
-            >
-              {greeting.subtext}
-            </motion.p>
+      {/* Desktop SielloMita Zen Cockpit Header: Menyatukan Greeting & 4 Live Metric Pills dalam 1 Baris Ramping (~76px)
+          Membebaskan 240px+ ruang vertikal agar pemandangan gunung & kereta api pixel melintas leluasa di ruang terbuka */}
+      <div className="hidden lg:block">
+        <AnimatedContent delay={0} blur={0}>
+          <div className="glass-card p-4 px-6 rounded-2xl relative overflow-hidden flex items-center justify-between gap-6 shadow-lg">
+            <div className="pointer-events-none absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-[var(--theme-accent,rgba(217,119,6,0.06))] via-transparent to-[var(--theme-accent,rgba(217,119,6,0.04))] opacity-60 blur-xl" />
+
+            {/* Left: Editorial Headline & Compact Subtext */}
+            <div className="flex items-center gap-5 z-10 min-w-0">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-3">
+                  <motion.h1
+                    suppressHydrationWarning={true}
+                    key={greeting.headline}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    className="font-heading text-xl lg:text-2xl font-bold text-[var(--text-primary)] tracking-tight whitespace-nowrap"
+                  >
+                    <BlurText text={greeting.headline} delay={0.04} />
+                  </motion.h1>
+                  <div
+                    suppressHydrationWarning={true}
+                    className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--glass-bg)] border border-[var(--glass-border)] px-2.5 py-1 rounded-lg shrink-0"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />
+                    <span>{formatTanggalSederhana(new Date().toISOString())}</span>
+                  </div>
+                </div>
+                <motion.p
+                  suppressHydrationWarning={true}
+                  key={greeting.subtext}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.35, delay: 0.05 }}
+                  className="text-xs text-[var(--text-secondary)] truncate max-w-lg"
+                >
+                  {greeting.subtext}
+                </motion.p>
+              </div>
+            </div>
+
+            {/* Right: Clean Editorial Typographic Strip (SielloMita Anti-Icon Clutter & Monokrom Semantik) */}
+            <div className="flex items-center gap-3 sm:gap-4 z-10 shrink-0 text-xs select-none">
+              {/* Total */}
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-heading text-base sm:text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                  <NumberTicker value={stats.total} />
+                </span>
+                <span className="text-[11px] font-medium text-[var(--text-muted)]">Total</span>
+              </div>
+
+              <span className="w-1 h-1 rounded-full bg-[var(--glass-border)] opacity-60" />
+
+              {/* Hari Ini */}
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-heading text-base sm:text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                  <NumberTicker value={stats.today} />
+                </span>
+                <span className="text-[11px] font-medium text-[var(--text-muted)]">Hari Ini</span>
+              </div>
+
+              <span className="w-1 h-1 rounded-full bg-[var(--glass-border)] opacity-60" />
+
+              {/* Penting */}
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-heading text-base sm:text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                  <NumberTicker value={stats.important} />
+                </span>
+                <span className="text-[11px] font-medium text-[var(--text-muted)]">Penting</span>
+              </div>
+
+              <span className="w-1 h-1 rounded-full bg-[var(--glass-border)] opacity-60" />
+
+              {/* Selesai */}
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-heading text-base sm:text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                  <NumberTicker value={stats.completed} />
+                </span>
+                <span className="text-[11px] font-medium text-[var(--text-muted)]">Selesai</span>
+              </div>
+            </div>
           </div>
-          <div
-            suppressHydrationWarning={true}
-            className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] bg-[var(--glass-bg)] border border-[var(--glass-border)] px-3.5 py-2 rounded-xl shrink-0 self-start sm:self-auto z-10 backdrop-blur-md transition-all duration-200 hover:scale-[1.02] hover:border-[var(--glass-border-hover)]"
-          >
-            <Calendar className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
-            <span suppressHydrationWarning={true}>
-              {formatTanggalSederhana(new Date().toISOString())}
-            </span>
-          </div>
-        </div>
-      </AnimatedContent>
+        </AnimatedContent>
+      </div>
 
       {/* Smart Notification Permission & Test Banner */}
       <NotificationBanner dismissible={true} />
@@ -428,73 +485,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 4 Stat Cards with 3D Tilt, Rim Glow, Slot Odometer & Micro-Icon Pop (Desktop Only) */}
-      <motion.div
-        variants={statContainerVariants}
-        initial="hidden"
-        animate="visible"
-        className="hidden lg:grid lg:grid-cols-4 gap-4"
-      >
-        {/* Total Tugas */}
-        <motion.div variants={statItemVariants} className="h-full">
-          <DesktopInteractiveCard className="h-full p-3.5 sm:p-5 min-h-[44px]">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight transition-transform duration-300 group-hover:translate-x-0.5">
-                <NumberTicker value={stats.total} />
-              </span>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] flex items-center justify-center transition-all duration-300 group-hover:scale-115 group-hover:rotate-6 group-hover:shadow-sm">
-                <CheckSquareOffset weight="fill" className="w-3.5 h-3.5" />
-              </div>
-            </div>
-            <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Total Tugas</p>
-          </DesktopInteractiveCard>
-        </motion.div>
 
-        {/* Hari Ini */}
-        <motion.div variants={statItemVariants} className="h-full">
-          <DesktopInteractiveCard className="h-full p-3.5 sm:p-5 min-h-[44px]">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight transition-transform duration-300 group-hover:translate-x-0.5">
-                <NumberTicker value={stats.today} />
-              </span>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[var(--theme-accent,#D97706)]/15 border border-[var(--theme-accent,#D97706)]/25 text-[var(--theme-accent,#D97706)] flex items-center justify-center transition-all duration-300 group-hover:scale-115 group-hover:rotate-6 group-hover:shadow-sm">
-                <CalendarCheck weight="fill" className="w-3.5 h-3.5" />
-              </div>
-            </div>
-            <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Hari Ini</p>
-          </DesktopInteractiveCard>
-        </motion.div>
-
-        {/* Penting */}
-        <motion.div variants={statItemVariants} className="h-full">
-          <DesktopInteractiveCard className="h-full p-3.5 sm:p-5 min-h-[44px]">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight transition-transform duration-300 group-hover:translate-x-0.5">
-                <NumberTicker value={stats.important} />
-              </span>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/25 text-[#F59E0B] flex items-center justify-center transition-all duration-300 group-hover:scale-115 group-hover:rotate-6 group-hover:shadow-sm">
-                <StarPhosphor weight="fill" className="w-3.5 h-3.5" />
-              </div>
-            </div>
-            <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Penting</p>
-          </DesktopInteractiveCard>
-        </motion.div>
-
-        {/* Selesai */}
-        <motion.div variants={statItemVariants} className="h-full">
-          <DesktopInteractiveCard className="h-full p-3.5 sm:p-5 min-h-[44px]">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-heading text-xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight transition-transform duration-300 group-hover:translate-x-0.5">
-                <NumberTicker value={stats.completed} />
-              </span>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[#8FB88F]/15 border border-[#8FB88F]/25 text-[#8FB88F] flex items-center justify-center transition-all duration-300 group-hover:scale-115 group-hover:rotate-6 group-hover:shadow-sm">
-                <CheckCirclePhosphor weight="fill" className="w-3.5 h-3.5" />
-              </div>
-            </div>
-            <p className="text-[11px] sm:text-sm text-[var(--text-secondary)] font-medium">Selesai</p>
-          </DesktopInteractiveCard>
-        </motion.div>
-      </motion.div>
 
       {/* Section: Tenggat Waktu Terdekat (Upcoming Deadlines Carousel / Grid - Desktop Only) */}
       <div className="hidden lg:block">

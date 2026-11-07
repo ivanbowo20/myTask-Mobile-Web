@@ -100,8 +100,8 @@ export default function DashboardShell({ children }) {
           }}
         />
 
-        {/* Main Workspace Content */}
-        <main className="flex-1 lg:ml-64 min-w-0 p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 overflow-y-auto">
+        {/* Main Workspace Content (Compact Apple Rail Margin lg:ml-16 membebaskan 192px kanvas pemandangan) */}
+        <main className="flex-1 lg:ml-16 min-w-0 p-4 sm:p-6 lg:p-8 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:pb-8 overflow-y-auto transition-[margin] duration-300">
           <div className="max-w-6xl mx-auto space-y-8">
             {children}
           </div>

@@ -63,13 +63,14 @@ export default function Sidebar({
     const isHovered = hoveredHref === href;
 
     return (
-      <div key={href}>
+      <div key={href} title={!isAsideHovered ? label : undefined}>
         <Link
           href={href}
           prefetch={true}
           onMouseEnter={() => setHoveredHref(href)}
           className={cn(
-            "relative flex items-center justify-between min-h-[40px] px-3.5 py-2 rounded-full text-sm font-medium transition-colors duration-150 group cursor-pointer active:scale-[0.97] select-none",
+            "relative flex items-center min-h-[42px] py-2 rounded-2xl text-sm font-medium transition-all duration-200 group cursor-pointer active:scale-[0.97] select-none",
+            isAsideHovered ? "px-3.5 justify-between" : "px-0 justify-center",
             isActive
               ? "text-[var(--text-primary)] font-semibold"
               : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -79,15 +80,18 @@ export default function Sidebar({
           {isActive && (
             <motion.div
               layoutId="sidebar-active-pill"
-              className="absolute inset-0 rounded-full border border-[var(--theme-accent,#D97706)]/25 shadow-[0_2px_12px_var(--theme-glow,rgba(217,119,6,0.12))] pointer-events-none z-0"
+              className={cn(
+                "absolute inset-0 border border-[var(--theme-accent,#D97706)]/25 shadow-[0_2px_12px_var(--theme-glow,rgba(217,119,6,0.12))] pointer-events-none z-0",
+                isAsideHovered ? "rounded-full" : "rounded-2xl"
+              )}
               style={{
                 background: `color-mix(in srgb, var(--theme-accent, #D97706) 12%, var(--glass-bg-hover, rgba(255,255,255,0.06)))`,
               }}
               transition={{
                 type: "spring",
-                stiffness: 380,
-                damping: 28,
-                mass: 0.85,
+                stiffness: 220,
+                damping: 30,
+                mass: 0.8,
               }}
             />
           )}
@@ -96,21 +100,20 @@ export default function Sidebar({
           {isHovered && !isActive && (
             <motion.div
               layoutId="sidebar-hover-pill"
-              className="absolute inset-0 bg-[var(--glass-bg)] rounded-full border border-[var(--glass-border)] pointer-events-none z-0"
+              className={cn(
+                "absolute inset-0 bg-[var(--glass-bg)] border border-[var(--glass-border)] pointer-events-none z-0",
+                isAsideHovered ? "rounded-full" : "rounded-2xl"
+              )}
               transition={{
                 type: "spring",
-                stiffness: 420,
+                stiffness: 240,
                 damping: 32,
               }}
             />
           )}
 
-          <div className="relative z-10 flex items-center gap-3">
-            <motion.div
-              animate={isActive ? { scale: [1, 1.25, 1.08], rotate: [0, -6, 0] } : { scale: 1, rotate: 0 }}
-              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="shrink-0 flex items-center justify-center"
-            >
+          <div className={cn("relative z-10 flex items-center", !isAsideHovered && "justify-center w-full")}>
+            <div className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105">
               <Icon
                 weight={isActive ? "fill" : "regular"}
                 className={cn(
@@ -120,14 +123,19 @@ export default function Sidebar({
                     : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
                 )}
               />
-            </motion.div>
-            <span>{label}</span>
+            </div>
+            {isAsideHovered && (
+              <span className="whitespace-nowrap text-sm ml-2.5 select-none transition-opacity duration-200">
+                {label}
+              </span>
+            )}
           </div>
 
-          {badge !== undefined && badge > 0 && (
+          {/* Badge count saat sidebar melebar (hanya di-render saat hover agar tidak mendistorsi flex flow saat collapsed) */}
+          {isAsideHovered && badge !== undefined && badge > 0 && (
             <span
               className={cn(
-                "relative z-10 font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors duration-150",
+                "relative z-10 font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full ml-2 shrink-0 select-none transition-all duration-200",
                 badgeColor ||
                   (isActive
                     ? "bg-[var(--glass-border-hover)] text-[var(--text-primary)]"
@@ -136,6 +144,11 @@ export default function Sidebar({
             >
               {badge}
             </span>
+          )}
+
+          {/* Micro dot indicator saat sidebar ramping (w-16) - berposisi absolute sehingga 0% efek pada sumbu icon */}
+          {!isAsideHovered && badge !== undefined && badge > 0 && (
+            <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-[var(--theme-accent,#D97706)] ring-2 ring-[var(--theme-nav-bg,#100c0a)] pointer-events-none transition-opacity duration-200" />
           )}
         </Link>
       </div>
@@ -153,7 +166,12 @@ export default function Sidebar({
         setIsAsideHovered(false);
         setHoveredHref(null);
       }}
-      className="hidden lg:flex fixed top-16 bottom-0 left-0 z-30 w-64 bg-[var(--theme-nav-bg,rgba(16,12,10,0.75))] backdrop-blur-[20px] backdrop-saturate-[130%] border-r border-[var(--glass-border)] flex-col justify-between overflow-hidden"
+      className={cn(
+        "hidden lg:flex fixed top-16 bottom-0 left-0 z-40 bg-[var(--theme-nav-bg,rgba(16,12,10,0.85))] backdrop-blur-[24px] backdrop-saturate-[130%] border-r border-[var(--glass-border)] flex-col justify-between overflow-hidden transition-[width,box-shadow,border-color] duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]",
+        isAsideHovered
+          ? "w-64 shadow-[0_20px_50px_rgba(0,0,0,0.55)] border-[var(--glass-border-hover)]"
+          : "w-16 shadow-none"
+      )}
     >
       {/* Magnetic Cursor Ambient Spotlight — Ultra-Subtle & Refined */}
       {isAsideHovered && (
@@ -164,17 +182,22 @@ export default function Sidebar({
           }}
         />
       )}
-      <div className="p-4 space-y-6 overflow-y-auto">
+      <div className={cn("space-y-6 overflow-y-auto transition-all duration-300", isAsideHovered ? "p-4" : "p-2")}>
         {/* Section 1: Menu Utama */}
         <div className="space-y-1.5">
-          <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+          <p
+            className={cn(
+              "px-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden",
+              isAsideHovered ? "max-h-6 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+            )}
+          >
             Menu Utama
           </p>
           <nav className="space-y-1">
             {mainLinks.map(renderLinkItem)}
 
             {/* Tema Menu Item (Immediately after Kategori) */}
-            <div>
+            <div title={!isAsideHovered ? "Pilih Tema" : undefined}>
               <button
                 type="button"
                 onClick={() => {
@@ -182,7 +205,8 @@ export default function Sidebar({
                 }}
                 onMouseEnter={() => setHoveredHref("tema")}
                 className={cn(
-                  "w-full relative flex items-center justify-between min-h-[40px] px-3.5 py-2 rounded-full text-sm font-medium transition-colors duration-150 group cursor-pointer active:scale-[0.97] select-none",
+                  "w-full relative flex items-center min-h-[42px] py-2 rounded-2xl text-sm font-medium transition-all duration-200 group cursor-pointer active:scale-[0.97] select-none",
+                  isAsideHovered ? "px-3.5 justify-between" : "px-0 justify-center",
                   isThemeModalOpen
                     ? "text-[var(--text-primary)] font-semibold"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -192,15 +216,18 @@ export default function Sidebar({
                 {isThemeModalOpen && (
                   <motion.div
                     layoutId="sidebar-active-pill"
-                    className="absolute inset-0 rounded-full border border-[var(--theme-accent,#D97706)]/25 shadow-[0_2px_12px_var(--theme-glow,rgba(217,119,6,0.12))] pointer-events-none z-0"
+                    className={cn(
+                      "absolute inset-0 border border-[var(--theme-accent,#D97706)]/25 shadow-[0_2px_12px_var(--theme-glow,rgba(217,119,6,0.12))] pointer-events-none z-0",
+                      isAsideHovered ? "rounded-full" : "rounded-2xl"
+                    )}
                     style={{
                       background: `color-mix(in srgb, var(--theme-accent, #D97706) 12%, var(--glass-bg-hover, rgba(255,255,255,0.06)))`,
                     }}
                     transition={{
                       type: "spring",
-                      stiffness: 380,
-                      damping: 28,
-                      mass: 0.85,
+                      stiffness: 220,
+                      damping: 30,
+                      mass: 0.8,
                     }}
                   />
                 )}
@@ -209,21 +236,20 @@ export default function Sidebar({
                 {hoveredHref === "tema" && !isThemeModalOpen && (
                   <motion.div
                     layoutId="sidebar-hover-pill"
-                    className="absolute inset-0 bg-[var(--glass-bg)] rounded-full border border-[var(--glass-border)] pointer-events-none z-0"
+                    className={cn(
+                      "absolute inset-0 bg-[var(--glass-bg)] border border-[var(--glass-border)] pointer-events-none z-0",
+                      isAsideHovered ? "rounded-full" : "rounded-2xl"
+                    )}
                     transition={{
                       type: "spring",
-                      stiffness: 420,
+                      stiffness: 240,
                       damping: 32,
                     }}
                   />
                 )}
 
-                <div className="relative z-10 flex items-center gap-3">
-                  <motion.div
-                    animate={isThemeModalOpen ? { scale: [1, 1.25, 1.08], rotate: [0, -6, 0] } : { scale: 1, rotate: 0 }}
-                    transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                    className="shrink-0 flex items-center justify-center"
-                  >
+                <div className={cn("relative z-10 flex items-center", !isAsideHovered && "justify-center w-full")}>
+                  <div className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105">
                     <Palette
                       weight={isThemeModalOpen ? "fill" : "regular"}
                       className={cn(
@@ -233,13 +259,19 @@ export default function Sidebar({
                           : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
                       )}
                     />
-                  </motion.div>
-                  <span>Tema</span>
+                  </div>
+                  {isAsideHovered && (
+                    <span className="whitespace-nowrap text-sm ml-2.5 select-none transition-opacity duration-200">
+                      Tema
+                    </span>
+                  )}
                 </div>
 
-                <span className="relative z-10 text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:bg-purple-400/15 dark:text-purple-300 transition-colors duration-150">
-                  PRO
-                </span>
+                {isAsideHovered && (
+                  <span className="relative z-10 text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:bg-purple-400/15 dark:text-purple-300 ml-2 shrink-0 select-none transition-all duration-200">
+                    PRO
+                  </span>
+                )}
               </button>
             </div>
           </nav>
@@ -247,7 +279,12 @@ export default function Sidebar({
 
         {/* Section 2: Lainnya */}
         <div className="space-y-1.5 pt-3 border-t border-[var(--glass-border)]">
-          <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+          <p
+            className={cn(
+              "px-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden",
+              isAsideHovered ? "max-h-6 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+            )}
+          >
             Lainnya
           </p>
           <nav className="space-y-1">
@@ -257,9 +294,16 @@ export default function Sidebar({
       </div>
 
       {/* Footer App Info */}
-      <div className="p-4 border-t border-[var(--glass-border)] text-xs text-[var(--text-muted)] space-y-1">
-        <p className="font-medium text-[var(--text-primary)]">MyTask v2.0</p>
-        <p>© 2026 Manajemen Pintar</p>
+      <div className={cn("border-t border-[var(--glass-border)] text-xs text-[var(--text-muted)] transition-all duration-300", isAsideHovered ? "p-4 space-y-1" : "p-2 text-center")}>
+        <p className="font-medium text-[var(--text-primary)] transition-all duration-300">{isAsideHovered ? "MyTask v2.0" : "v2.0"}</p>
+        <p
+          className={cn(
+            "text-[11px] overflow-hidden transition-all duration-300",
+            isAsideHovered ? "max-h-4 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+          )}
+        >
+          © 2026 Manajemen Pintar
+        </p>
       </div>
     </aside>
   );
