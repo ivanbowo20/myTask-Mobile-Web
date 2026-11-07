@@ -273,12 +273,13 @@ export default function NotebookPage() {
                 {pinnedNotebooks.map((nb, idx) => (
                   <motion.div
                     key={nb.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ y: 28 }}
+                    animate={{ y: 0 }}
                     transition={{
-                      duration: 0.38,
-                      delay: Math.min(0.15 + idx * 0.08, 0.65),
-                      ease: [0.16, 1, 0.3, 1],
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30,
+                      delay: Math.min(0.08 + idx * 0.12, 0.7),
                     }}
                     className="h-full relative rounded-2xl overflow-hidden"
                   >
@@ -309,12 +310,13 @@ export default function NotebookPage() {
                 {otherNotebooks.map((nb, idx) => (
                   <motion.div
                     key={nb.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ y: 28 }}
+                    animate={{ y: 0 }}
                     transition={{
-                      duration: 0.38,
-                      delay: Math.min(0.15 + idx * 0.08, 0.65),
-                      ease: [0.16, 1, 0.3, 1],
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30,
+                      delay: Math.min(0.08 + idx * 0.12, 0.7),
                     }}
                     className="h-full relative rounded-2xl overflow-hidden"
                   >

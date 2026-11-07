@@ -29,15 +29,16 @@ const TaskCard = memo(function TaskCard({
   const CardContainer = motion.div;
 
   const containerMotionProps = shouldReduceMotion
-    ? { initial: false, animate: { opacity: 1 } }
+    ? { initial: false, animate: { y: 0 } }
     : {
-        initial: { opacity: 0, y: 16 },
-        animate: { opacity: 1, y: 0 },
+        initial: { y: 28 },
+        animate: { y: 0 },
         exit: { opacity: 0, scale: 0.96 },
         transition: {
-          duration: 0.38,
-          delay: Math.min(0.15 + (index || 0) * 0.08, 0.7),
-          ease: [0.16, 1, 0.3, 1],
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+          delay: Math.min(0.05 + (index || 0) * 0.12, 0.9),
         },
       };
 

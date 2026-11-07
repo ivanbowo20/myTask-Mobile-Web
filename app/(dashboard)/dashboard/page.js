@@ -469,9 +469,10 @@ export default function DashboardPage() {
             />
           ) : (
             <div className="space-y-2.5">
-              {mobileAgendaTasks.map((task) => (
+              {mobileAgendaTasks.map((task, idx) => (
                 <TaskCard
                   key={task.id}
+                  index={idx}
                   task={task}
                   kategori={getKategoriById(categories, task.kategoriId)}
                   onToggleSelesai={toggleComplete}
@@ -518,12 +519,13 @@ export default function DashboardPage() {
                 return (
                   <motion.div
                     key={task.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ y: 28 }}
+                    animate={{ y: 0 }}
                     transition={{
-                      duration: 0.38,
-                      delay: Math.min(0.1 + idx * 0.08, 0.5),
-                      ease: [0.16, 1, 0.3, 1],
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30,
+                      delay: Math.min(0.08 + idx * 0.12, 0.6),
                     }}
                     className={`w-[85%] min-w-[85%] flex-shrink-0 snap-center sm:w-auto sm:min-w-0 sm:flex-shrink p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition-all duration-200 sm:hover:-translate-y-0.5 glass-card relative overflow-hidden bg-[var(--glass-bg)] ${
                       isOverdue

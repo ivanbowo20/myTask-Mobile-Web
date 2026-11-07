@@ -15,22 +15,23 @@ import { cn } from '@/lib/utils';
 export default function MotionContainer({
   children,
   delay = 0,
-  duration = 0.4,
+  duration = 0.45,
   className = '',
   gradient = true,
-  yOffset = 18,
+  yOffset = 28,
   ...props
 }) {
   const shouldReduceMotion = useReducedMotion();
 
   return (
     <motion.div
-      initial={shouldReduceMotion ? false : { opacity: 0, y: yOffset }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={shouldReduceMotion ? false : { y: yOffset }}
+      animate={{ y: 0 }}
       transition={{
-        duration: shouldReduceMotion ? 0 : duration,
-        delay: shouldReduceMotion ? 0 : delay * 0.1,
-        ease: [0.16, 1, 0.3, 1], // Apple WWDC fluid spring curve
+        type: 'spring',
+        stiffness: 300,
+        damping: 30,
+        delay: shouldReduceMotion ? 0 : delay * 0.12,
       }}
       className={cn('relative overflow-hidden', className)}
       {...props}
