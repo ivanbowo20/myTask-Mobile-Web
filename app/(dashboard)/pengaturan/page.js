@@ -13,7 +13,7 @@ import {
 import { Palette, GearSix } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import AnimatedContent from "@/components/ui/AnimatedContent";
+import MotionContainer from "@/components/ui/MotionContainer";
 import { useToast } from "@/lib/use-toast";
 import { useTheme } from "@/lib/theme-context";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -57,7 +57,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 max-w-4xl">
       {/* Header */}
-      <AnimatedContent delay={0}>
+      <MotionContainer delay={0} className="rounded-2xl">
         <div className="border-b border-[var(--glass-border)] pb-5 space-y-1">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--theme-accent)] shadow-sm">
@@ -71,10 +71,10 @@ export default function SettingsPage() {
             Informasi profil pengguna, detail spesifikasi aplikasi, dan manajemen sesi.
           </p>
         </div>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Card 1: Profil Pengguna */}
-      <AnimatedContent delay={0.08}>
+      <MotionContainer delay={1} className="rounded-2xl">
         <section className="glass-panel p-5 sm:p-6 rounded-2xl space-y-5">
           <div className="flex items-center gap-2 pb-3 border-b border-[var(--glass-border)]">
             <User className="w-4 h-4 text-[var(--text-secondary)]" />
@@ -111,10 +111,10 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Card 2: Tema & Tampilan */}
-      <AnimatedContent delay={0.14}>
+      <MotionContainer delay={2} className="rounded-2xl">
         <section className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-[var(--glass-border)]">
             <div className="flex items-center gap-2">
@@ -163,10 +163,10 @@ export default function SettingsPage() {
             </Button>
           </div>
         </section>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Card 3: Informasi Aplikasi */}
-      <AnimatedContent delay={0.20}>
+      <MotionContainer delay={3} className="rounded-2xl">
         <section className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-[var(--glass-border)]">
             <Info className="w-4 h-4 text-[var(--text-secondary)]" />
@@ -190,10 +190,10 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Card 4: Zona Bahaya & Logout */}
-      <AnimatedContent delay={0.26}>
+      <MotionContainer delay={4} className="rounded-2xl">
         <section className="glass-panel p-5 sm:p-6 rounded-2xl border-l-4 border-l-[#E88B8B] space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-[var(--glass-border)]">
             <ShieldAlert className="w-4 h-4 text-[#E88B8B]" />
@@ -217,7 +217,7 @@ export default function SettingsPage() {
             </Button>
           </div>
         </section>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Confirm Logout Dialog */}
       <ConfirmDialog

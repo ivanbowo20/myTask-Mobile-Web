@@ -8,7 +8,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import AnimatedContent from "@/components/ui/AnimatedContent";
+import MotionContainer from "@/components/ui/MotionContainer";
 import { useDesktopMotion } from "@/lib/use-desktop-motion";
 import { useTasks } from "@/lib/task-context";
 import { detectIconByCategoryName } from "@/lib/constants";
@@ -83,7 +83,7 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-8">
       {/* Header (Hero Glass Banner — SielloMita Anti-Washout Standard) */}
-      <AnimatedContent delay={0}>
+      <MotionContainer delay={0} className="rounded-2xl">
         <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5 z-10">
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -107,10 +107,10 @@ export default function CategoriesPage() {
             Tambah Kategori
           </Button>
         </div>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Quick Add Inline Card */}
-      <AnimatedContent delay={0.08}>
+      <MotionContainer delay={1} className="rounded-2xl">
         <div className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4 shadow-sm">
           <h2 className="font-heading text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
             <Plus weight="bold" className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
@@ -146,11 +146,11 @@ export default function CategoriesPage() {
             </div>
           </form>
         </div>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Categories Grid */}
-      <AnimatedContent delay={0.16}>
-        {categories.length === 0 ? (
+      {categories.length === 0 ? (
+        <MotionContainer delay={1}>
           <EmptyState
             icon={FolderSimple}
             title="Belum ada kategori"
@@ -158,28 +158,27 @@ export default function CategoriesPage() {
             actionLabel="Tambah Kategori Baru"
             onAction={openAddCategory}
           />
-        ) : isDesktop ? (
-          <motion.div
-            variants={cascadeContainerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4"
-          >
-            {categories.map((cat) => (
-              <motion.div key={cat.id} variants={cascadeItemVariants} className="h-full">
-                <CategoryCard
-                  kategori={cat}
-                  jumlahTugas={taskCountMap[cat.id] || 0}
-                  onEdit={openEditCategory}
-                  onDelete={(c) => setCategoryToDelete(c)}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
-            {categories.map((cat) => (
-              <div key={cat.id} className="h-full">
+        </MotionContainer>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
+          {categories.map((cat, idx) => (
+            <motion.div
+              key={cat.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.38,
+                delay: Math.min(0.15 + idx * 0.08, 0.65),
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              className="h-full relative rounded-xl sm:rounded-2xl overflow-hidden"
+            >
+              {/* Subtle Ambient Accent Glow (SielloMita Standard) */}
+              <div
+                className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent opacity-25 z-0"
+                aria-hidden="true"
+              />
+              <div className="relative z-10 h-full">
                 <CategoryCard
                   kategori={cat}
                   jumlahTugas={taskCountMap[cat.id] || 0}
@@ -187,10 +186,10 @@ export default function CategoriesPage() {
                   onDelete={(c) => setCategoryToDelete(c)}
                 />
               </div>
-            ))}
-          </div>
-        )}
-      </AnimatedContent>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

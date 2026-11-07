@@ -5,8 +5,7 @@ import { Star } from "lucide-react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
-import AnimatedList from "@/components/ui/AnimatedList";
-import AnimatedContent from "@/components/ui/AnimatedContent";
+import MotionContainer from "@/components/ui/MotionContainer";
 import { useTasks } from "@/lib/task-context";
 import { getKategoriById } from "@/lib/utils";
 
@@ -30,30 +29,30 @@ export default function ImportantTasksPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <AnimatedContent delay={0}>
+      <MotionContainer delay={0} className="rounded-2xl">
         <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5 z-10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]">
-              <Star className="w-4 h-4 fill-[#F59E0B]" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#F59E0B]/15 border border-[#F59E0B]/30 flex items-center justify-center text-[#F59E0B]">
+                <Star className="w-4 h-4 fill-[#F59E0B]" />
+              </div>
+              <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
+                Tugas Penting
+              </h1>
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#F59E0B]">
+                {activeCount} prioritas aktif
+              </span>
             </div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-[#FAFAFA] [html[data-theme='celestial-sky']_&]:text-[#0F172A] tracking-tight">
-              Tugas Penting
-            </h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#F59E0B]">
-              {activeCount} prioritas aktif
-            </span>
+            <p className="text-xs sm:text-sm text-[#A1A1AA] [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
+              Fokus pada tugas-tugas bertanda bintang yang memiliki dampak terbesar.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-[#A1A1AA] [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium leading-relaxed">
-            Fokus pada tugas-tugas bertanda bintang yang memiliki dampak terbesar.
-          </p>
         </div>
-      </div>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Task List or Empty State */}
-      <AnimatedContent delay={0.08}>
-        {importantTasks.length === 0 ? (
+      {importantTasks.length === 0 ? (
+        <MotionContainer delay={1}>
           <EmptyState
             icon={Star}
             title="Belum ada tugas prioritas"
@@ -61,28 +60,24 @@ export default function ImportantTasksPage() {
             actionLabel="Tambah Tugas Baru"
             onAction={openAddTask}
           />
-        ) : (
-          <AnimatedList
-            items={importantTasks}
-            gap={16}
-            animation="pop"
-            stagger={0.05}
-            trackClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-            renderItem={(task) => (
-              <div className="h-full w-full">
-                <TaskCard
-                  task={task}
-                  kategori={getKategoriById(categories, task.kategoriId)}
-                  onToggleSelesai={toggleComplete}
-                  onTogglePrioritas={toggleImportant}
-                  onEdit={openEditTask}
-                  onDelete={(t) => setTaskToDelete(t)}
-                />
-              </div>
-            )}
-          />
-        )}
-      </AnimatedContent>
+        </MotionContainer>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {importantTasks.map((task, index) => (
+            <div key={task.id} className="h-full w-full">
+              <TaskCard
+                index={index}
+                task={task}
+                kategori={getKategoriById(categories, task.kategoriId)}
+                onToggleSelesai={toggleComplete}
+                onTogglePrioritas={toggleImportant}
+                onEdit={openEditTask}
+                onDelete={(t) => setTaskToDelete(t)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

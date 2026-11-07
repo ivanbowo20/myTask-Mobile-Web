@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Bell, AlertTriangle, Calendar, Clock } from "lucide-react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import AnimatedContent from "@/components/ui/AnimatedContent";
+import MotionContainer from "@/components/ui/MotionContainer";
 import NotificationBanner from "@/components/notifikasi/NotificationBanner";
 import { useTasks } from "@/lib/task-context";
 import { getKategoriById } from "@/lib/utils";
@@ -26,7 +26,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <AnimatedContent delay={0}>
+      <MotionContainer delay={0} className="rounded-2xl">
         <div className="border-b border-[var(--glass-border)] pb-5 space-y-1">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[var(--glass-bg)] border border-[var(--glass-border)] flex items-center justify-center text-[var(--theme-accent)] shadow-sm">
@@ -43,15 +43,15 @@ export default function NotificationsPage() {
             Ringkasan seluruh pengingat tenggat waktu tugas, terbagi dalam tiga tingkatan urgensi.
           </p>
         </div>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Interactive Web Push Notification Status & Control Banner */}
-      <AnimatedContent delay={0.04}>
+      <MotionContainer delay={1} className="rounded-2xl">
         <NotificationBanner dismissible={false} />
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Section 1: Tenggat Terlewat */}
-      <AnimatedContent delay={0.08}>
+      <MotionContainer delay={2} className="rounded-2xl">
         <section className="p-5 sm:p-6 rounded-2xl glass-panel shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -72,9 +72,10 @@ export default function NotificationsPage() {
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-              {overdueList.map((task) => (
+              {overdueList.map((task, idx) => (
                 <TaskCard
                   key={task.id}
+                  index={idx}
                   task={task}
                   kategori={getKategoriById(categories, task.kategoriId)}
                   onToggleSelesai={toggleComplete}
@@ -86,10 +87,10 @@ export default function NotificationsPage() {
             </div>
           )}
         </section>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Section 2: Tenggat Hari Ini */}
-      <AnimatedContent delay={0.16}>
+      <MotionContainer delay={3} className="rounded-2xl">
         <section className="p-5 sm:p-6 rounded-2xl glass-panel shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -107,9 +108,10 @@ export default function NotificationsPage() {
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-              {todayList.map((task) => (
+              {todayList.map((task, idx) => (
                 <TaskCard
                   key={task.id}
+                  index={idx}
                   task={task}
                   kategori={getKategoriById(categories, task.kategoriId)}
                   onToggleSelesai={toggleComplete}
@@ -121,10 +123,10 @@ export default function NotificationsPage() {
             </div>
           )}
         </section>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Section 3: Tenggat Mendatang */}
-      <AnimatedContent delay={0.24}>
+      <MotionContainer delay={4} className="rounded-2xl">
         <section className="p-5 sm:p-6 rounded-2xl glass-panel shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -142,9 +144,10 @@ export default function NotificationsPage() {
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-              {upcomingList.map((task) => (
+              {upcomingList.map((task, idx) => (
                 <TaskCard
                   key={task.id}
+                  index={idx}
                   task={task}
                   kategori={getKategoriById(categories, task.kategoriId)}
                   onToggleSelesai={toggleComplete}
@@ -156,7 +159,7 @@ export default function NotificationsPage() {
             </div>
           )}
         </section>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

@@ -14,8 +14,7 @@ import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
-import AnimatedList from "@/components/ui/AnimatedList";
-import AnimatedContent from "@/components/ui/AnimatedContent";
+import MotionContainer from "@/components/ui/MotionContainer";
 import { useDesktopMotion } from "@/lib/use-desktop-motion";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { useTasks } from "@/lib/task-context";
@@ -114,7 +113,7 @@ function AllTasksContent() {
   return (
     <div className="space-y-6">
       {/* Header (Hero Glass Banner — SielloMita Anti-Washout Standard) */}
-      <AnimatedContent delay={0}>
+      <MotionContainer delay={0} className="rounded-2xl">
         <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5 z-10">
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -133,10 +132,10 @@ function AllTasksContent() {
             </p>
           </div>
         </div>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Status Filter Tabs with Arc UI Sliding Pill */}
-      <AnimatedContent delay={0.08}>
+      <MotionContainer delay={1} className="rounded-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-md overflow-x-auto scrollbar-none w-full sm:w-fit shadow-sm">
           {[
@@ -197,11 +196,11 @@ function AllTasksContent() {
           </button>
         )}
       </div>
-    </AnimatedContent>
+    </MotionContainer>
 
 
       {/* Filter and Search Bar */}
-      <AnimatedContent delay={0.16} className="relative z-20">
+      <MotionContainer delay={2} className="relative z-20 rounded-2xl">
         <div className="p-4 rounded-2xl bg-[var(--glass-bg)] border border-[var(--glass-border)] backdrop-blur-md shadow-sm flex flex-col md:flex-row items-center gap-3">
           {/* Search Input */}
           <div className="relative flex-1 w-full">
@@ -243,11 +242,11 @@ function AllTasksContent() {
             </Button>
           )}
         </div>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Task List or Empty State */}
-      <AnimatedContent delay={0.24}>
-        {paginatedTasks.length === 0 ? (
+      {paginatedTasks.length === 0 ? (
+        <MotionContainer delay={1}>
           <EmptyState
             icon={CheckSquareOffset}
             title="Tidak ada tugas yang sesuai"
@@ -259,131 +258,105 @@ function AllTasksContent() {
             actionLabel={hasActiveFilters ? "Reset Filter" : "Tambah Tugas"}
             onAction={hasActiveFilters ? handleResetFilters : openAddTask}
           />
-        ) : (
-          <div className="space-y-6">
-            {isDesktop ? (
-              <AnimatePresence mode="wait" custom={direction}>
-                <div key={`${currentPage}-${selectedStatus}-${selectedCategory}`}>
-                  <AnimatedList
-                    items={paginatedTasks}
-                    gap={16}
-                    animation="pop"
-                    stagger={0.05}
-                    trackClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                    enableArrowNavigation={true}
-                    renderItem={(task) => (
-                      <div className="h-full w-full">
-                        <TaskCard
-                          task={task}
-                          kategori={getKategoriById(categories, task.kategoriId)}
-                          onToggleSelesai={toggleComplete}
-                          onTogglePrioritas={toggleImportant}
-                          onEdit={openEditTask}
-                          onDelete={(t) => setTaskToDelete(t)}
-                        />
-                      </div>
-                    )}
-                  />
-                </div>
-              </AnimatePresence>
-            ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {paginatedTasks.map((task) => (
-                  <div key={task.id} className="h-full w-full">
-                    <TaskCard
-                      task={task}
-                      kategori={getKategoriById(categories, task.kategoriId)}
-                      onToggleSelesai={toggleComplete}
-                      onTogglePrioritas={toggleImportant}
-                      onEdit={openEditTask}
-                      onDelete={(t) => setTaskToDelete(t)}
-                    />
-                  </div>
-                ))}
+        </MotionContainer>
+      ) : (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedTasks.map((task, index) => (
+              <div key={task.id} className="h-full w-full">
+                <TaskCard
+                  index={index}
+                  task={task}
+                  kategori={getKategoriById(categories, task.kategoriId)}
+                  onToggleSelesai={toggleComplete}
+                  onTogglePrioritas={toggleImportant}
+                  onEdit={openEditTask}
+                  onDelete={(t) => setTaskToDelete(t)}
+                />
               </div>
-            )}
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--glass-border)] text-xs text-[var(--text-secondary)]">
-                <span>
-                  Menampilkan {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
-                  {Math.min(currentPage * ITEMS_PER_PAGE, filteredTasks.length)} dari{" "}
-                  {filteredTasks.length} tugas
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  <motion.button
-                    type="button"
-                    onClick={() => {
-                      setDirection(-1);
-                      setCurrentPage((p) => Math.max(p - 1, 1));
-                    }}
-                    disabled={currentPage === 1}
-                    whileHover={shouldReduceMotion || currentPage === 1 ? undefined : { scale: 1.02 }}
-                    whileTap={shouldReduceMotion || currentPage === 1 ? undefined : { scale: 0.96 }}
-                    transition={{ duration: 0.15, ease: SNAPPY_EASING }}
-                    aria-label="Halaman sebelumnya"
-                    className="inline-flex items-center justify-center font-medium rounded-lg min-h-[46px] px-3.5 py-2 text-xs gap-1.5 bg-[var(--glass-bg)] text-[var(--text-primary)] border border-[var(--glass-border)] hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)]"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    Sebelumnya
-                  </motion.button>
-
-                  <div className="flex items-center gap-1.5 px-2 font-medium text-[var(--text-primary)]">
-                    <span>Halaman</span>
-                    <div className="relative inline-flex items-center justify-center overflow-hidden min-w-[1.25rem] h-5">
-                      <AnimatePresence mode="wait" initial={false}>
-                        <motion.span
-                          key={currentPage}
-                          initial={{
-                            y: shouldReduceMotion ? 0 : direction * 8,
-                            opacity: 0,
-                          }}
-                          animate={{
-                            y: 0,
-                            opacity: 1,
-                          }}
-                          exit={{
-                            y: shouldReduceMotion ? 0 : direction * -8,
-                            opacity: 0,
-                          }}
-                          transition={{
-                            duration: shouldReduceMotion ? 0.1 : 0.18,
-                            ease: SNAPPY_EASING,
-                          }}
-                          className="font-bold block"
-                        >
-                          {currentPage}
-                        </motion.span>
-                      </AnimatePresence>
-                    </div>
-                    <span>dari</span>
-                    <span>{totalPages}</span>
-                  </div>
-
-                  <motion.button
-                    type="button"
-                    onClick={() => {
-                      setDirection(1);
-                      setCurrentPage((p) => Math.min(p + 1, totalPages));
-                    }}
-                    disabled={currentPage === totalPages}
-                    whileHover={shouldReduceMotion || currentPage === totalPages ? undefined : { scale: 1.02 }}
-                    whileTap={shouldReduceMotion || currentPage === totalPages ? undefined : { scale: 0.96 }}
-                    transition={{ duration: 0.15, ease: SNAPPY_EASING }}
-                    aria-label="Halaman selanjutnya"
-                    className="inline-flex items-center justify-center font-medium rounded-lg min-h-[46px] px-3.5 py-2 text-xs gap-1.5 bg-[var(--glass-bg)] text-[var(--text-primary)] border border-[var(--glass-border)] hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)]"
-                  >
-                    Selanjutnya
-                    <ChevronRight className="w-4 h-4" />
-                  </motion.button>
-                </div>
-              </div>
-            )}
+            ))}
           </div>
-        )}
-      </AnimatedContent>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--glass-border)] text-xs text-[var(--text-secondary)]">
+              <span>
+                Menampilkan {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredTasks.length)} dari{" "}
+                {filteredTasks.length} tugas
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    setDirection(-1);
+                    setCurrentPage((p) => Math.max(p - 1, 1));
+                  }}
+                  disabled={currentPage === 1}
+                  whileHover={shouldReduceMotion || currentPage === 1 ? undefined : { scale: 1.02 }}
+                  whileTap={shouldReduceMotion || currentPage === 1 ? undefined : { scale: 0.96 }}
+                  transition={{ duration: 0.15, ease: SNAPPY_EASING }}
+                  aria-label="Halaman sebelumnya"
+                  className="inline-flex items-center justify-center font-medium rounded-lg min-h-[46px] px-3.5 py-2 text-xs gap-1.5 bg-[var(--glass-bg)] text-[var(--text-primary)] border border-[var(--glass-border)] hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)]"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Sebelumnya
+                </motion.button>
+
+                <div className="flex items-center gap-1.5 px-2 font-medium text-[var(--text-primary)]">
+                  <span>Halaman</span>
+                  <div className="relative inline-flex items-center justify-center overflow-hidden min-w-[1.25rem] h-5">
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.span
+                        key={currentPage}
+                        initial={{
+                          y: shouldReduceMotion ? 0 : direction * 8,
+                          opacity: 0,
+                        }}
+                        animate={{
+                          y: 0,
+                          opacity: 1,
+                        }}
+                        exit={{
+                          y: shouldReduceMotion ? 0 : direction * -8,
+                          opacity: 0,
+                        }}
+                        transition={{
+                          duration: shouldReduceMotion ? 0.1 : 0.18,
+                          ease: SNAPPY_EASING,
+                        }}
+                        className="font-bold block"
+                      >
+                        {currentPage}
+                      </motion.span>
+                    </AnimatePresence>
+                  </div>
+                  <span>dari</span>
+                  <span>{totalPages}</span>
+                </div>
+
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    setDirection(1);
+                    setCurrentPage((p) => Math.min(p + 1, totalPages));
+                  }}
+                  disabled={currentPage === totalPages}
+                  whileHover={shouldReduceMotion || currentPage === totalPages ? undefined : { scale: 1.02 }}
+                  whileTap={shouldReduceMotion || currentPage === totalPages ? undefined : { scale: 0.96 }}
+                  transition={{ duration: 0.15, ease: SNAPPY_EASING }}
+                  aria-label="Halaman selanjutnya"
+                  className="inline-flex items-center justify-center font-medium rounded-lg min-h-[46px] px-3.5 py-2 text-xs gap-1.5 bg-[var(--glass-bg)] text-[var(--text-primary)] border border-[var(--glass-border)] hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none select-none cursor-pointer backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text-primary)]"
+                >
+                  Selanjutnya
+                  <ChevronRight className="w-4 h-4" />
+                </motion.button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

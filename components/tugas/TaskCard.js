@@ -10,7 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { formatTanggal, hitungSisaWaktu, hitungStatusDeadline, cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { triggerConfettiBurst, triggerStarBurst } from "@/lib/dopamine-fx";
 import { useDesktopMotion } from "@/lib/use-desktop-motion";
 
@@ -21,40 +21,54 @@ const TaskCard = memo(function TaskCard({
   onTogglePrioritas,
   onEdit,
   onDelete,
+  index = 0,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isDesktop = useDesktopMotion();
-  const CardContainer = isDesktop ? motion.div : "div";
-  const containerMotionProps = isDesktop
-    ? {
-        initial: { opacity: 0, y: 6 },
+  const shouldReduceMotion = useReducedMotion();
+  const CardContainer = motion.div;
+
+  const containerMotionProps = shouldReduceMotion
+    ? { initial: false, animate: { opacity: 1 } }
+    : {
+        initial: { opacity: 0, y: 16 },
         animate: { opacity: 1, y: 0 },
         exit: { opacity: 0, scale: 0.96 },
-        transition: { duration: 0.18, ease: "easeOut" },
-      }
-    : {};
+        transition: {
+          duration: 0.38,
+          delay: Math.min(0.15 + (index || 0) * 0.08, 0.7),
+          ease: [0.16, 1, 0.3, 1],
+        },
+      };
 
   const status = hitungStatusDeadline(task);
   const sisaWaktu = hitungSisaWaktu(task.deadline);
 
-  // Status-based container styling (theme specular glassmorphism)
+  // Status-based container styling (theme specular glassmorphism with solid frosted base)
   let containerStyles = "border-[var(--glass-border,rgba(255,255,255,0.08))] bg-[var(--glass-bg,rgba(22,17,14,0.55))] hover:border-[var(--glass-border-hover,rgba(255,255,255,0.2))]";
   if (task.selesai) {
-    containerStyles = "border-[#8FB88F]/30 bg-[#8FB88F]/5 hover:border-[#8FB88F]/40";
+    containerStyles = "border-[#8FB88F]/30 bg-[var(--glass-bg,rgba(22,17,14,0.55))] hover:border-[#8FB88F]/40";
   } else if (status === "terlewat") {
-    containerStyles = "border-[#E88B8B]/30 bg-[#E88B8B]/[0.04] hover:border-[#E88B8B]/50";
+    containerStyles = "border-[#E88B8B]/30 bg-[var(--glass-bg,rgba(22,17,14,0.55))] hover:border-[#E88B8B]/50";
   } else if (status === "hari-ini") {
-    containerStyles = "border-[var(--theme-accent,#D97706)]/30 bg-[var(--theme-accent,#D97706)]/[0.04] hover:border-[var(--theme-accent,#D97706)]/50";
+    containerStyles = "border-[var(--theme-accent,#D97706)]/30 bg-[var(--glass-bg,rgba(22,17,14,0.55))] hover:border-[var(--theme-accent,#D97706)]/50";
   }
 
   return (
     <CardContainer
       {...containerMotionProps}
       className={cn(
-        "group relative rounded-xl glass-card transition-all duration-200 lg:hover:-translate-y-0.5 lg:hover:shadow-md",
+        "group relative rounded-xl glass-card transition-all duration-200 lg:hover:-translate-y-0.5 lg:hover:shadow-md overflow-hidden",
         containerStyles
       )}
     >
+      {/* Subtle Ambient Accent Gradient (Desktop only, SielloMita Standard) */}
+      {isDesktop && (
+        <div
+          className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent opacity-30"
+          aria-hidden="true"
+        />
+      )}
       {/* ============================================================ */}
       {/* MOBILE COMPACT ACCORDION VIEW (< 640px)                      */}
       {/* ============================================================ */}

@@ -5,8 +5,7 @@ import { CheckCircle2, Trash2 } from "lucide-react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
-import AnimatedList from "@/components/ui/AnimatedList";
-import AnimatedContent from "@/components/ui/AnimatedContent";
+import MotionContainer from "@/components/ui/MotionContainer";
 import { useTasks } from "@/lib/task-context";
 import { getKategoriById } from "@/lib/utils";
 
@@ -30,7 +29,7 @@ export default function CompletedTasksPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <AnimatedContent delay={0}>
+      <MotionContainer delay={0} className="rounded-2xl">
         <div className="glass-card p-4 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
@@ -60,38 +59,34 @@ export default function CompletedTasksPage() {
             </button>
           )}
         </div>
-      </AnimatedContent>
+      </MotionContainer>
 
       {/* Task List or Empty State */}
-      <AnimatedContent delay={0.08}>
-        {completedTasks.length === 0 ? (
+      {completedTasks.length === 0 ? (
+        <MotionContainer delay={1}>
           <EmptyState
             icon={CheckCircle2}
             title="Belum ada tugas selesai"
             description="Centang tugas yang telah Anda kerjakan untuk memindahkannya ke arsip tugas selesai ini."
           />
-        ) : (
-          <AnimatedList
-            items={completedTasks}
-            gap={16}
-            animation="pop"
-            stagger={0.05}
-            trackClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-            renderItem={(task) => (
-              <div className="h-full w-full">
-                <TaskCard
-                  task={task}
-                  kategori={getKategoriById(categories, task.kategoriId)}
-                  onToggleSelesai={toggleComplete}
-                  onTogglePrioritas={toggleImportant}
-                  onEdit={openEditTask}
-                  onDelete={(t) => setTaskToDelete(t)}
-                />
-              </div>
-            )}
-          />
-        )}
-      </AnimatedContent>
+        </MotionContainer>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {completedTasks.map((task, index) => (
+            <div key={task.id} className="h-full w-full">
+              <TaskCard
+                index={index}
+                task={task}
+                kategori={getKategoriById(categories, task.kategoriId)}
+                onToggleSelesai={toggleComplete}
+                onTogglePrioritas={toggleImportant}
+                onEdit={openEditTask}
+                onDelete={(t) => setTaskToDelete(t)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

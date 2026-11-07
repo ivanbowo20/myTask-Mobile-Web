@@ -22,7 +22,7 @@ import BlurText from "@/components/ui/BlurText";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import { getContextualGreeting } from "@/lib/greeting";
-import AnimatedContent from "@/components/ui/AnimatedContent";
+import MotionContainer from "@/components/ui/MotionContainer";
 import NotificationBanner from "@/components/notifikasi/NotificationBanner";
 import { useTasks } from "@/lib/task-context";
 import { useSession } from "@/lib/auth-client";
@@ -224,7 +224,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Header Greeting Dinamis — Mobile View (< 1024px) */}
       <div className="lg:hidden">
-        <AnimatedContent delay={0} blur={0}>
+        <MotionContainer delay={0} className="rounded-2xl">
           <div className="glass-card p-5 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1.5 z-10">
               <motion.h1
@@ -258,13 +258,13 @@ export default function DashboardPage() {
               </span>
             </div>
           </div>
-        </AnimatedContent>
+        </MotionContainer>
       </div>
 
       {/* Desktop SielloMita Zen Cockpit Header: Menyatukan Greeting & 4 Live Metric Pills dalam 1 Baris Ramping (~76px)
           Membebaskan 240px+ ruang vertikal agar pemandangan gunung & kereta api pixel melintas leluasa di ruang terbuka */}
       <div className="hidden lg:block">
-        <AnimatedContent delay={0} blur={0}>
+        <MotionContainer delay={0} className="rounded-2xl">
           <div className="glass-card p-4 px-6 rounded-2xl relative overflow-hidden flex items-center justify-between gap-6 shadow-lg">
             <div className="pointer-events-none absolute -inset-x-20 -inset-y-10 bg-gradient-to-r from-[var(--theme-accent,rgba(217,119,6,0.06))] via-transparent to-[var(--theme-accent,rgba(217,119,6,0.04))] opacity-60 blur-xl" />
 
@@ -344,7 +344,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </AnimatedContent>
+        </MotionContainer>
       </div>
 
       {/* Smart Notification Permission & Test Banner */}
@@ -489,7 +489,7 @@ export default function DashboardPage() {
 
       {/* Section: Tenggat Waktu Terdekat (Upcoming Deadlines Carousel / Grid - Desktop Only) */}
       <div className="hidden lg:block">
-        <AnimatedContent delay={0.16} direction="up" distance={14}>
+        <MotionContainer delay={1} className="rounded-2xl">
         <div className="glass-panel p-5 sm:p-6 rounded-2xl space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -509,24 +509,43 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 -mx-4 px-4 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-3 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
-              {upcomingDeadlines.map((task) => {
+              {upcomingDeadlines.map((task, idx) => {
                 const kat = getKategoriById(categories, task.kategoriId);
                 const status = hitungStatusDeadline(task);
                 const isOverdue = status === "terlewat";
                 const isToday = status === "hari-ini";
 
                 return (
-                  <div
+                  <motion.div
                     key={task.id}
-                    className={`w-[85%] min-w-[85%] flex-shrink-0 snap-center sm:w-auto sm:min-w-0 sm:flex-shrink p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition-all duration-200 sm:hover:-translate-y-0.5 glass-card ${
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.38,
+                      delay: Math.min(0.1 + idx * 0.08, 0.5),
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
+                    className={`w-[85%] min-w-[85%] flex-shrink-0 snap-center sm:w-auto sm:min-w-0 sm:flex-shrink p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition-all duration-200 sm:hover:-translate-y-0.5 glass-card relative overflow-hidden bg-[var(--glass-bg)] ${
                       isOverdue
-                        ? "border-l-4 border-l-[#E88B8B] bg-[#E88B8B]/10 hover:border-[var(--glass-border-hover)]"
+                        ? "border-l-4 border-l-[#E88B8B] hover:border-[var(--glass-border-hover)]"
                         : isToday
-                        ? "border-l-4 border-l-[var(--theme-accent,#D97706)] bg-[var(--theme-accent,#D97706)]/10 hover:border-[var(--glass-border-hover)]"
+                        ? "border-l-4 border-l-[var(--theme-accent,#D97706)] hover:border-[var(--glass-border-hover)]"
                         : "hover:border-[var(--glass-border-hover)]"
                     }`}
                   >
-                    <div className="space-y-1.5 min-w-0">
+                    {/* Status Ambient Tint & Subtle Accent Gradient (SielloMita Standard) */}
+                    <div
+                      className={`pointer-events-none absolute inset-0 rounded-xl opacity-20 ${
+                        isOverdue
+                          ? "bg-gradient-to-br from-[#E88B8B]/30 via-transparent to-transparent"
+                          : isToday
+                          ? "bg-gradient-to-br from-[var(--theme-accent,#D97706)]/25 via-transparent to-transparent"
+                          : "bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent"
+                      }`}
+                      aria-hidden="true"
+                    />
+
+                    <div className="space-y-1.5 min-w-0 relative z-10">
                       <p className="text-xs font-semibold text-[var(--text-primary)] truncate" title={task.judul}>
                         {task.judul}
                       </p>
@@ -556,7 +575,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-[var(--glass-border)]">
+                    <div className="flex items-center justify-between pt-2 border-t border-[var(--glass-border)] relative z-10">
                       <span className="text-[10px] text-[var(--text-muted)]">
                         {formatTanggal(task.deadline).split(",")[1] || ""}
                       </span>
@@ -570,19 +589,19 @@ export default function DashboardPage() {
                         Selesai
                       </button>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
           )}
         </div>
-      </AnimatedContent>
+      </MotionContainer>
       </div>
 
       {/* Two Column Section: Tugas Hari Ini & Tugas Terbaru (Wave Lateral Slide) */}
       <div className="hidden lg:grid lg:grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Kolom Kiri: Tugas Hari Ini (Wave Slide from Left) */}
-        <AnimatedContent delay={0.22} direction="horizontal" reverse={true} distance={14} className="h-full">
+        <MotionContainer delay={2} className="h-full rounded-2xl">
           <div className="glass-panel h-full p-5 sm:p-6 rounded-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
@@ -612,9 +631,10 @@ export default function DashboardPage() {
               />
             ) : (
               <div className="space-y-3">
-                {todayTasksList.map((task) => (
+                {todayTasksList.map((task, idx) => (
                   <TaskCard
                     key={task.id}
+                    index={idx}
                     task={task}
                     kategori={getKategoriById(categories, task.kategoriId)}
                     onToggleSelesai={toggleComplete}
@@ -626,10 +646,10 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-        </AnimatedContent>
+        </MotionContainer>
 
         {/* Kolom Kanan: Tugas Terbaru (Wave Slide from Right) */}
-        <AnimatedContent delay={0.28} direction="horizontal" distance={14} className="h-full">
+        <MotionContainer delay={3} className="h-full rounded-2xl">
           <div className="glass-panel h-full p-5 sm:p-6 rounded-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
@@ -656,9 +676,10 @@ export default function DashboardPage() {
               />
             ) : (
               <div className="space-y-3">
-                {recentTasksList.map((task) => (
+                {recentTasksList.map((task, idx) => (
                   <TaskCard
                     key={task.id}
+                    index={idx}
                     task={task}
                     kategori={getKategoriById(categories, task.kategoriId)}
                     onToggleSelesai={toggleComplete}
@@ -670,7 +691,7 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-        </AnimatedContent>
+        </MotionContainer>
       </div>
 
       {/* Delete Confirmation Dialog */}
