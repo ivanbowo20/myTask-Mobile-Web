@@ -15,6 +15,16 @@
   - `@ballmac`: Ballmac UI AI agent consoles, developer tools, and device frames (`https://ui.ballmac.com`).
 - Ketika merencanakan atau menambahkan animasi, selalu gunakan referensi dari library ini untuk rekomendasi terbaik dan install komponen dengan format `npx shadcn@latest add @registry/component-name`.
 
+### 🛡️ Aturan Emas Performa Animasi & Mobile Interaction (Anti-Compromise Animation)
+1. **Dilarang Mengorbankan Kehalusan & Keindahan Animasi demi Optimasi:**
+   - Optimasi performa TIDAK BOLEH memangkas elemen visual yang menjadi daya tarik aplikasi (misal: menghilangkan kereta api, salju lebat, atau awan bergerak).
+   - DILARANG menggunakan teknik "pause/freeze on scroll" (mematikan animasi saat layar disentuh/digulir) karena merusak kepuasan interaksi pengguna dan menimbulkan kesan aplikasi sering lag/macet.
+2. **Mandat Zero-React-Diffing untuk Animasi Bergerak:**
+   - Animasi kontinu (salju, partikel, awan, objek melintas) DILARANG KERAS digerakkan melalui React state loop (`useState` di dalam `requestAnimationFrame`).
+   - Wajib menggunakan HTML5 Canvas 2D langsung, WebGL shader, atau CSS GPU transforms (`transform: translate3d()`, `@keyframes`) yang 100% independen dari siklus re-render Virtual DOM React.
+3. **Imunitas Terhadap Dynamic Address Bar Mobile:**
+   - Dimensi kanvas atau container animasi latar belakang wajib terkunci stabil di layar mobile untuk mencegah pembatalan loop render (`cancelAnimationFrame`) saat bilah alamat peramban naik atau turun saat scrolling.
+
 ## Frontend Design & Anti-AI Slop (SielloMita Design)
 - Menggunakan standar skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine):
   - **Anti-AI Slop Enforcement**: Melarang 16 AI slop tells (gradien generik ungu, judul hero membungkus 6 baris, pill shapes di semua tombol/kartu, glassmorphism kabur berlebih, bento berlubang, 3 kartu fitur simetris tanpa visual anchor, dual competing primary CTAs, shouty hype copy, chaotic ambient pulsing, *Card-in-Card Nesting Hell*, dan *Divider Line Clutter*).

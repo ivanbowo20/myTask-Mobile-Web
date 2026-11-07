@@ -55,28 +55,6 @@ export const useCurrentFrame = () => {
     let lastTime = performance.now();
     let accumulatedTime = 0;
 
-    const isMobileDevice =
-      typeof window !== 'undefined' ? window.innerWidth < 768 : false;
-    // Pada HP kentang (Infinix Smart 6): throttle ke ~30 FPS (interval >= 32ms) untuk memangkas beban CPU & baterai hingga 50%
-    // Pada desktop: berjalan penuh 60 FPS (interval >= 16ms)
-    const minFrameInterval = isMobileDevice ? 32 : 16;
-
-    // Deteksi modal terbuka agar auto-pause saat user membuka dialog/modal
-    let isModalOpen =
-      typeof document !== 'undefined' &&
-      document.body.classList.contains('overflow-hidden');
-
-    const observer =
-      typeof MutationObserver !== 'undefined' && typeof document !== 'undefined'
-        ? new MutationObserver(() => {
-            isModalOpen = document.body.classList.contains('overflow-hidden');
-          })
-        : null;
-
-    if (observer && typeof document !== 'undefined') {
-      observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    }
-
     const onVisibilityChange = () => {
       if (document.hidden) {
         isPaused = true;
@@ -89,21 +67,18 @@ export const useCurrentFrame = () => {
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     const tick = (now) => {
-      if (document.hidden || isModalOpen) {
+      if (document.hidden) {
         lastTime = now;
         rafId = requestAnimationFrame(tick);
         return;
       }
 
       const elapsed = now - lastTime;
-
       if (!isPaused) {
-        if (elapsed >= minFrameInterval) {
-          const delta = elapsed / 1000;
-          accumulatedTime += delta;
-          lastTime = now;
-          setStandaloneFrame(Math.floor(accumulatedTime * 60) % LOOP_FRAMES);
-        }
+        const delta = elapsed / 1000;
+        accumulatedTime += delta;
+        lastTime = now;
+        setStandaloneFrame(Math.floor(accumulatedTime * 60) % LOOP_FRAMES);
       } else {
         lastTime = now;
       }
@@ -116,7 +91,6 @@ export const useCurrentFrame = () => {
     return () => {
       cancelAnimationFrame(rafId);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      if (observer) observer.disconnect();
     };
   }, [ctx]);
 
@@ -254,40 +228,6 @@ const PALETTE = {
 };
 
 /**
- * Komponen Awan Pixel Art Glacial
- */
-const PixelCloudCluster = React.memo(({ x, y, scale = 1, variant = 0 }) => {
-  const u = Math.max(3, Math.round(6 * scale));
-  const blocks =
-    variant === 0
-      ? [
-          { dx: 2, dy: 0, w: 6, h: 1, c: PALETTE.cloudHighlight },
-          { dx: 1, dy: 1, w: 9, h: 1, c: PALETTE.cloudHighlight },
-          { dx: 0, dy: 2, w: 12, h: 2, c: PALETTE.cloudBase },
-        ]
-      : [
-          { dx: 3, dy: 0, w: 5, h: 1, c: PALETTE.cloudHighlight },
-          { dx: 1, dy: 1, w: 8, h: 1, c: PALETTE.cloudHighlight },
-          { dx: 0, dy: 2, w: 10, h: 1, c: PALETTE.cloudBase },
-        ];
-
-  return (
-    <g opacity={0.48}>
-      {blocks.map((b, i) => (
-        <rect
-          key={i}
-          x={Math.round(x + b.dx * u)}
-          y={Math.round(y + b.dy * u)}
-          width={Math.round(b.w * u)}
-          height={Math.round(b.h * u)}
-          fill={b.c}
-        />
-      ))}
-    </g>
-  );
-});
-
-/**
  * Komponen Puncak Gunung Salju Pixel Art (Stepped 16-bit Ridges)
  */
 const PixelMountainPeak = React.memo(({
@@ -295,181 +235,174 @@ const PixelMountainPeak = React.memo(({
   baseY,
   peakWidth,
   peakHeight,
-  pixelStep = 6,
+  pixelStep = 4,
   ridgeSeed = 1,
   layerType = 'main',
 }) => {
-  const step = Math.max(4, Math.round(pixelStep));
-  const rows = Math.max(8, Math.floor(peakHeight / step));
+  const steps = useMemo(() => {
+    const halfW = peakWidth * 0.5;
+    const numSteps = Math.max(12, Math.floor(peakHeight / pixelStep));
+    const stepArr = [];
 
-  const slices = useMemo(() => {
-    const arr = [];
-    for (let r = 0; r < rows; r++) {
-      const progress = r / rows; // 0 di puncak, 1 di kaki gunung
-      const jitterL = (seededRandom(ridgeSeed * 31 + r * 7) - 0.5) * step * 1.4;
-      const jitterR = (seededRandom(ridgeSeed * 47 + r * 13) - 0.5) * step * 1.4;
-      const rowHalfW = (peakWidth * 0.5) * Math.pow(progress, 0.92);
+    const isFar = layerType === 'far';
+    const mainFill = isFar
+      ? PALETTE.mountainFarBase
+      : PALETTE.mountainDarkSlate;
+    const shadowFill = isFar
+      ? PALETTE.mountainDarkSlate
+      : PALETTE.mountainIceShadow;
+    const snowMid = isFar
+      ? PALETTE.mountainFarHighlight
+      : PALETTE.mountainFrostMid;
+    const snowCrest = isFar
+      ? PALETTE.mountainFrostMid
+      : PALETTE.mountainSnowCrisp;
 
-      const leftX = Math.round((centerX - rowHalfW + jitterL) / step) * step;
-      const rightX = Math.round((centerX + rowHalfW + jitterR) / step) * step;
-      const totalW = Math.max(step * 2, rightX - leftX);
+    for (let i = 0; i < numSteps; i++) {
+      const t = i / numSteps;
+      const curY = baseY - peakHeight + i * pixelStep;
+      const noiseL = (seededRandom(ridgeSeed + i * 1.7) - 0.5) * pixelStep * 1.6;
+      const noiseR = (seededRandom(ridgeSeed + i * 2.3 + 50) - 0.5) * pixelStep * 1.6;
 
-      // Punggung bukit tengah bergeser sedikit untuk ilusi 3D
+      const curHalfW = Math.max(
+        pixelStep,
+        Math.pow(t, 1.15) * halfW + (noiseL + noiseR) * 0.5
+      );
       const ridgeOffset =
-        Math.sin(progress * Math.PI * 1.5 + ridgeSeed) * (totalW * 0.12);
-      const ridgeX =
-        Math.round((centerX + ridgeOffset) / step) * step;
+        (Math.sin(t * Math.PI * 1.5) * 0.22 +
+          (seededRandom(ridgeSeed + i * 0.9) - 0.5) * 0.12) *
+        curHalfW;
 
-      const y = Math.round(baseY - peakHeight + r * step);
-      const snowCapRatio =
-        layerType === 'main'
-          ? Math.max(0.16, 0.52 - progress * 0.38)
-          : Math.max(0.1, 0.34 - progress * 0.25);
-
-      arr.push({
-        y,
-        leftX,
-        rightX,
-        ridgeX: Math.min(rightX - step, Math.max(leftX + step, ridgeX)),
-        snowW: Math.max(step, Math.round(( (rightX - ridgeX) * snowCapRatio ) / step) * step),
-        isUpperPeak: progress < 0.28,
+      stepArr.push({
+        y: Math.round(curY),
+        h: Math.round(pixelStep + 0.5),
+        leftX: Math.round(centerX - curHalfW),
+        rightX: Math.round(centerX + curHalfW),
+        ridgeX: Math.round(centerX + ridgeOffset),
+        snowCoverage: Math.max(0, 1 - t * 1.8),
+        mainFill,
+        shadowFill,
+        snowMid,
+        snowCrest,
       });
     }
-    return arr;
-  }, [centerX, baseY, peakWidth, peakHeight, step, rows, ridgeSeed, layerType]);
 
-  const shadowColor =
-    layerType === 'far' ? PALETTE.mountainFarBase : PALETTE.mountainDarkSlate;
-  const litSlateColor =
-    layerType === 'far' ? PALETTE.mountainFarHighlight : PALETTE.mountainMidSlate;
-  const snowColor =
-    layerType === 'far' ? PALETTE.mountainFrostMid : PALETTE.mountainSnowCrisp;
+    return stepArr;
+  }, [centerX, baseY, peakWidth, peakHeight, pixelStep, ridgeSeed, layerType]);
 
   return (
     <g>
-      {slices.map((s, idx) => (
-        <g key={idx}>
-          {/* Sisi Bayangan Kiri Gunung */}
-          <rect
-            x={s.leftX}
-            y={s.y}
-            width={Math.max(step, s.ridgeX - s.leftX)}
-            height={step + 1}
-            fill={shadowColor}
-          />
-          {/* Sisi Tebing Es Kanan */}
-          <rect
-            x={s.ridgeX}
-            y={s.y}
-            width={Math.max(step, s.rightX - s.ridgeX)}
-            height={step + 1}
-            fill={litSlateColor}
-          />
-          {/* Aksen Kristal Salju di Punggung Tebing */}
-          <rect
-            x={s.ridgeX}
-            y={s.y}
-            width={s.snowW}
-            height={step + 1}
-            fill={snowColor}
-            opacity={s.isUpperPeak ? 0.92 : 0.78}
-          />
-        </g>
-      ))}
+      {steps.map((s, idx) => {
+        const leftWidth = Math.max(1, s.ridgeX - s.leftX);
+        const rightWidth = Math.max(1, s.rightX - s.ridgeX);
+
+        return (
+          <g key={idx}>
+            <rect
+              x={s.leftX}
+              y={s.y}
+              width={leftWidth}
+              height={s.h}
+              fill={s.mainFill}
+            />
+            <rect
+              x={s.ridgeX}
+              y={s.y}
+              width={rightWidth}
+              height={s.h}
+              fill={s.shadowFill}
+            />
+
+            {s.snowCoverage > 0.05 && (
+              <>
+                <rect
+                  x={s.leftX}
+                  y={s.y}
+                  width={Math.round(leftWidth * s.snowCoverage)}
+                  height={s.h}
+                  fill={s.snowMid}
+                />
+                <rect
+                  x={s.leftX}
+                  y={s.y}
+                  width={Math.max(
+                    1,
+                    Math.round(leftWidth * s.snowCoverage * 0.55)
+                  )}
+                  height={Math.max(1, Math.round(s.h * 0.7))}
+                  fill={s.snowCrest}
+                />
+                <rect
+                  x={s.ridgeX}
+                  y={s.y}
+                  width={Math.max(
+                    1,
+                    Math.round(rightWidth * s.snowCoverage * 0.35)
+                  )}
+                  height={s.h}
+                  fill={s.snowMid}
+                />
+              </>
+            )}
+          </g>
+        );
+      })}
     </g>
   );
 });
 
 /**
- * Siluet Barisan Pinus Rendah di Kejauhan Kaki Gunung
- */
-const DistantPixelTreeline = React.memo(({ startX, endX, baseY, pixelSize = 4, seed = 42 }) => {
-  const p = Math.max(3, Math.round(pixelSize));
-  const columns = useMemo(() => {
-    const cols = [];
-    const totalCols = Math.ceil((endX - startX) / p);
-    for (let i = 0; i < totalCols; i++) {
-      const wave =
-        Math.sin(i * 0.25 + seed) * 3 +
-        Math.cos(i * 0.65 + seed * 2) * 2 +
-        seededRandom(i * 17 + seed) * 4;
-      const hSteps = Math.max(2, Math.round(5 + wave));
-      cols.push({
-        x: startX + i * p,
-        h: hSteps * p,
-      });
-    }
-    return cols;
-  }, [startX, endX, p, seed]);
-
-  return (
-    <g>
-      {columns.map((col, idx) => (
-        <rect
-          key={idx}
-          x={col.x}
-          y={Math.round(baseY - col.h)}
-          width={p + 1}
-          height={col.h + p * 3}
-          fill={PALETTE.distantPine}
-        />
-      ))}
-    </g>
-  );
-});
-
-/**
- * Hamparan Bukit Salju Bergradasi Biru Es Redup (Stepped Pixel Contour)
+ * Komponen Lereng Bukit Salju Glacial (Stepped Terraced Snow Slopes)
  */
 const PixelSnowHillside = React.memo(({
   width,
   height,
   leftY,
   rightY,
-  pixelStep = 8,
+  pixelStep = 6,
   fillColor,
-  crestColor,
+  crestColor = null,
   curveWave = 0.012,
   seed = 1,
 }) => {
-  const step = Math.max(4, Math.round(pixelStep));
-  const strips = useMemo(() => {
-    const count = Math.ceil(width / step);
-    const list = [];
-    for (let i = 0; i < count; i++) {
-      const t = i / Math.max(1, count - 1);
-      const baseLine = leftY + (rightY - leftY) * t;
-      const waveOffset =
-        Math.sin(t * Math.PI * 2 + seed) * (height * curveWave);
-      const topY = Math.round((baseLine + waveOffset) / step) * step;
-      list.push({
-        x: i * step,
-        topY,
-        h: Math.max(step, height - topY + step),
+  const terraces = useMemo(() => {
+    const numCols = Math.ceil(width / pixelStep);
+    const rects = [];
+
+    for (let c = 0; c < numCols; c++) {
+      const x = c * pixelStep;
+      const progress = x / width;
+      const baseY = leftY + (rightY - leftY) * progress;
+      const wave =
+        Math.sin(x * curveWave + seed * 2.1) * (pixelStep * 2.2) +
+        Math.cos(x * curveWave * 0.5 + seed) * (pixelStep * 1.4);
+
+      const surfaceY = Math.round((baseY + wave) / pixelStep) * pixelStep;
+      const h = Math.max(0, height - surfaceY);
+
+      rects.push({
+        x,
+        y: surfaceY,
+        w: pixelStep + 0.5,
+        h,
       });
     }
-    return list;
-  }, [width, height, leftY, rightY, step, curveWave, seed]);
+
+    return rects;
+  }, [width, height, leftY, rightY, pixelStep, curveWave, seed]);
 
   return (
     <g>
-      {strips.map((st, idx) => (
+      {terraces.map((t, idx) => (
         <g key={idx}>
-          <rect
-            x={st.x}
-            y={st.topY}
-            width={step + 1}
-            height={st.h}
-            fill={fillColor}
-          />
+          <rect x={t.x} y={t.y} width={t.w} height={t.h} fill={fillColor} />
           {crestColor && (
             <rect
-              x={st.x}
-              y={st.topY}
-              width={step + 1}
-              height={Math.max(2, Math.round(step * 0.45))}
+              x={t.x}
+              y={t.y}
+              width={t.w}
+              height={Math.max(1.5, Math.round(pixelStep * 0.35))}
               fill={crestColor}
-              opacity={0.65}
             />
           )}
         </g>
@@ -479,25 +412,77 @@ const PixelSnowHillside = React.memo(({
 });
 
 /**
- * Komponen Pohon Cemara Megah Bersalju di Ujung Kiri (Left-Anchored Lone Pine)
- * Proporsi ramping menjulang tinggi (spire conifer) dengan undakan dahan pixel 16-bit
- * dan batang yang menancap kokoh ke bukit salju bawah agar tidak pernah melayang.
+ * Siluet Barisan Hutan Pinus Rendah di Kejauhan Kaki Gunung
+ */
+const DistantPixelTreeline = React.memo(({
+  startX = 0,
+  endX = 1920,
+  baseY = 600,
+  pixelSize = 4,
+  seed = 42,
+}) => {
+  const trees = useMemo(() => {
+    const result = [];
+    const spacing = pixelSize * 2.4;
+    const count = Math.ceil((endX - startX) / spacing);
+
+    for (let i = 0; i < count; i++) {
+      const x = startX + i * spacing;
+      const rand = seededRandom(seed + i * 7.1);
+      const treeH = Math.round((3 + rand * 4.5) * pixelSize);
+      const topY = baseY - treeH;
+
+      result.push({
+        x: Math.round(x),
+        topY: Math.round(topY),
+        h: treeH,
+        w: Math.round(pixelSize * 1.8),
+        snowCapH: Math.max(1, Math.round(pixelSize * 0.8)),
+      });
+    }
+    return result;
+  }, [startX, endX, baseY, pixelSize, seed]);
+
+  return (
+    <g id="distant-pixel-pines">
+      {trees.map((t, idx) => (
+        <g key={idx}>
+          <rect
+            x={t.x}
+            y={t.topY}
+            width={t.w}
+            height={t.h}
+            fill={PALETTE.distantPine}
+          />
+          <rect
+            x={t.x}
+            y={t.topY}
+            width={t.w}
+            height={t.snowCapH}
+            fill={PALETTE.mountainFrostMid}
+            opacity={0.7}
+          />
+        </g>
+      ))}
+    </g>
+  );
+});
+
+/**
+ * Pohon Cemara Megah Tunggal di Ujung Kiri (Left-Anchored Lone Pine)
+ * 100% Statis di layer terdepan midground sehingga kereta melintas di belakangnya.
  */
 const PixelPineTree = React.memo(({
   x,
   topY,
   baseY,
-  frame = 0,
   phaseOffset = 0,
   swayAmplitude = 1.4,
 }) => {
   const tiers = 11;
   const targetFoliageHeight = Math.max(120, baseY - topY);
-  // Ukuran unit pixel dihitung langsung dari tinggi pohon agar proporsional di semua resolusi
   const p = Math.max(2, targetFoliageHeight / (tiers * 3.15));
-
-  const loopAngle = ((frame % LOOP_FRAMES) / LOOP_FRAMES) * Math.PI * 2;
-  const windSway = Math.sin(loopAngle * 2 + phaseOffset) * swayAmplitude;
+  const windSway = Math.sin(phaseOffset) * swayAmplitude * 0.4;
 
   const foliageBottomY = topY + tiers * 3.1 * p;
   const trunkWidth = Math.round(2.6 * p);
@@ -506,7 +491,7 @@ const PixelPineTree = React.memo(({
 
   return (
     <g>
-      {/* Batang Pohon Cemara (Menancap dalam ke bukit salju foreground) */}
+      {/* Batang Pohon Cemara */}
       <rect
         x={Math.round(x - trunkWidth * 0.5)}
         y={trunkTopY}
@@ -522,7 +507,7 @@ const PixelPineTree = React.memo(({
         fill="#12100E"
       />
 
-      {/* Gundukan Salju Akar Pohon agar Menyatu Kokoh dengan Tanah */}
+      {/* Gundukan Salju Akar Pohon */}
       <rect
         x={Math.round(x - 4.5 * p)}
         y={Math.round(baseY + 1.2 * p)}
@@ -540,18 +525,16 @@ const PixelPineTree = React.memo(({
         opacity={0.8}
       />
 
-      {/* Susunan 11 Tingkat Dahan Cemara Ramping (Dari Bawah ke Puncak) */}
+      {/* Susunan 11 Tingkat Dahan Cemara Ramping */}
       {Array.from({ length: tiers })
         .map((_, idx) => idx)
         .reverse()
         .map((tierIdx) => {
           const tierProgress = tierIdx / (tiers - 1);
-          // Goyangan angin lebih terasa di pucuk atas, stabil di pangkal bawah
           const swayFactor = Math.pow(1 - tierProgress * 0.82, 1.35);
           const tierShiftX = Math.round(windSway * swayFactor * p * 0.45);
 
           const tierY = Math.round(topY + tierIdx * 3.05 * p);
-          // Lebar dahan ramping & meruncing ke atas (tinggi pohon ~2.2x lebar bawah)
           const halfSpan = Math.round((1.4 + Math.pow(tierProgress, 0.92) * 8.2) * p);
           const upperSpan = Math.max(Math.round(p), Math.round(halfSpan * 0.62));
           const midSpan = Math.max(Math.round(1.5 * p), Math.round(halfSpan * 0.84));
@@ -559,7 +542,7 @@ const PixelPineTree = React.memo(({
 
           return (
             <g key={tierIdx} transform={`translate(${tierShiftX}, 0)`}>
-              {/* 1. Bayangan Bawah Dahan & Ujung Dahan Merunduk (#091811) */}
+              {/* 1. Bayangan Bawah Dahan */}
               <rect
                 x={Math.round(x - halfSpan - p * 0.5)}
                 y={tierY + stepH * 3}
@@ -567,7 +550,6 @@ const PixelPineTree = React.memo(({
                 height={Math.round(stepH * 1.35)}
                 fill={PALETTE.pineShadow}
               />
-              {/* Ujung dahan kiri & kanan yang sedikit menjuntai khas cemara es */}
               <rect
                 x={Math.round(x - halfSpan - p)}
                 y={tierY + stepH * 3.6}
@@ -583,585 +565,58 @@ const PixelPineTree = React.memo(({
                 fill={PALETTE.pineShadow}
               />
 
-              {/* 2. Badan Utama Dahan Cemara Berundak (#0E2419 & #143324) */}
+              {/* 2. Dahan Dasar Hijau Es Sangat Gelap */}
               <rect
                 x={Math.round(x - halfSpan)}
                 y={tierY + stepH * 2}
-                width={halfSpan * 2}
-                height={Math.round(stepH * 1.5)}
+                width={Math.round(halfSpan * 2)}
+                height={Math.round(stepH * 1.2)}
                 fill={PALETTE.pineBase}
               />
+
+              {/* 3. Dahan Tengah Hijau Emerald Glacial */}
               <rect
                 x={Math.round(x - midSpan)}
                 y={tierY + stepH}
-                width={midSpan * 2}
-                height={Math.round(stepH * 1.3)}
+                width={Math.round(midSpan * 2)}
+                height={stepH}
                 fill={PALETTE.pineMid}
               />
 
-              {/* 3. Lapisan Bayangan Salju Es Berundak (#CBD5E1) */}
+              {/* 4. Lapisan Salju Tebal di Punggung Dahan */}
               <rect
-                x={Math.round(x - halfSpan + p * 0.4)}
-                y={tierY + Math.round(stepH * 1.7)}
-                width={Math.round((halfSpan - p * 0.4) * 2)}
+                x={Math.round(x - upperSpan)}
+                y={tierY}
+                width={Math.round(upperSpan * 2)}
                 height={stepH}
                 fill={PALETTE.treeSnowShade}
               />
-              {/* Tumpukan salju di ujung kiri & kanan dahan */}
               <rect
-                x={Math.round(x - halfSpan - p * 0.4)}
-                y={tierY + Math.round(stepH * 2.3)}
-                width={Math.round(2.4 * p)}
-                height={Math.max(2, Math.round(stepH * 0.85))}
+                x={Math.round(x - upperSpan * 0.6)}
+                y={tierY}
+                width={Math.round(upperSpan * 1.2)}
+                height={Math.max(1, Math.round(stepH * 0.6))}
+                fill={PALETTE.treeSnowPure}
+              />
+
+              {/* Pucuk salju ekstra di ujung dahan */}
+              <rect
+                x={Math.round(x - halfSpan + p * 0.5)}
+                y={tierY + stepH * 2}
+                width={Math.round(1.5 * p)}
+                height={Math.max(1, Math.round(stepH * 0.65))}
                 fill={PALETTE.treeSnowShade}
               />
               <rect
                 x={Math.round(x + halfSpan - 2 * p)}
-                y={tierY + Math.round(stepH * 2.3)}
-                width={Math.round(2.4 * p)}
-                height={Math.max(2, Math.round(stepH * 0.85))}
+                y={tierY + stepH * 2}
+                width={Math.round(1.5 * p)}
+                height={Math.max(1, Math.round(stepH * 0.65))}
                 fill={PALETTE.treeSnowShade}
-              />
-
-              {/* 4. Lapisan Salju Putih Bersih di Punggung Dahan (#F8FAFC) */}
-              <rect
-                x={Math.round(x - midSpan)}
-                y={tierY + Math.round(stepH * 0.8)}
-                width={midSpan * 2}
-                height={stepH}
-                fill={PALETTE.treeSnowPure}
-              />
-              <rect
-                x={Math.round(x - upperSpan)}
-                y={tierY}
-                width={upperSpan * 2}
-                height={stepH}
-                fill={PALETTE.treeSnowPure}
               />
             </g>
           );
         })}
-
-      {/* Pucuk Runcing Kristal Salju Pohon Cemara (Spire Tip) */}
-      <g transform={`translate(${Math.round(windSway * p * 0.5)}, 0)`}>
-        <rect
-          x={Math.round(x - p)}
-          y={Math.round(topY - 1.4 * p)}
-          width={Math.round(2 * p)}
-          height={Math.round(1.6 * p)}
-          fill={PALETTE.treeSnowShade}
-        />
-        <rect
-          x={Math.round(x - p * 0.55)}
-          y={Math.round(topY - 3.2 * p)}
-          width={Math.round(1.1 * p)}
-          height={Math.round(2.2 * p)}
-          fill={PALETTE.treeSnowPure}
-        />
-      </g>
-    </g>
-  );
-});
-
-/**
- * Komponen Kereta Api Uap Pixel Art 16-Bit (PixelTrain) - Trinity Optimized for Low-End Mobile (Infinix Smart 6)
- * - Pacing tenang & syahdu: melintas selama ~14.5 - 15.5 detik, diikuti jeda hening ~14.5 - 15.5 detik.
- * - Skala pixel +15% di Desktop (p = 3.1) dan +20% di Mobile (p = 3.25) agar siluet gerbong & jendela
- *   langsung tegas terbaca di layar smartphone maupun desktop.
- * - Optimasi Mobile (Infinix Smart 6):
- *   1. Zero Layout-Thrashing: translasi 100% via GPU translate3d (${trainX}px, 0, 0).
- *   2. Fixed Particle Pool: uap asap dibatasi 5 partikel tetap di mobile (10 di desktop).
- *   3. Anti GPU Tile-Stall: Mematikan filter drop-shadow berat pada mobile (menggunakan halo 1px rect pixel murni).
- */
-const PixelTrain = React.memo(({ frame, width, y, isMobile, fps = 60 }) => {
-  const safeFps = fps > 0 ? fps : 60;
-  const loopFrames = Math.round(30 * safeFps);
-
-  const crossingSeconds = isMobile ? 14.5 : 15.5;
-  const crossingFrames = Math.round(crossingSeconds * safeFps);
-  const safeFrame = Number.isFinite(frame) ? frame : 0;
-  const trainFrame = ((safeFrame % loopFrames) + loopFrames) % loopFrames;
-  const isCrossing = trainFrame <= crossingFrames;
-
-  // Skala pixel diperbesar proporsional (+15% Desktop, +20% Mobile)
-  const p = isMobile ? 3.25 : 3.1;
-  const baseY = Math.round(Number.isFinite(y) ? y : 0);
-
-  const startX = isMobile ? -310 : -340;
-  const endX = isMobile ? width + 110 : width + 210;
-
-  const trainX = interpolate(
-    trainFrame,
-    [0, crossingFrames],
-    [startX, endX],
-    {
-      extrapolateLeft: 'clamp',
-      extrapolateRight: 'clamp',
-    }
-  );
-
-  const carriages = [0, 1, 2, 3];
-  const carriageWidth = Math.round(14 * p);
-  const carriageGap = Math.round(2.6 * p);
-
-  const locoX = carriages.length * (carriageWidth + carriageGap);
-  const chimneyX = locoX + Math.round(10 * p);
-  const chimneyTopY = baseY - Math.round(7 * p);
-
-  // Elemen Rel Kereta Pixel & Fondasi Tanggul Salju
-  const railwayDetails = useMemo(() => {
-    const tieSpacing = Math.max(9, Math.round(3.4 * p));
-    const tieWidth = Math.max(4, Math.round(1.55 * p));
-    const totalTies = Math.ceil(width / tieSpacing);
-    const ties = [];
-    const frostPatches = [];
-    const embankmentStones = [];
-
-    for (let i = 0; i < totalTies; i++) {
-      const tx = i * tieSpacing;
-      const rand = seededRandom(i * 19 + 73);
-      ties.push({
-        x: tx,
-        w: tieWidth,
-        isDark: i % 2 === 0,
-      });
-
-      if (rand > 0.35) {
-        frostPatches.push({
-          x: tx - 1,
-          w: Math.round(tieWidth * (1.4 + (rand - 0.35) * 2.1)),
-          isBright: rand > 0.72,
-        });
-      }
-
-      if (i % 2 === 0) {
-        embankmentStones.push({
-          x: tx,
-          w: Math.round(tieSpacing * 1.35),
-          h: rand > 0.5 ? Math.round(1.1 * p) : Math.round(0.8 * p),
-        });
-      }
-    }
-    return { ties, frostPatches, embankmentStones };
-  }, [width, p]);
-
-  // Fixed particle pool: 5 partikel di mobile (Infinix Smart 6) & 10 partikel di desktop
-  const steamCount = isMobile ? 5 : 10;
-  const steamPuffs = useMemo(() => {
-    return Array.from({ length: steamCount }).map((_, idx) => {
-      const cycleLen = safeFps <= 30 ? 44 : 88;
-      const rawProgress =
-        (((trainFrame + idx * (cycleLen / steamCount)) % cycleLen) + cycleLen) %
-        cycleLen;
-      const puffProgress = Math.max(0, Math.min(1, rawProgress / cycleLen));
-
-      const waveX = Math.sin(puffProgress * Math.PI * 2 + idx * 0.7) * 0.65 * p;
-      const puffDriftX = -puffProgress * 23 * p - idx * 0.45 * p + waveX;
-      const puffRiseY =
-        -Math.pow(puffProgress, 0.88) * 10.5 * p -
-        Math.sin(puffProgress * Math.PI) * 1.4 * p;
-
-      const puffSize = Math.round(
-        interpolate(
-          puffProgress,
-          [0, 0.28, 0.75, 1],
-          [p * 1.25, p * 2.1, p * 2.55, p * 1.45]
-        )
-      );
-
-      const puffOpacity = interpolate(
-        puffProgress,
-        [0, 0.1, 0.35, 0.72, 1],
-        [0.0, 0.66, 0.54, 0.28, 0.0],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-      );
-
-      return {
-        id: idx,
-        dx: Math.round(puffDriftX),
-        dy: Math.round(puffRiseY),
-        size: Math.max(2, puffSize),
-        opacity: puffOpacity,
-      };
-    });
-  }, [trainFrame, safeFps, steamCount, p]);
-
-  // Drop-shadow hanya aktif di desktop; di mobile dimatikan untuk mencegah GPU PowerVR tile-stall
-  const warmWindowGlowStyle = isMobile
-    ? undefined
-    : { filter: 'drop-shadow(0px 0px 4px rgba(254, 240, 138, 0.6))' };
-
-  return (
-    <g id="midground-pixel-train-layer">
-      {/* =========================================================
-          0. PONDASI TANGGUL SALJU & REL KERETA PIXEL
-      ========================================================== */}
-      <g id="subtle-pixel-railway-track">
-        <rect
-          x={0}
-          y={baseY + Math.round(1.6 * p) + 2}
-          width={width}
-          height={Math.round(3.8 * p)}
-          fill={PALETTE.groundFarSlope}
-        />
-
-        <rect
-          x={0}
-          y={baseY + Math.round(1.25 * p)}
-          width={width}
-          height={Math.round(1.45 * p)}
-          fill={PALETTE.trainEmbankmentSlate}
-        />
-        <rect
-          x={0}
-          y={baseY + Math.round(1.85 * p)}
-          width={width}
-          height={Math.round(1.15 * p)}
-          fill={PALETTE.trainEmbankmentDark}
-        />
-
-        {railwayDetails.embankmentStones.map((stone, idx) => (
-          <rect
-            key={`stone-${idx}`}
-            x={stone.x}
-            y={baseY + Math.round(1.15 * p)}
-            width={stone.w}
-            height={stone.h}
-            fill={
-              idx % 2 === 0
-                ? PALETTE.groundSubtleEdge
-                : PALETTE.trainEmbankmentSlate
-            }
-            opacity={0.85}
-          />
-        ))}
-
-        <rect
-          x={0}
-          y={baseY + Math.round(1.05 * p)}
-          width={width}
-          height={Math.max(1.5, Math.round(0.5 * p))}
-          fill={PALETTE.mountainSnowCrisp}
-          opacity={0.58}
-        />
-
-        <rect
-          x={0}
-          y={baseY + 1}
-          width={width}
-          height={Math.round(1.3 * p)}
-          fill={PALETTE.trainWheelSteel}
-          opacity={0.68}
-        />
-
-        {railwayDetails.ties.map((tie, idx) => (
-          <rect
-            key={`tie-${idx}`}
-            x={tie.x}
-            y={baseY}
-            width={tie.w}
-            height={Math.round(1.5 * p)}
-            fill={tie.isDark ? PALETTE.trainWheelSteel : PALETTE.trainRoofSlate}
-            opacity={0.9}
-          />
-        ))}
-
-        <rect
-          x={0}
-          y={baseY}
-          width={width}
-          height={Math.max(1.5, Math.round(0.52 * p))}
-          fill={PALETTE.mountainIceShadow}
-          opacity={0.92}
-        />
-
-        <rect
-          x={0}
-          y={baseY + Math.round(0.92 * p)}
-          width={width}
-          height={Math.max(1.5, Math.round(0.48 * p))}
-          fill={PALETTE.trainRoofSlate}
-          opacity={0.96}
-        />
-
-        {railwayDetails.frostPatches.map((frost, idx) => (
-          <rect
-            key={`frost-${idx}`}
-            x={frost.x}
-            y={baseY + Math.round(1.02 * p)}
-            width={frost.w}
-            height={Math.max(1.5, Math.round(0.5 * p))}
-            fill={
-              frost.isBright ? PALETTE.treeSnowPure : PALETTE.treeSnowShade
-            }
-            opacity={frost.isBright ? 0.74 : 0.52}
-          />
-        ))}
-      </g>
-
-      {/* Rangkaian Kereta hanya dirender saat sedang melintas (isCrossing) */}
-      {isCrossing && (
-        <g
-          style={{
-            transform: `translate3d(${trainX.toFixed(2)}px, 0, 0)`,
-            willChange: 'transform',
-          }}
-        >
-          {/* =========================================================
-              1. EMPAT GERBONG PENUMPANG BERLAMPU KUNING EMAS HANGAT
-          ========================================================== */}
-          {carriages.map((cIdx) => {
-            const cx = cIdx * (carriageWidth + carriageGap);
-            return (
-              <g key={`carriage-${cIdx}`}>
-                <rect
-                  x={cx + carriageWidth}
-                  y={baseY - Math.round(2.1 * p)}
-                  width={carriageGap}
-                  height={Math.round(p)}
-                  fill={PALETTE.trainRoofSlate}
-                />
-
-                <rect
-                  x={cx + Math.round(p)}
-                  y={baseY - Math.round(5.8 * p)}
-                  width={carriageWidth - Math.round(2 * p)}
-                  height={Math.round(1.1 * p)}
-                  fill={PALETTE.trainRoofSlate}
-                />
-                <rect
-                  x={cx + Math.round(2 * p)}
-                  y={baseY - Math.round(6.1 * p)}
-                  width={carriageWidth - Math.round(4 * p)}
-                  height={Math.max(1, Math.round(0.38 * p))}
-                  fill={PALETTE.mountainFrostMid}
-                  opacity={0.58}
-                />
-
-                <rect
-                  x={cx}
-                  y={baseY - Math.round(4.7 * p)}
-                  width={carriageWidth}
-                  height={Math.round(3.7 * p)}
-                  fill={PALETTE.trainBodyDark}
-                />
-
-                <rect
-                  x={cx + Math.round(1.6 * p)}
-                  y={baseY - Math.round(1.05 * p)}
-                  width={Math.round(3.1 * p)}
-                  height={Math.round(1.15 * p)}
-                  fill={PALETTE.trainWheelSteel}
-                />
-                <rect
-                  x={cx + carriageWidth - Math.round(4.7 * p)}
-                  y={baseY - Math.round(1.05 * p)}
-                  width={Math.round(3.1 * p)}
-                  height={Math.round(1.15 * p)}
-                  fill={PALETTE.trainWheelSteel}
-                />
-
-                {/* Ambient glow pada badan gerbong */}
-                <rect
-                  x={cx + Math.round(1.1 * p)}
-                  y={baseY - Math.round(4.4 * p)}
-                  width={carriageWidth - Math.round(2.2 * p)}
-                  height={Math.round(2.7 * p)}
-                  fill={PALETTE.trainWindowBright}
-                  opacity={0.18}
-                />
-                <rect
-                  x={cx + Math.round(1.6 * p)}
-                  y={baseY + Math.round(0.25 * p)}
-                  width={carriageWidth - Math.round(3.2 * p)}
-                  height={Math.round(1.1 * p)}
-                  fill={PALETTE.trainWindowBright}
-                  opacity={0.18}
-                />
-
-                {/* 4 Jendela Kuning Emas Cerah (#fef08a) */}
-                <g style={warmWindowGlowStyle}>
-                  {[0, 1, 2, 3].map((wIdx) => {
-                    const wx = cx + Math.round((1.9 + wIdx * 2.85) * p);
-                    const wy = baseY - Math.round(3.8 * p);
-                    const ww = Math.round(1.9 * p);
-                    const wh = Math.round(1.8 * p);
-                    return (
-                      <g key={`win-${wIdx}`}>
-                        {/* Halo bloom pixel rect */}
-                        <rect
-                          x={wx - 1}
-                          y={wy - 1}
-                          width={ww + 2}
-                          height={wh + 2}
-                          fill="rgba(254, 240, 138, 0.38)"
-                        />
-                        <rect
-                          x={wx}
-                          y={wy}
-                          width={ww}
-                          height={wh}
-                          fill={PALETTE.trainWindowBright}
-                        />
-                      </g>
-                    );
-                  })}
-                </g>
-              </g>
-            );
-          })}
-
-          {/* =========================================================
-              2. LOKOMOTIF UAP (Steam Engine)
-          ========================================================== */}
-          <g id="train-steam-locomotive">
-            <rect
-              x={locoX - Math.round(0.5 * p)}
-              y={baseY - Math.round(6.2 * p)}
-              width={Math.round(5.8 * p)}
-              height={Math.round(p)}
-              fill={PALETTE.trainRoofSlate}
-            />
-            <rect
-              x={locoX}
-              y={baseY - Math.round(5.2 * p)}
-              width={Math.round(5.2 * p)}
-              height={Math.round(4.2 * p)}
-              fill={PALETTE.trainBodyDark}
-            />
-            <g style={warmWindowGlowStyle}>
-              <rect
-                x={locoX + Math.round(1.1 * p) - 1}
-                y={baseY - Math.round(4.35 * p) - 1}
-                width={Math.round(2.4 * p) + 2}
-                height={Math.round(1.85 * p) + 2}
-                fill="rgba(254, 240, 138, 0.38)"
-              />
-              <rect
-                x={locoX + Math.round(1.3 * p)}
-                y={baseY - Math.round(4.3 * p)}
-                width={Math.round(2.3 * p)}
-                height={Math.round(1.8 * p)}
-                fill={PALETTE.trainWindowBright}
-              />
-            </g>
-
-            <rect
-              x={locoX + Math.round(5.2 * p)}
-              y={baseY - Math.round(4.4 * p)}
-              width={Math.round(8.8 * p)}
-              height={Math.round(3.4 * p)}
-              fill={PALETTE.trainBodyDark}
-            />
-            <rect
-              x={locoX + Math.round(5.2 * p)}
-              y={baseY - Math.round(4.8 * p)}
-              width={Math.round(7.8 * p)}
-              height={Math.round(0.75 * p)}
-              fill={PALETTE.trainRoofSlate}
-            />
-
-            <rect
-              x={chimneyX}
-              y={chimneyTopY}
-              width={Math.round(2.1 * p)}
-              height={Math.round(2.9 * p)}
-              fill={PALETTE.trainBodyDark}
-            />
-            <rect
-              x={chimneyX - Math.round(0.4 * p)}
-              y={chimneyTopY}
-              width={Math.round(2.9 * p)}
-              height={Math.round(0.85 * p)}
-              fill={PALETTE.trainRoofSlate}
-            />
-
-            <rect
-              x={locoX + Math.round(14 * p)}
-              y={baseY - Math.round(2.3 * p)}
-              width={Math.round(1.6 * p)}
-              height={Math.round(1.3 * p)}
-              fill={PALETTE.trainRoofSlate}
-            />
-            <rect
-              x={locoX + Math.round(1.4 * p)}
-              y={baseY - Math.round(1.05 * p)}
-              width={Math.round(3.3 * p)}
-              height={Math.round(1.15 * p)}
-              fill={PALETTE.trainWheelSteel}
-            />
-            <rect
-              x={locoX + Math.round(6 * p)}
-              y={baseY - Math.round(1.05 * p)}
-              width={Math.round(3.3 * p)}
-              height={Math.round(1.15 * p)}
-              fill={PALETTE.trainWheelSteel}
-            />
-            <rect
-              x={locoX + Math.round(10.4 * p)}
-              y={baseY - Math.round(1.05 * p)}
-              width={Math.round(2.5 * p)}
-              height={Math.round(1.15 * p)}
-              fill={PALETTE.trainWheelSteel}
-            />
-
-            <g style={warmWindowGlowStyle}>
-              <rect
-                x={locoX + Math.round(14 * p)}
-                y={baseY - Math.round(4 * p)}
-                width={Math.round(1.35 * p)}
-                height={Math.round(1.35 * p)}
-                fill={PALETTE.trainWindowBright}
-              />
-            </g>
-            <rect
-              x={locoX + Math.round(15.35 * p)}
-              y={baseY - Math.round(4.5 * p)}
-              width={Math.round(5.4 * p)}
-              height={Math.round(2.4 * p)}
-              fill={PALETTE.trainWindowBright}
-              opacity={0.25}
-            />
-          </g>
-
-          {/* =========================================================
-              3. KEPULAN UAP ASAP KONTINU (Semi-transparan lembut)
-          ========================================================== */}
-          <g id="locomotive-steam-puffs">
-            {steamPuffs.map((puff) => {
-              const px = chimneyX + puff.dx;
-              const py = chimneyTopY - Math.round(1.1 * p) + puff.dy;
-              const s = puff.size;
-              const sub = Math.max(2, Math.round(s * 0.68));
-              return (
-                <g key={puff.id} opacity={puff.opacity}>
-                  <rect
-                    x={px}
-                    y={py}
-                    width={s}
-                    height={s}
-                    fill="rgba(255, 255, 255, 0.92)"
-                  />
-                  <rect
-                    x={px - Math.round(sub * 0.62)}
-                    y={py + Math.round(sub * 0.22)}
-                    width={sub}
-                    height={sub}
-                    fill="rgba(241, 245, 249, 0.75)"
-                  />
-                  <rect
-                    x={px + Math.round(s * 0.24)}
-                    y={py - Math.round(sub * 0.55)}
-                    width={sub}
-                    height={sub}
-                    fill="rgba(226, 232, 240, 0.7)"
-                  />
-                </g>
-              );
-            })}
-          </g>
-        </g>
-      )}
     </g>
   );
 });
@@ -1255,27 +710,411 @@ const DimIceBlueSnowfieldsLayer = React.memo(function DimIceBlueSnowfieldsLayer(
 });
 
 /**
- * Komponen Utama: WinterFrostBackground
- * - Palet Deep Frosted Glacial Slate (Teduh, Dingin, Bebas Silau).
- * - Menampilkan 16-Bit PixelTrain di midground (keluar dari balik pohon cemara besar di kiri).
- * - High-performance 2D Canvas Snowflake Engine (0% React diffing, 55 partikel di mobile).
+ * Layer Tanggul Salju & Rel Kereta Pixel Statis (React.memo)
+ */
+const SubtlePixelRailwayTrack = React.memo(function SubtlePixelRailwayTrack({
+  width,
+  baseY,
+  p,
+}) {
+  const railwayDetails = useMemo(() => {
+    const tieSpacing = Math.max(9, Math.round(3.4 * p));
+    const tieWidth = Math.max(4, Math.round(1.55 * p));
+    const totalTies = Math.ceil(width / tieSpacing);
+    const ties = [];
+    const frostPatches = [];
+    const embankmentStones = [];
+
+    for (let i = 0; i < totalTies; i++) {
+      const tx = i * tieSpacing;
+      const rand = seededRandom(i * 19 + 73);
+      ties.push({
+        x: tx,
+        w: tieWidth,
+        isDark: i % 2 === 0,
+      });
+
+      if (rand > 0.35) {
+        frostPatches.push({
+          x: tx - 1,
+          w: Math.round(tieWidth * (1.4 + (rand - 0.35) * 2.1)),
+          isBright: rand > 0.72,
+        });
+      }
+
+      if (i % 2 === 0) {
+        embankmentStones.push({
+          x: tx,
+          w: Math.round(tieSpacing * 1.35),
+          h: rand > 0.5 ? Math.round(1.1 * p) : Math.round(0.8 * p),
+        });
+      }
+    }
+    return { ties, frostPatches, embankmentStones };
+  }, [width, p]);
+
+  return (
+    <g id="subtle-pixel-railway-track">
+      <rect
+        x={0}
+        y={baseY + Math.round(1.6 * p) + 2}
+        width={width}
+        height={Math.round(3.8 * p)}
+        fill={PALETTE.groundFarSlope}
+      />
+      <rect
+        x={0}
+        y={baseY + Math.round(1.25 * p)}
+        width={width}
+        height={Math.round(1.45 * p)}
+        fill={PALETTE.trainEmbankmentSlate}
+      />
+      <rect
+        x={0}
+        y={baseY + Math.round(1.85 * p)}
+        width={width}
+        height={Math.round(1.15 * p)}
+        fill={PALETTE.trainEmbankmentDark}
+      />
+      {railwayDetails.embankmentStones.map((stone, idx) => (
+        <rect
+          key={`stone-${idx}`}
+          x={stone.x}
+          y={baseY + Math.round(1.15 * p)}
+          width={stone.w}
+          height={stone.h}
+          fill={
+            idx % 2 === 0
+              ? PALETTE.groundSubtleEdge
+              : PALETTE.trainEmbankmentSlate
+          }
+          opacity={0.85}
+        />
+      ))}
+      <rect
+        x={0}
+        y={baseY + Math.round(1.05 * p)}
+        width={width}
+        height={Math.max(1.5, Math.round(0.5 * p))}
+        fill={PALETTE.mountainSnowCrisp}
+        opacity={0.58}
+      />
+      <rect
+        x={0}
+        y={baseY + 1}
+        width={width}
+        height={Math.round(1.3 * p)}
+        fill={PALETTE.trainWheelSteel}
+        opacity={0.68}
+      />
+      {railwayDetails.ties.map((tie, idx) => (
+        <rect
+          key={`tie-${idx}`}
+          x={tie.x}
+          y={baseY}
+          width={tie.w}
+          height={Math.round(1.5 * p)}
+          fill={tie.isDark ? PALETTE.trainWheelSteel : PALETTE.trainRoofSlate}
+          opacity={0.9}
+        />
+      ))}
+      <rect
+        x={0}
+        y={baseY}
+        width={width}
+        height={Math.max(1.5, Math.round(0.52 * p))}
+        fill={PALETTE.mountainIceShadow}
+        opacity={0.92}
+      />
+      <rect
+        x={0}
+        y={baseY + Math.round(0.92 * p)}
+        width={width}
+        height={Math.max(1.5, Math.round(0.48 * p))}
+        fill={PALETTE.trainRoofSlate}
+        opacity={0.96}
+      />
+      {railwayDetails.frostPatches.map((frost, idx) => (
+        <rect
+          key={`frost-${idx}`}
+          x={frost.x}
+          y={baseY + Math.round(1.02 * p)}
+          width={frost.w}
+          height={Math.max(1.5, Math.round(0.5 * p))}
+          fill={
+            frost.isBright ? PALETTE.treeSnowPure : PALETTE.treeSnowShade
+          }
+          opacity={frost.isBright ? 0.74 : 0.52}
+        />
+      ))}
+    </g>
+  );
+});
+
+/**
+ * ============================================================================
+ * HIGH-PERFORMANCE CANVAS 2D DIRECT RENDER ENGINES (0% REACT VDOM OVERHEAD)
+ * ============================================================================
+ */
+
+/**
+ * Render Awan Glacial Pixel Art di Canvas 2D
+ */
+function drawPixelClouds(ctx, { width, height, isMobile, timeSec, pixelUnit }) {
+  const cloudCount = isMobile ? 4 : 6;
+  const wrapWidth = width + 320;
+  ctx.save();
+  ctx.globalAlpha = 0.48;
+
+  for (let i = 0; i < cloudCount; i++) {
+    const cBaseX = i / cloudCount;
+    const cY = isMobile
+      ? height * (0.07 + (i % 3) * 0.07)
+      : height * (0.08 + (i % 3) * 0.08);
+    const scale = isMobile ? (width / 1080) * 1.35 : (width / 1920) * 1.7;
+    const variant = i % 2;
+    const u = Math.max(3, Math.round(6 * scale));
+
+    const cloudLoopTime = 120;
+    const cloudProgress = (timeSec / cloudLoopTime) % 1;
+    const currentX = ((cBaseX + cloudProgress) % 1) * wrapWidth - 160;
+    const roundedX = Math.round(currentX / pixelUnit) * pixelUnit;
+
+    const blocks =
+      variant === 0
+        ? [
+            { dx: 2, dy: 0, w: 6, h: 1, c: PALETTE.cloudHighlight },
+            { dx: 1, dy: 1, w: 9, h: 1, c: PALETTE.cloudHighlight },
+            { dx: 0, dy: 2, w: 12, h: 2, c: PALETTE.cloudBase },
+          ]
+        : [
+            { dx: 3, dy: 0, w: 5, h: 1, c: PALETTE.cloudHighlight },
+            { dx: 1, dy: 1, w: 8, h: 1, c: PALETTE.cloudHighlight },
+            { dx: 0, dy: 2, w: 10, h: 2, c: PALETTE.cloudBase },
+          ];
+
+    for (let b = 0; b < blocks.length; b++) {
+      const block = blocks[b];
+      ctx.fillStyle = block.c;
+      ctx.fillRect(
+        Math.round(roundedX + block.dx * u),
+        Math.round(cY + block.dy * u),
+        Math.round(block.w * u),
+        Math.round(block.h * u)
+      );
+    }
+  }
+  ctx.restore();
+}
+
+/**
+ * Render Kereta Api Uap 16-Bit & Kepulan Asap Uap Sinusoidal di Canvas 2D
+ */
+function drawPixelTrain(ctx, { width, baseY, isMobile, timeSec, p }) {
+  const crossingSeconds = isMobile ? 14.5 : 15.5;
+  const loopSeconds = 30;
+  const timeInLoop = ((timeSec % loopSeconds) + loopSeconds) % loopSeconds;
+  if (timeInLoop > crossingSeconds) return;
+
+  const progress = timeInLoop / crossingSeconds;
+  const startX = isMobile ? -310 : -340;
+  const endX = isMobile ? width + 110 : width + 210;
+  const trainX = startX + progress * (endX - startX);
+
+  const carriages = [0, 1, 2, 3];
+  const carriageWidth = Math.round(14 * p);
+  const carriageGap = Math.round(2.6 * p);
+  const locoX = trainX + carriages.length * (carriageWidth + carriageGap);
+  const chimneyX = locoX + Math.round(10 * p);
+  const chimneyTopY = baseY - Math.round(7 * p);
+
+  // 1. Empat Gerbong Penumpang Berlampu Emas Hangat
+  for (let cIdx = 0; cIdx < carriages.length; cIdx++) {
+    const cx = trainX + cIdx * (carriageWidth + carriageGap);
+
+    // Coupler
+    ctx.fillStyle = PALETTE.trainRoofSlate;
+    ctx.fillRect(cx + carriageWidth, baseY - Math.round(2.1 * p), carriageGap, Math.round(p));
+
+    // Roof top
+    ctx.fillRect(cx + Math.round(p), baseY - Math.round(5.8 * p), carriageWidth - Math.round(2 * p), Math.round(1.1 * p));
+    ctx.fillStyle = PALETTE.mountainFrostMid;
+    ctx.globalAlpha = 0.58;
+    ctx.fillRect(cx + Math.round(2 * p), baseY - Math.round(6.1 * p), carriageWidth - Math.round(4 * p), Math.max(1, Math.round(0.38 * p)));
+    ctx.globalAlpha = 1.0;
+
+    // Body
+    ctx.fillStyle = PALETTE.trainBodyDark;
+    ctx.fillRect(cx, baseY - Math.round(4.7 * p), carriageWidth, Math.round(3.7 * p));
+
+    // Wheels
+    ctx.fillStyle = PALETTE.trainWheelSteel;
+    ctx.fillRect(cx + Math.round(1.6 * p), baseY - Math.round(1.05 * p), Math.round(3.1 * p), Math.round(1.15 * p));
+    ctx.fillRect(cx + carriageWidth - Math.round(4.7 * p), baseY - Math.round(1.05 * p), Math.round(3.1 * p), Math.round(1.15 * p));
+
+    // Ambient glow badan gerbong
+    ctx.fillStyle = PALETTE.trainWindowBright;
+    ctx.globalAlpha = 0.18;
+    ctx.fillRect(cx + Math.round(1.1 * p), baseY - Math.round(4.4 * p), carriageWidth - Math.round(2.2 * p), Math.round(2.7 * p));
+    ctx.fillRect(cx + Math.round(1.6 * p), baseY + Math.round(0.25 * p), carriageWidth - Math.round(3.2 * p), Math.round(1.1 * p));
+    ctx.globalAlpha = 1.0;
+
+    // 4 Jendela Kuning Emas Cerah (#FEF08A)
+    for (let wIdx = 0; wIdx < 4; wIdx++) {
+      const wx = cx + Math.round((1.9 + wIdx * 2.85) * p);
+      const wy = baseY - Math.round(3.8 * p);
+      const ww = Math.round(1.9 * p);
+      const wh = Math.round(1.8 * p);
+
+      ctx.fillStyle = 'rgba(254, 240, 138, 0.38)';
+      ctx.fillRect(wx - 1, wy - 1, ww + 2, wh + 2);
+      ctx.fillStyle = PALETTE.trainWindowBright;
+      ctx.fillRect(wx, wy, ww, wh);
+    }
+  }
+
+  // 2. Lokomotif Uap (Steam Locomotive)
+  ctx.fillStyle = PALETTE.trainRoofSlate;
+  ctx.fillRect(locoX - Math.round(0.5 * p), baseY - Math.round(6.2 * p), Math.round(5.8 * p), Math.round(p));
+  ctx.fillStyle = PALETTE.trainBodyDark;
+  ctx.fillRect(locoX, baseY - Math.round(5.2 * p), Math.round(5.2 * p), Math.round(4.2 * p));
+
+  // Cab window halo & core
+  ctx.fillStyle = 'rgba(254, 240, 138, 0.38)';
+  ctx.fillRect(locoX + Math.round(1.1 * p) - 1, baseY - Math.round(4.35 * p) - 1, Math.round(2.4 * p) + 2, Math.round(1.85 * p) + 2);
+  ctx.fillStyle = PALETTE.trainWindowBright;
+  ctx.fillRect(locoX + Math.round(1.3 * p), baseY - Math.round(4.3 * p), Math.round(2.3 * p), Math.round(1.8 * p));
+
+  // Boiler & boiler roof
+  ctx.fillStyle = PALETTE.trainBodyDark;
+  ctx.fillRect(locoX + Math.round(5.2 * p), baseY - Math.round(4.4 * p), Math.round(8.8 * p), Math.round(3.4 * p));
+  ctx.fillStyle = PALETTE.trainRoofSlate;
+  ctx.fillRect(locoX + Math.round(5.2 * p), baseY - Math.round(4.8 * p), Math.round(7.8 * p), Math.round(0.75 * p));
+
+  // Chimney & cap
+  ctx.fillStyle = PALETTE.trainBodyDark;
+  ctx.fillRect(chimneyX, chimneyTopY, Math.round(2.1 * p), Math.round(2.9 * p));
+  ctx.fillStyle = PALETTE.trainRoofSlate;
+  ctx.fillRect(chimneyX - Math.round(0.4 * p), chimneyTopY, Math.round(2.9 * p), Math.round(0.85 * p));
+
+  // Cowcatcher
+  ctx.fillRect(locoX + Math.round(14 * p), baseY - Math.round(2.3 * p), Math.round(1.6 * p), Math.round(1.3 * p));
+
+  // Wheels
+  ctx.fillStyle = PALETTE.trainWheelSteel;
+  ctx.fillRect(locoX + Math.round(1.4 * p), baseY - Math.round(1.05 * p), Math.round(3.3 * p), Math.round(1.15 * p));
+  ctx.fillRect(locoX + Math.round(6 * p), baseY - Math.round(1.05 * p), Math.round(3.3 * p), Math.round(1.15 * p));
+  ctx.fillRect(locoX + Math.round(10.4 * p), baseY - Math.round(1.05 * p), Math.round(2.5 * p), Math.round(1.15 * p));
+
+  // Headlight core & forward glow beam
+  ctx.fillStyle = 'rgba(254, 240, 138, 0.38)';
+  ctx.fillRect(locoX + Math.round(14 * p) - 1, baseY - Math.round(4 * p) - 1, Math.round(1.35 * p) + 2, Math.round(1.35 * p) + 2);
+  ctx.fillStyle = PALETTE.trainWindowBright;
+  ctx.fillRect(locoX + Math.round(14 * p), baseY - Math.round(4 * p), Math.round(1.35 * p), Math.round(1.35 * p));
+  ctx.globalAlpha = 0.25;
+  ctx.fillRect(locoX + Math.round(15.35 * p), baseY - Math.round(4.5 * p), Math.round(5.4 * p), Math.round(2.4 * p));
+  ctx.globalAlpha = 1.0;
+
+  // 3. Kepulan Uap Asap (Steam Puffs) Sinusoidal Murni
+  const steamCount = isMobile ? 5 : 10;
+  const cycleLen = 1.45;
+  for (let idx = 0; idx < steamCount; idx++) {
+    const rawProgress = ((timeSec + idx * (cycleLen / steamCount)) % cycleLen) / cycleLen;
+    const waveX = Math.sin(rawProgress * Math.PI * 2 + idx * 0.7) * 0.65 * p;
+    const puffDriftX = -rawProgress * 23 * p - idx * 0.45 * p + waveX;
+    const puffRiseY = -Math.pow(rawProgress, 0.88) * 10.5 * p - Math.sin(rawProgress * Math.PI) * 1.4 * p;
+
+    let puffSize = p * 1.25;
+    if (rawProgress < 0.28) puffSize = p * 1.25 + (rawProgress / 0.28) * (p * 2.1 - p * 1.25);
+    else if (rawProgress < 0.75) puffSize = p * 2.1 + ((rawProgress - 0.28) / 0.47) * (p * 2.55 - p * 2.1);
+    else puffSize = p * 2.55 + ((rawProgress - 0.75) / 0.25) * (p * 1.45 - p * 2.55);
+
+    let puffOpacity = 0;
+    if (rawProgress < 0.1) puffOpacity = (rawProgress / 0.1) * 0.66;
+    else if (rawProgress < 0.35) puffOpacity = 0.66 - ((rawProgress - 0.1) / 0.25) * (0.66 - 0.54);
+    else if (rawProgress < 0.72) puffOpacity = 0.54 - ((rawProgress - 0.35) / 0.37) * (0.54 - 0.28);
+    else puffOpacity = 0.28 - ((rawProgress - 0.72) / 0.28) * 0.28;
+
+    if (puffOpacity > 0.02) {
+      const px = chimneyX + Math.round(puffDriftX);
+      const py = chimneyTopY - Math.round(1.1 * p) + Math.round(puffRiseY);
+      const s = Math.max(2, Math.round(puffSize));
+      const sub = Math.max(2, Math.round(s * 0.68));
+
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, Math.max(0, puffOpacity));
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+      ctx.fillRect(px, py, s, s);
+      ctx.fillStyle = 'rgba(241, 245, 249, 0.75)';
+      ctx.fillRect(px - Math.round(sub * 0.62), py + Math.round(sub * 0.22), sub, sub);
+      ctx.fillStyle = 'rgba(226, 232, 240, 0.7)';
+      ctx.fillRect(px + Math.round(s * 0.24), py - Math.round(sub * 0.55), sub, sub);
+      ctx.restore();
+    }
+  }
+}
+
+/**
+ * ============================================================================
+ * KOMPONEN UTAMA: WinterFrostBackground
+ * - Zero React State Re-render Loop (0% Virtual DOM Diffing di Main Thread).
+ * - Imunitas penuh terhadap fluktuasi URL address bar browser mobile saat scroll.
+ * - Locked 60 FPS Canvas 2D engine untuk kereta uap 16-bit, awan, dan 55 salju.
+ * ============================================================================
  */
 export default function WinterFrostBackground({ children, className = '' }) {
-  const canvasRef = useRef(null);
-  const frame = useCurrentFrame();
-  const { width, height, fps } = useVideoConfig();
+  const midgroundCanvasRef = useRef(null);
+  const snowCanvasRef = useRef(null);
 
-  const isMobile = height > width;
+  const lastWidthRef = useRef(typeof window !== 'undefined' ? window.innerWidth : 1920);
+  const lastHeightRef = useRef(typeof window !== 'undefined' ? window.innerHeight : 1080);
+
+  const [dimensions, setDimensions] = useState(() => {
+    if (typeof window === 'undefined') return { width: 1920, height: 1080 };
+    const w = window.innerWidth || 1920;
+    const isMob = w < 768;
+    const h = isMob && window.screen?.availHeight ? window.screen.availHeight : window.innerHeight || 1080;
+    return { width: w, height: h };
+  });
+
+  const { width, height } = dimensions;
+  const isMobile = height > width || width < 768;
   const pixelUnit = isMobile
     ? Math.max(3, Math.round(width / 180))
     : Math.max(4, Math.round(width / 320));
 
-  const safeFrame = Number.isFinite(frame) ? frame : 0;
-  const loopProgress =
-    (((safeFrame % LOOP_FRAMES) + LOOP_FRAMES) % LOOP_FRAMES) / LOOP_FRAMES;
+  const horizonY = isMobile ? height * 0.56 : height * 0.68;
+  const trainTrackY = (isMobile ? horizonY + height * 0.036 : horizonY + height * 0.028) + 6;
+  const trainP = isMobile ? 3.25 : 3.1;
+
+  // Imunitas terhadap URL Address Bar Mobile Resize:
+  // Hanya picu re-layout jika lebar berubah (rotasi layar) atau perubahan tinggi dramatis (> 120px)
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handleResize = () => {
+      const newW = window.innerWidth;
+      const newH = window.innerHeight;
+      const isMob = newW < 768;
+
+      if (isMob && newW === lastWidthRef.current && Math.abs(newH - lastHeightRef.current) < 120) {
+        return;
+      }
+
+      lastWidthRef.current = newW;
+      lastHeightRef.current = newH;
+      setDimensions({
+        width: newW,
+        height: isMob && window.screen?.availHeight ? window.screen.availHeight : newH,
+      });
+    };
+
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   /**
-   * 1. KONFIGURASI PEGUNUNGAN ES
+   * 1. KONFIGURASI PEGUNUNGAN ES STATIS (Renders Once)
    */
   const mountains = useMemo(() => {
     if (isMobile) {
@@ -1362,7 +1201,7 @@ export default function WinterFrostBackground({ children, className = '' }) {
   }, [isMobile, width, height]);
 
   /**
-   * 2. SATU POHON CEMARA MEGAH DI UJUNG KIRI (Left-Anchored Lone Pine)
+   * 2. SATU POHON CEMARA MEGAH DI UJUNG KIRI (Renders Once)
    */
   const lonePine = useMemo(() => {
     if (isMobile) {
@@ -1385,43 +1224,18 @@ export default function WinterFrostBackground({ children, className = '' }) {
   }, [isMobile, width, height]);
 
   /**
-   * 3. AWAN ES MALAM LOOPING HALUS
-   */
-  const clouds = useMemo(() => {
-    const count = isMobile ? 4 : 6;
-    return Array.from({ length: count }).map((_, i) => ({
-      id: i,
-      baseX: i / count,
-      y: isMobile
-        ? height * (0.07 + (i % 3) * 0.07)
-        : height * (0.08 + (i % 3) * 0.08),
-      scale: isMobile ? (width / 1080) * 1.35 : (width / 1920) * 1.7,
-      variant: i % 2,
-    }));
-  }, [isMobile, width, height]);
-
-  const horizonY = isMobile ? height * 0.56 : height * 0.68;
-
-  // Jalur rel kereta midground di atas dataran danau es
-  const trainTrackY =
-    (isMobile ? horizonY + height * 0.036 : horizonY + height * 0.028) + 6;
-
-  // Kabut lembah es tipis
-  const mistOpacity = interpolate(
-    Math.sin(loopProgress * Math.PI * 2 * 2),
-    [-1, 1],
-    [0.12, 0.24]
-  );
-
-  /**
-   * 4. CANVAS 2D SNOW ENGINE (0% React State Re-renders)
-   * Menjamin 60 FPS di desktop & locked 30 FPS di HP kentang (Infinix Smart 6).
+   * 3. UNIFIED HIGH-PERFORMANCE CANVAS 2D RENDER LOOP
+   * Menjalankan rendering Awan, Kereta Api, dan 55 Partikel Salju Alami
+   * dalam 1 requestAnimationFrame murni tanpa React state re-render loop.
    */
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return undefined;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return undefined;
+    const midCanvas = midgroundCanvasRef.current;
+    const snowCanvas = snowCanvasRef.current;
+    if (!midCanvas || !snowCanvas) return undefined;
+
+    const midCtx = midCanvas.getContext('2d');
+    const snowCtx = snowCanvas.getContext('2d');
+    if (!midCtx || !snowCtx) return undefined;
 
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
@@ -1431,6 +1245,7 @@ export default function WinterFrostBackground({ children, className = '' }) {
     const isMobileDevice = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
     const count = isMobileDevice ? 55 : 135;
 
+    // Generate deterministic snowflake pool
     const flakes = Array.from({ length: count }).map((_, idx) => {
       const r1 = seededRandom(idx * 11 + 1);
       const r2 = seededRandom(idx * 23 + 2);
@@ -1479,6 +1294,7 @@ export default function WinterFrostBackground({ children, className = '' }) {
     let rafId;
     let lastTime = performance.now();
 
+    // Auto-pause rendering saat modal tambah/edit tugas terbuka
     let isModalOpen =
       typeof document !== 'undefined' &&
       document.body.classList.contains('overflow-hidden');
@@ -1494,8 +1310,6 @@ export default function WinterFrostBackground({ children, className = '' }) {
       observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     }
 
-    const minDelta = isMobileDevice ? 32 : 16;
-
     function render(now) {
       if (document.hidden || isModalOpen) {
         lastTime = now;
@@ -1504,20 +1318,30 @@ export default function WinterFrostBackground({ children, className = '' }) {
       }
 
       const elapsed = now - lastTime;
-      if (elapsed < minDelta) {
-        rafId = requestAnimationFrame(render);
-        return;
-      }
-
       const deltaSeconds = Math.min(elapsed / 1000, 0.1);
       lastTime = now;
-
-      ctx.clearRect(0, 0, width, height);
       const timeSec = now / 1000;
 
+      // 1. Render Midground (Awan Glacial, Kabut Lembah, dan Kereta Api Uap)
+      midCtx.clearRect(0, 0, width, height);
+
+      // Awan Pixel Art Melayang
+      drawPixelClouds(midCtx, { width, height, isMobile, timeSec, pixelUnit });
+
+      // Kabut Lembah Es Halus
+      const mistOpacity = 0.14 + (Math.sin(timeSec * 0.4) + 1) * 0.5 * 0.08;
+      midCtx.fillStyle = PALETTE.mountainIceShadow;
+      midCtx.globalAlpha = mistOpacity;
+      midCtx.fillRect(0, horizonY - height * 0.03, width, height * 0.05);
+      midCtx.globalAlpha = 1.0;
+
+      // Kereta Api Uap 16-Bit & Partikel Asap Uap Sinusoidal
+      drawPixelTrain(midCtx, { width, baseY: trainTrackY, isMobile, timeSec, p: trainP });
+
+      // 2. Render Foreground (55 Kristal Salju Alami - Zero Judder Pacing)
+      snowCtx.clearRect(0, 0, width, height);
       for (let i = 0; i < flakes.length; i++) {
         const flake = flakes[i];
-
         flake.y += flake.fallSpeed * deltaSeconds;
         if (flake.y > height + 8) {
           flake.y = -8;
@@ -1528,13 +1352,12 @@ export default function WinterFrostBackground({ children, className = '' }) {
         const currentX = (flake.baseX + sway + width) % width;
         const s = flake.size;
 
-        ctx.fillStyle = `rgba(248, 250, 252, ${flake.opacity})`;
-
+        snowCtx.fillStyle = `rgba(248, 250, 252, ${flake.opacity})`;
         if (flake.isCrossFlake) {
-          ctx.fillRect(currentX - s * 0.5, flake.y - s * 1.5, s, s * 3);
-          ctx.fillRect(currentX - s * 1.5, flake.y - s * 0.5, s * 3, s);
+          snowCtx.fillRect(currentX - s * 0.5, flake.y - s * 1.5, s, s * 3);
+          snowCtx.fillRect(currentX - s * 1.5, flake.y - s * 0.5, s * 3, s);
         } else {
-          ctx.fillRect(currentX, flake.y, s, s);
+          snowCtx.fillRect(currentX, flake.y, s, s);
         }
       }
 
@@ -1549,7 +1372,7 @@ export default function WinterFrostBackground({ children, className = '' }) {
       cancelAnimationFrame(rafId);
       if (observer) observer.disconnect();
     };
-  }, [width, height, pixelUnit]);
+  }, [width, height, pixelUnit, horizonY, trainTrackY, trainP, isMobile]);
 
   return (
     <AbsoluteFill
@@ -1559,21 +1382,20 @@ export default function WinterFrostBackground({ children, className = '' }) {
         overflow: 'hidden',
       }}
     >
+      {/* =================================================================
+          LAYER 1: PEMANDANGAN STATIS LATAR BELAKANG (0% React Diffing)
+          Langit, Pegunungan Es, Barisan Pinus Kejauhan, Bukit Salju, dan Rel
+      ================================================================== */}
       <svg
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
         shapeRendering="crispEdges"
+        className="absolute inset-0 w-full h-full block pointer-events-none"
         style={{
-          width: '100%',
-          height: '100%',
-          display: 'block',
           imageRendering: 'pixelated',
         }}
       >
-        {/* =================================================================
-            LAYER 1: LANGIT BIRU NAVY ES PEKAT & AWAN GLACIAL
-        ================================================================== */}
         <g id="deep-glacial-sky-bands">
           <rect
             x={0}
@@ -1592,41 +1414,8 @@ export default function WinterFrostBackground({ children, className = '' }) {
           />
         </g>
 
-        <g id="drifting-glacial-clouds">
-          {clouds.map((c) => {
-            const wrapWidth = width + 320;
-            const currentX =
-              ((c.baseX + loopProgress) % 1) * wrapWidth - 160;
-            return (
-              <PixelCloudCluster
-                key={c.id}
-                x={Math.round(currentX / pixelUnit) * pixelUnit}
-                y={c.y}
-                scale={c.scale}
-                variant={c.variant}
-              />
-            );
-          })}
-        </g>
-
-        {/* =================================================================
-            LAYER 2: PUNCAK PEGUNUNGAN ES
-        ================================================================== */}
         <FrostedSlateMountainsLayer mountains={mountains} pixelUnit={pixelUnit} />
 
-        {/* Kabut Lembah Es Redup di Kaki Pegunungan */}
-        <rect
-          x={0}
-          y={horizonY - height * 0.03}
-          width={width}
-          height={height * 0.05}
-          fill={PALETTE.mountainIceShadow}
-          opacity={mistOpacity}
-        />
-
-        {/* =================================================================
-            LAYER 3: SILUET BARISAN PINUS RENDAH DI KEJAUHAN KAKI GUNUNG
-        ================================================================== */}
         <DistantPixelTreeline
           startX={0}
           endX={width}
@@ -1635,9 +1424,6 @@ export default function WinterFrostBackground({ children, className = '' }) {
           seed={42}
         />
 
-        {/* =================================================================
-            LAYER 4: HAMPARAN TANAH SALJU BERGRADASI BIRU ES REDUP
-        ================================================================== */}
         <DimIceBlueSnowfieldsLayer
           width={width}
           height={height}
@@ -1646,28 +1432,46 @@ export default function WinterFrostBackground({ children, className = '' }) {
           isMobile={isMobile}
         />
 
-        {/* ===============================================================
-            LAYER 4.5 (MIDGROUND): KERETA API UAP 16-BIT (PixelTrain)
-            Berada di atas dataran danau es berundak & di depan deretan pinus
-            kecil/gunung, namun tetap di BELAKANG pohon cemara besar kiri.
-        ================================================================ */}
-        <PixelTrain
-          frame={frame}
+        <SubtlePixelRailwayTrack
           width={width}
-          y={trainTrackY}
-          isMobile={isMobile}
-          fps={fps}
+          baseY={trainTrackY}
+          p={trainP}
         />
+      </svg>
 
-        {/* =================================================================
-            LAYER 5: SATU POHON CEMARA MEGAH DI UJUNG KIRI (Left-Anchored Lone Pine)
-        ================================================================== */}
+      {/* =================================================================
+          LAYER 2: CANVAS 2D MIDGROUND (0% React Diffing)
+          Awan Glacial Melayang, Kabut Lembah, dan Kereta Api Uap 16-Bit
+      ================================================================== */}
+      <canvas
+        ref={midgroundCanvasRef}
+        width={width}
+        height={height}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{
+          imageRendering: 'pixelated',
+        }}
+      />
+
+      {/* =================================================================
+          LAYER 3: POHON CEMARA MEGAH KIRI (0% React Diffing, Depan Kereta)
+          Kereta melintas di belakang dahan cemara megah ini.
+      ================================================================== */}
+      <svg
+        width={width}
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        shapeRendering="crispEdges"
+        className="absolute inset-0 w-full h-full block pointer-events-none"
+        style={{
+          imageRendering: 'pixelated',
+        }}
+      >
         <g id="left-anchored-lone-pine">
           <PixelPineTree
             x={lonePine.x}
             topY={lonePine.topY}
             baseY={lonePine.baseY}
-            frame={frame}
             phaseOffset={lonePine.phase}
             swayAmplitude={lonePine.sway}
           />
@@ -1675,10 +1479,11 @@ export default function WinterFrostBackground({ children, className = '' }) {
       </svg>
 
       {/* =================================================================
-          LAYER 6: CANVAS 2D HUJAN SALJU KRISTAL (Zero React State Re-renders)
+          LAYER 4: CANVAS 2D FOREGROUND (0% React Diffing)
+          55 Kristal Salju Alami Mengalir Bebas di Layar HP & Desktop
       ================================================================== */}
       <canvas
-        ref={canvasRef}
+        ref={snowCanvasRef}
         width={width}
         height={height}
         className="absolute inset-0 w-full h-full pointer-events-none"

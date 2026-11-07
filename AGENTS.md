@@ -24,6 +24,16 @@ Project ini telah terintegrasi dengan shadcn registry untuk animasi & visual mod
 
 Saat user meminta rekomendasi atau penambahan animasi, AI HARUS merujuk pada katalog di atas atau skill `animation-components-registry` untuk memberikan opsi visual terbaik yang sesuai dengan konteks desain.
 
+### ATURAN EMAS PERFORMA ANIMASI & MOBILE INTERACTION (ANTI-COMPROMISE ANIMATION)
+1. **Dilarang Mengorbankan Kehalusan & Keindahan Animasi demi Optimasi:**
+   - Optimasi performa TIDAK BOLEH memangkas elemen visual yang menjadi daya tarik aplikasi (misal: menghilangkan kereta api, salju lebat, atau awan bergerak).
+   - DILARANG menggunakan teknik "pause/freeze on scroll" (mematikan animasi saat layar disentuh/digulir) karena merusak kepuasan interaksi pengguna dan menimbulkan kesan aplikasi sering lag/macet.
+2. **Mandat Zero-React-Diffing untuk Animasi Bergerak:**
+   - Animasi kontinu (salju, partikel, awan, objek melintas) DILARANG KERAS digerakkan melalui React state loop (`useState` di dalam `requestAnimationFrame`).
+   - Wajib menggunakan HTML5 Canvas 2D langsung, WebGL shader, atau CSS GPU transforms (`transform: translate3d()`, `@keyframes`) yang 100% independen dari siklus re-render Virtual DOM React.
+3. **Imunitas Terhadap Dynamic Address Bar Mobile:**
+   - Dimensi kanvas atau container animasi latar belakang wajib terkunci stabil di layar mobile untuk mencegah pembatalan loop render (`cancelAnimationFrame`) saat bilah alamat peramban naik atau turun saat scrolling.
+
 ## FRONTEND DESIGN & ANTI-AI SLOP (SIELLOMITA DESIGN)
 Untuk seluruh perancangan antarmuka, styling komponen, dan review visual:
 1. Gunakan skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine).
