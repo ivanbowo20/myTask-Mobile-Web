@@ -15,7 +15,7 @@ export default function ThemeBackground() {
   if (!isMounted) {
     return (
       <div
-        className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='winter-frost']_&]:bg-[#121E36] [html[data-theme='abyssal-teal']_&]:bg-[#021013] [html[data-theme='soft-aurora']_&]:bg-[#060810]"
+        className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='winter-frost']_&]:bg-[#121E36] [html[data-theme='abyssal-teal']_&]:bg-[#0B120E] [html[data-theme='soft-aurora']_&]:bg-[#060810]"
         aria-hidden="true"
       />
     );
@@ -25,7 +25,7 @@ export default function ThemeBackground() {
 
   return (
     <div
-      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='winter-frost']_&]:bg-[#121E36] isolate [transform:translate3d(0,0,0)]"
+      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='winter-frost']_&]:bg-[#121E36] [html[data-theme='abyssal-teal']_&]:bg-[#0B120E] isolate [transform:translate3d(0,0,0)]"
       aria-hidden="true"
     >
       {/* Dynamic Background Switcher with Fluid Simultaneous Cross-fade (initial={false} untuk 0ms first paint) */}
@@ -46,20 +46,18 @@ export default function ThemeBackground() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Adaptive scrim mask: Dinonaktifkan pada celestial-sky & winter-frost agar langit biru & panorama es alami & kontras teks terjaga */}
+      {/* Adaptive scrim mask: Dinonaktifkan pada celestial-sky, winter-frost & abyssal-teal agar visual alami & kontras teks terjaga */}
       <div
         className={`absolute inset-0 pointer-events-none transition-all duration-500 ${
-          activeThemeId === 'celestial-sky' || activeThemeId === 'winter-frost'
+          activeThemeId === 'celestial-sky' || activeThemeId === 'winter-frost' || activeThemeId === 'abyssal-teal'
             ? 'bg-transparent backdrop-blur-none'
-            : activeThemeId === 'abyssal-teal'
-            ? 'bg-black/55 backdrop-blur-none sm:backdrop-blur-[1.5px]'
             : 'bg-black/65 backdrop-blur-none sm:backdrop-blur-[2px]'
         }`}
         aria-hidden="true"
       />
 
       {/* Subtle noise texture for frosted crystal refraction (Desktop only, hemat GPU HP) */}
-      {activeThemeId !== 'celestial-sky' && activeThemeId !== 'winter-frost' && (
+      {activeThemeId !== 'celestial-sky' && activeThemeId !== 'winter-frost' && activeThemeId !== 'abyssal-teal' && (
         <div
           className="hidden sm:block absolute inset-0 opacity-[0.025] mix-blend-overlay pointer-events-none"
           style={{

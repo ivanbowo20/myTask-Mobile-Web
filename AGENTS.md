@@ -33,6 +33,9 @@ Saat user meminta rekomendasi atau penambahan animasi, AI HARUS merujuk pada kat
    - Wajib menggunakan HTML5 Canvas 2D langsung, WebGL shader, atau CSS GPU transforms (`transform: translate3d()`, `@keyframes`) yang 100% independen dari siklus re-render Virtual DOM React.
 3. **Imunitas Terhadap Dynamic Address Bar Mobile:**
    - Dimensi kanvas atau container animasi latar belakang wajib terkunci stabil di layar mobile untuk mencegah pembatalan loop render (`cancelAnimationFrame`) saat bilah alamat peramban naik atau turun saat scrolling.
+4. **Standar Animasi Premium (Framer Motion & React Mandate):**
+   - Setiap animasi transisi tab, container masuk (cascading entrance), dan kartu berkelas WAJIB menggunakan React dan Framer Motion (`motion.div`, `AnimatePresence`, spring physics) dengan GPU transforms (`opacity`, `y`, `scale`), BUKAN skrip manipulasi DOM JS murni (seperti manipulasi style manual di requestAnimationFrame).
+   - Animasi transisi antar-halaman/rute DILARANG menggunakan CSS `filter: blur()` di container induk karena merusak stabilitas compositing layer kaca es (`backdrop-filter`) di peramban Chromium/WebKit.
 
 ## FRONTEND DESIGN & ANTI-AI SLOP (SIELLOMITA DESIGN)
 Untuk seluruh perancangan antarmuka, styling komponen, dan review visual:

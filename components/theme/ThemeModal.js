@@ -239,10 +239,31 @@ export default function ThemeModal() {
                       )}
 
                       {t.id === 'abyssal-teal' && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#021013] via-[#04282E] to-[#0A4A4E] overflow-hidden">
-                          <div className="absolute top-1/4 -right-2 w-28 h-20 rounded-full bg-[#0D9488]/55 filter blur-[14px]" />
-                          <div className="absolute -bottom-2 -left-2 w-28 h-18 rounded-full bg-[#2DD4BF]/45 filter blur-[16px]" />
-                          <div className="absolute top-1/2 left-1/3 w-20 h-20 rounded-full bg-[#10B981]/35 filter blur-[12px]" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#0B120E] via-[#0E1B15] to-[#12241D] overflow-hidden">
+                          {/* Langit berbintang */}
+                          <div className="absolute top-2 left-6 w-1 h-1 rounded-full bg-white opacity-85 animate-pulse" />
+                          <div className="absolute top-4 left-20 w-0.5 h-0.5 rounded-full bg-white opacity-70" />
+                          <div className="absolute top-2 right-10 w-1 h-1 rounded-full bg-white opacity-90" />
+                          <div className="absolute top-6 right-24 w-0.5 h-0.5 rounded-full bg-white opacity-60" />
+
+                          {/* Pita Aurora Hijau Zamrud & Daun Melengkung */}
+                          <div className="absolute -top-3 left-1/4 w-36 h-14 rounded-full bg-[#2DB15C]/55 filter blur-[10px] -rotate-12" />
+                          <div className="absolute top-2 -right-4 w-32 h-12 rounded-full bg-[#79CE67]/45 filter blur-[12px] rotate-6" />
+                          <div className="absolute top-5 left-1 w-28 h-8 rounded-full bg-[#C2DB6C]/30 filter blur-[8px] -rotate-6" />
+
+                          {/* Siluet pegunungan bersalju */}
+                          <div
+                            className="absolute bottom-2 inset-x-0 h-10 bg-[#16261E] opacity-95"
+                            style={{ clipPath: 'polygon(0% 100%, 15% 45%, 35% 80%, 55% 35%, 75% 65%, 90% 40%, 100% 100%)' }}
+                          >
+                            <div className="absolute top-0 left-[55%] -translate-x-1/2 w-3 h-2 bg-[#E2E8F0] opacity-90 rounded-sm" />
+                            <div className="absolute top-1 left-[15%] -translate-x-1/2 w-2.5 h-1.5 bg-[#E2E8F0] opacity-80 rounded-sm" />
+                          </div>
+
+                          {/* Pantulan air danau di bawah garis batas */}
+                          <div className="absolute bottom-0 inset-x-0 h-3 bg-[#0B1410] border-t border-[#2DB15C]/20 opacity-90">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#2DB15C]/25 to-transparent filter blur-[2px]" />
+                          </div>
                         </div>
                       )}
 

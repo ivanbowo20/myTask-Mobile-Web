@@ -365,14 +365,14 @@ select {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.2), 0 16px 40px -8px rgba(0, 0, 0, 0.6);
 }
 
-/* Frosted Abyssal Crystal specular highlights */
+/* Frosted Emerald Aurora specular highlights */
 html[data-theme="abyssal-teal"] .glass-card,
 html[data-theme="abyssal-teal"] .glass-panel {
-  box-shadow: inset 0 1px 0 0 rgba(45, 212, 191, 0.28), 0 8px 32px -4px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 1px 0 0 rgba(121, 206, 103, 0.28), 0 8px 32px -4px rgba(0, 0, 0, 0.55);
 }
 
 html[data-theme="abyssal-teal"] .glass-card:hover {
-  box-shadow: inset 0 1px 0 0 rgba(45, 212, 191, 0.45), 0 16px 40px -8px rgba(0, 0, 0, 0.65), 0 0 24px -4px rgba(45, 212, 191, 0.18);
+  box-shadow: inset 0 1px 0 0 rgba(121, 206, 103, 0.45), 0 16px 40px -8px rgba(0, 0, 0, 0.65), 0 0 24px -4px rgba(45, 177, 92, 0.22);
 }
 
 /* ============================================================ */
@@ -1157,11 +1157,11 @@ html[data-theme="soft-aurora"] .glass-modal {
 }
 
 html[data-theme="abyssal-teal"] .glass-modal {
-  background: rgba(4, 20, 24, 0.97) !important;
+  background: rgba(11, 18, 14, 0.97) !important;
   backdrop-filter: blur(24px) saturate(130%);
   -webkit-backdrop-filter: blur(24px) saturate(130%);
-  border: 1px solid rgba(45, 212, 191, 0.25);
-  box-shadow: inset 0 1px 0 0 rgba(45, 212, 191, 0.20), 0 24px 64px -12px rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(121, 206, 103, 0.25);
+  box-shadow: inset 0 1px 0 0 rgba(121, 206, 103, 0.20), 0 24px 64px -12px rgba(0, 0, 0, 0.85);
 }
 
 .glass-dropdown {
@@ -1309,6 +1309,25 @@ html[data-theme="abyssal-teal"] .glass-modal {
     border-color: rgba(186, 230, 253, 0.30) !important;
   }
 
+  /* Emerald Aurora Mobile Glass Optimization (< 768px):
+     Nonaktifkan backdrop-filter multi-pass pada kartu tugas di HP (Infinix Smart 6 / PowerVR GPU)
+     agar scrolling 60 FPS bebas lag dan touch response seketika. */
+  html[data-theme="abyssal-teal"] .glass-card,
+  html[data-theme="abyssal-teal"] article.glass-card {
+    background: rgba(11, 18, 14, 0.92) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: rgba(121, 206, 103, 0.22) !important;
+    box-shadow: 0 8px 24px -2px rgba(0, 0, 0, 0.60), inset 0 1px 0 0 rgba(121, 206, 103, 0.15) !important;
+  }
+
+  html[data-theme="abyssal-teal"] .glass-panel {
+    background: rgba(11, 18, 14, 0.92) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: rgba(121, 206, 103, 0.20) !important;
+  }
+
   /* Mobile Dark Themes Modal Solid Opacity (100% Anti-Bleedthrough & 0% GPU Jank) */
   html[data-theme="dark-chocolate"] .glass-modal {
     background: rgba(14, 11, 9, 0.99) !important;
@@ -1323,7 +1342,7 @@ html[data-theme="abyssal-teal"] .glass-modal {
   }
 
   html[data-theme="abyssal-teal"] .glass-modal {
-    background: rgba(3, 16, 20, 0.99) !important;
+    background: rgba(10, 16, 13, 0.99) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
