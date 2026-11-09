@@ -3,9 +3,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FRAG, VERT } from './shader';
 
-const FPS = 24;
 const LOOP_SECONDS = 40;
-const LOOP_FRAMES = FPS * LOOP_SECONDS;
+const TWO_PI = 2 * Math.PI;
+const SPEED = TWO_PI / LOOP_SECONDS;
 
 function compile(gl, type, src) {
   const s = gl.createShader(type);
@@ -96,8 +96,8 @@ export default function AuroraCanvas({ paused = false }) {
     const resize = () => {
       if (!canvas) return;
       const isMob = typeof window !== 'undefined' && (window.innerWidth < 768 || 'ontouchstart' in window);
-      // Clamp DPR: 0.9 di HP kentang (Infinix Smart 6 / PowerVR) agar 60fps mulus, 1.5 di Desktop
-      const dpr = isMob ? Math.min(window.devicePixelRatio || 1, 0.9) : Math.min(window.devicePixelRatio || 1, 1.5);
+      // DPR 0.65 di mobile (<768px) untuk menghemat fill-rate GPU low-end (Infinix Smart 6 / PowerVR), 1.25 di Desktop
+      const dpr = isMob ? 0.65 : Math.min(window.devicePixelRatio || 1, 1.25);
       const w = Math.max(2, Math.floor(canvas.clientWidth * dpr));
       const h = Math.max(2, Math.floor(canvas.clientHeight * dpr));
 
@@ -120,32 +120,30 @@ export default function AuroraCanvas({ paused = false }) {
     resize();
     window.addEventListener('resize', resize, { passive: true });
 
-    let frame = 0;
+    let phase = 0;
     let last = performance.now();
-    let acc = 0;
     let raf = 0;
     let isTabHidden = false;
 
-    const draw = () => {
-      gl.uniform1f(uP, (2 * Math.PI * (frame % LOOP_FRAMES)) / LOOP_FRAMES);
-      gl.uniform1f(uF, frame % 97);
+    const draw = (p, f) => {
+      gl.uniform1f(uP, p);
+      gl.uniform1f(uF, f);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
 
-    draw();
+    draw(0, 0);
 
     const tick = (now) => {
       raf = requestAnimationFrame(tick);
       if (isTabHidden || pausedRef.current) return;
 
-      acc += now - last;
+      const delta = Math.min((now - last) / 1000, 0.1);
       last = now;
-      const step = 1000 / FPS;
-      if (acc < step) return;
-      acc = Math.min(acc - step, step); // hindari spiral setelah tab switch
 
-      frame++;
-      draw();
+      phase = (phase + delta * SPEED) % TWO_PI;
+      const grainSeed = (now * 0.05) % 97;
+
+      draw(phase, grainSeed);
     };
 
     raf = requestAnimationFrame(tick);
@@ -155,7 +153,6 @@ export default function AuroraCanvas({ paused = false }) {
       isTabHidden = document.hidden;
       if (!isTabHidden) {
         last = performance.now();
-        acc = 0;
       }
     };
     document.addEventListener('visibilitychange', onVisibilityChange);

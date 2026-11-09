@@ -18,9 +18,9 @@ export default function AbyssalTealBackground() {
       {/* Real-Time WebGL Shader Scene (Aurora + Mountains + Starlight + Fjord Water Reflections) */}
       <AuroraCanvas paused={false} />
 
-      {/* Adaptive Scrim Dark Overlay (Ensures To-Do List Cards & Text have crisp > 7:1 contrast) */}
+      {/* Adaptive Scrim Gradient (Langit atas bening agar pendaran aurora bersinar terang; bagian bawah bertransisi lembut ke obsidian gelap agar kartu to-do tetap tajam & kontras > 7:1) */}
       <div
-        className="absolute inset-0 bg-black/55 backdrop-blur-[0.5px] pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/60 pointer-events-none"
         aria-hidden="true"
       />
     </div>

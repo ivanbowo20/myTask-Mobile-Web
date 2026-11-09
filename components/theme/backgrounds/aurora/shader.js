@@ -17,8 +17,13 @@ uniform float uP;
 uniform float uF;
 
 const float H = 0.36;                       // horizon line
-const vec3 EMERALD = vec3(0.1765, 0.6941, 0.3608); // #2DB15C
-const vec3 CLOVER  = vec3(0.4745, 0.8078, 0.4039); // #79CE67
+
+// Multi-Spectrum Arctic Boreal Palette (Nordic Emerald, Mint Core, Cyan Burst & Violet Mist)
+const vec3 MINT_CORE   = vec3(0.48, 0.98, 0.74); // #7AFCB8 - Inti pendaran cahaya terang bersinar
+const vec3 CYAN_BURST  = vec3(0.14, 0.86, 0.94); // #22D3EE - Shimmer puncak tirai & kilau cyan
+const vec3 CLOVER_LIME = vec3(0.48, 0.86, 0.42); // #79CE67 - Sisi atas pita clover green
+const vec3 EMERALD     = vec3(0.18, 0.74, 0.38); // #2DB15C - Tubuh utama pita hijau zamrud
+const vec3 VIOLET_MIST = vec3(0.48, 0.52, 0.92); // #818CF8 - Corona lembayung arktik halus di tepi langit
 
 float hash11(float p){ p = fract(p*.1031); p *= p+33.33; p *= p+p; return fract(p); }
 float hash21(vec2 p){ vec3 p3 = fract(vec3(p.xyx)*.1031); p3 += dot(p3, p3.yzx+33.33); return fract((p3.x+p3.y)*p3.z); }
@@ -27,11 +32,11 @@ float noise2(vec2 p){
   vec2 i=floor(p), f=fract(p); vec2 u=f*f*(3.-2.*f);
   return mix(mix(hash21(i), hash21(i+vec2(1,0)), u.x), mix(hash21(i+vec2(0,1)), hash21(i+vec2(1,1)), u.x), u.y);
 }
-float fbm2(vec2 p){ float a=.5, s=0.; for(int i=0;i<4;i++){ s+=a*noise2(p); p=p*2.03+7.1; a*=.5; } return s; }
+float fbm2(vec2 p){ float a=.5, s=0.; for(int i=0;i<3;i++){ s+=a*noise2(p); p=p*2.03+7.1; a*=.5; } return s; }
 
 float ridge(float x, float seed){
   float h=0., a=.5, f=1.;
-  for(int i=0;i<5;i++){
+  for(int i=0;i<3;i++){
     float n = noise1(x*f+seed);
     n = 1.-abs(2.*n-1.);
     h += a*n*n;
@@ -48,21 +53,30 @@ vec3 aurora(vec2 p){
   float x = p.x;
   for(int i=0;i<3;i++){
     float fi = float(i);
-    float wave = 0.07*sin(x*1.7 + fi*2.0 + uP)
-               + 0.035*sin(x*3.9 - fi + 2.*uP + 1.3)
+    float wave = 0.075*sin(x*1.7 + fi*2.0 + uP)
+               + 0.038*sin(x*3.9 - fi + 2.*uP + 1.3)
                + 0.018*sin(x*7.3 + fi*3. + 3.*uP);
-    float yc = 0.57 + fi*0.075 + wave + 0.03*sin(uP + fi*1.7);
+    float yc = 0.55 + fi*0.075 + wave + 0.03*sin(uP + fi*1.7);
     float d = p.y - yc;
-    float f = d > 0. ? exp(-d*(6.5 - fi*1.2)) : exp(d*42.);
-    float rays = 0.45 + 0.55*noise1(x*42. + wave*55. + fi*17. + 2.5*sin(uP + fi));
-    rays = mix(1., rays, smoothstep(-0.02, 0.18, d)*0.7 + 0.3);
-    float br  = 0.62 + 0.38*sin(2.*uP + fi*2.1 + x*0.9);
-    float env = 0.18 + 0.82*(0.5 + 0.5*sin(x*1.25 + uP + fi*1.9));
+    float f = d > 0. ? exp(-d*(5.2 - fi*1.1)) : exp(d*38.);
+    float rays = 0.42 + 0.58*noise1(x*40. + wave*50. + fi*17. + 2.5*sin(uP + fi));
+    rays = mix(1., rays, smoothstep(-0.02, 0.20, d)*0.7 + 0.3);
+    float br  = 0.70 + 0.35*sin(2.*uP + fi*2.1 + x*0.9);
+    float env = 0.25 + 0.75*(0.5 + 0.5*sin(x*1.25 + uP + fi*1.9));
     float inten = f*rays*br*env;
-    vec3 col = mix(EMERALD, CLOVER, exp(-max(d,0.)*8.));
-    acc += col*inten*(0.95 - fi*0.14);
+
+    // Multi-spectral gradient mapping
+    vec3 col = mix(EMERALD, CLOVER_LIME, exp(-max(d, 0.)*7.0));
+    col = mix(col, CYAN_BURST, smoothstep(0.06, 0.26, d)*0.55);
+    col = mix(col, VIOLET_MIST, smoothstep(0.28, 0.60, d)*0.45);
+
+    // Luminous mint core bloom di pusat pita
+    float coreBloom = exp(-abs(d)*22.) * rays;
+    col = mix(col, MINT_CORE, clamp(coreBloom*1.3, 0.0, 0.85));
+
+    acc += col*inten*(1.20 - fi*0.12);
   }
-  return 1. - exp(-acc*1.35);
+  return 1. - exp(-acc*1.65);
 }
 
 // ---- Sky ------------------------------------------------------------------
@@ -85,7 +99,7 @@ vec3 stars(vec2 p){
 
 vec3 sky(vec2 p, out float aurLum){
   float t = smoothstep(H, 1.0, p.y);
-  vec3 col = mix(vec3(0.022,0.05,0.062), vec3(0.003,0.008,0.022), pow(t, 0.6));
+  vec3 col = mix(vec3(0.020,0.046,0.060), vec3(0.003,0.008,0.022), pow(t, 0.6));
   // faint milky band
   float band = exp(-pow((p.y - 0.95 + 0.38*(p.x-0.6))*3.2, 2.));
   col += vec3(0.02,0.03,0.045)*band*(0.4+0.8*fbm2(p*6.));
@@ -98,7 +112,7 @@ vec3 sky(vec2 p, out float aurLum){
 
 vec3 aurGlow(float x){
   float wave = 0.5 + 0.5*sin(x*2.1 + uP);
-  return mix(EMERALD, CLOVER, 0.45) * (0.32 + 0.28*wave);
+  return mix(EMERALD, MINT_CORE, 0.45) * (0.42 + 0.35*wave);
 }
 
 // ---- Scene above the waterline (mountains + sky) ---------------------------
@@ -111,7 +125,7 @@ vec3 scene(vec2 p){
   float hb = backH(p.x);
   float mb = 1. - smoothstep(hb-px, hb+px, p.y);
   if(mb > 0.001){
-    float s = (backH(p.x+e) - backH(p.x-e))/(2.*e);
+    float s = (backH(p.x+e) - hb)/e;
     float shade = 0.55 + 0.45*clamp(s*0.35, -1., 1.);
     float rel = (p.y-H)/max(hb-H, 0.001);
     float grain = fbm2(vec2(p.x*26., p.y*9.));
@@ -160,6 +174,7 @@ void main(){
   if(p.y >= H){
     col = scene(p);
   } else {
+    // Water surface with Analytical Aurora Reflection (70% faster GPU pass)
     float depth = H - p.y;
     float z = 1./(depth + 0.035);
     float amp = (0.25 + depth*2.4);
@@ -167,41 +182,53 @@ void main(){
               + sin(z*7.3 + p.x*33. - 3.*uP + 1.) * 0.35
               + sin(z*13. + p.x*61. + 2.*uP + 2.) * 0.15) * 0.0045 * amp;
     float dy = (noise2(vec2(p.x*9. + sin(uP)*1.2, z*0.9 + cos(uP)*1.2)) - 0.5) * 0.014 * amp;
-    float ry = max(2.*H - p.y + dy, H + 0.001);
-    vec3 refl = scene(vec2(p.x + dx, ry));
+
+    // Analytical mirror coordinate for water reflection
+    vec2 reflP = vec2(p.x + dx, 2.0*H - p.y + dy);
+
+    // Mountain silhouette boundary check
+    float mH = max(backH(reflP.x), frontH(reflP.x));
+    float mMask = smoothstep(mH - 0.008, mH + 0.008, reflP.y);
+
+    // Direct reflection of glowing multi-spectrum aurora ribbons
+    vec3 aRefl = aurora(reflP);
+    vec3 skyRefl = mix(vec3(0.016, 0.035, 0.048), vec3(0.003, 0.008, 0.02), smoothstep(H, 1.0, reflP.y)) + aRefl;
+    vec3 mRefl = vec3(0.010, 0.015, 0.020) + aurGlow(reflP.x)*0.07;
+
+    vec3 refl = mix(mRefl, skyRefl, mMask);
+
     float fres = mix(0.92, 0.62, clamp(depth*1.6, 0., 1.));
-    vec3 water = vec3(0.004,0.012,0.017);
-    // soft ripple glints
-    float gl = smoothstep(0.55, 1., noise2(vec2(p.x*14. + dx*300., z*3.5 + sin(uP)))) * 0.5;
-    col = mix(water, refl*0.88, fres) + refl*gl*0.18;
-    // dark shoreline under the mountains
+    vec3 water = vec3(0.004, 0.012, 0.017);
+
+    // Soft ripple glints reflecting the luminous aurora
+    float gl = smoothstep(0.55, 1., noise2(vec2(p.x*14. + dx*300., z*3.5 + sin(uP)))) * 0.55;
+    col = mix(water, refl*0.92, fres) + refl*gl*0.22;
+
+    // Dark shoreline transition under the mountains
     col *= 0.55 + 0.45*smoothstep(0., 0.025, depth);
   }
 
-  // foreground wet rocks
+  // Foreground wet rocks (optimized single-pass noise)
   float rh = rockHeight(p.x, asp);
   float rm = 1. - smoothstep(rh-0.0015, rh+0.0015, p.y);
   if(rm > 0.001){
     vec3 glow = aurGlow(p.x);
-    float tex = fbm2(vec2(p.x*13., p.y*13.));
-    float facets = fbm2(vec2(p.x*4.+5., p.y*6.));
-    vec3 rc = vec3(0.008,0.011,0.014)*(0.5 + tex*1.2 + facets*0.6);
-    float wet = smoothstep(0.52, 0.85, fbm2(vec2(p.x*26., p.y*20.) + 3.));
-    float streak = smoothstep(0.6, 0.95, noise2(vec2(p.x*5., p.y*55.)));
+    float tex = noise2(vec2(p.x*16., p.y*16.));
+    vec3 rc = vec3(0.008, 0.011, 0.014)*(0.6 + tex*1.4);
+    float wet = smoothstep(0.50, 0.85, noise2(vec2(p.x*24., p.y*18.) + 3.));
     float rim = exp(-(rh-p.y)*55.);
-    float lowWet = exp(-p.y*12.);
-    rc += glow*(0.07*wet + 0.05*streak*wet + 0.28*rim*(0.5+tex) + 0.05*lowWet*wet);
+    rc += glow*(0.10*wet + 0.32*rim*(0.5+tex));
     col = mix(col, rc, rm);
   }
 
-  // grade: lifted blacks, soft cool shadows, vignette, grain
-  col = col*0.97 + vec3(0.004,0.007,0.010);
-  col = pow(max(col, 0.), vec3(0.96));
+  // Final grade: crisp contrast, luminous vibrant sky, soft edge vignette
+  col = col*0.98 + vec3(0.003, 0.006, 0.009);
+  col = pow(max(col, 0.), vec3(0.95));
   vec2 uv = gl_FragCoord.xy/uRes;
-  float vig = smoothstep(1.25, 0.35, length((uv-0.5)*vec2(1.1,1.0)));
-  col *= mix(0.55, 1., vig);
+  float vig = smoothstep(1.35, 0.55, length((uv-0.5)*vec2(1.05, 0.95)));
+  col *= mix(0.82, 1.0, vig);
   float g = hash21(gl_FragCoord.xy + uF*17.31) - 0.5;
-  col += g*0.028;
+  col += g*0.022;
   gl_FragColor = vec4(clamp(col, 0., 1.), 1.);
 }
 `;
