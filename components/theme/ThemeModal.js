@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Shirt, Sparkles } from 'lucide-react';
+import { X, Check, Shirt, ShieldCheck } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { cn, lockBodyScroll, unlockBodyScroll } from '@/lib/utils';
 
@@ -353,7 +353,7 @@ export default function ThemeModal() {
             {/* Footer / Contrast Guarantee Notice */}
             <div className="pt-4 mt-4 border-t border-[var(--glass-border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)] shrink-0" />
+                <ShieldCheck className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)] shrink-0" />
                 <span>
                   Tersimpan otomatis • Dilengkapi proteksi kontras teks WCAG AA.
                 </span>

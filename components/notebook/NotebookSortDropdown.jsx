@@ -72,7 +72,7 @@ export default function NotebookSortDropdown({ value = 'newest', onChange, class
   }
 
   return (
-    <div ref={containerRef} className={cn('relative inline-block text-left', className)}>
+    <div ref={containerRef} className={cn('relative inline-block text-left z-30', className)}>
       {/* Trigger Button with Apple Glass Aesthetic */}
       <button
         type="button"
@@ -112,8 +112,8 @@ export default function NotebookSortDropdown({ value = 'newest', onChange, class
             role="listbox"
             aria-label="Pilihan urutan catatan materi"
             className={cn(
-              'absolute left-0 sm:right-0 sm:left-auto top-full mt-1.5 z-40',
-              'min-w-[200px] p-1.5 rounded-xl space-y-0.5',
+              'absolute right-0 top-full mt-1.5 z-50',
+              'min-w-[210px] p-1.5 rounded-xl space-y-0.5',
               'bg-[var(--theme-nav-bg,#16110E)]/95 border border-white/12 shadow-[0_16px_40px_-8px_rgba(0,0,0,0.6)] backdrop-blur-xl',
               '[html[data-theme="celestial-sky"]_&]:bg-white/95 [html[data-theme="celestial-sky"]_&]:border-sky-200',
               '[html[data-theme="celestial-sky"]_&]:shadow-[0_16px_36px_-6px_rgba(2,132,199,0.22)]'

@@ -9,14 +9,17 @@ import {
   X,
   FileText,
   Star,
-  Sparkles,
+  Trash2,
 } from 'lucide-react';
-import { BookBookmark } from '@phosphor-icons/react';
+import { BookBookmark, FolderSimple, FolderPlus } from '@phosphor-icons/react';
 import Button from '@/components/ui/Button';
 import SpecularButton from '@/components/ui/SpecularButton';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import NotebookCard from '@/components/notebook/NotebookCard';
 import NotebookSortDropdown from '@/components/notebook/NotebookSortDropdown';
+import NotebookCategorySidebar from '@/components/notebook/NotebookCategorySidebar';
+import NotebookCategoryPills from '@/components/notebook/NotebookCategoryPills';
+import AssignNotesModal from '@/components/notebook/AssignNotesModal';
 import MotionContainer from '@/components/ui/MotionContainer';
 import { useNotebooks } from '@/lib/notebook-context';
 import { useDesktopMotion } from '@/lib/use-desktop-motion';
@@ -71,11 +74,15 @@ export default function NotebookPage() {
     setDateFilter,
     sortBy,
     setSortBy,
+    selectedCategory,
+    setSelectedCategory,
+    deleteCustomCategory,
   } = useNotebooks();
 
   const searchInputRef = useRef(null);
   const isDesktop = useDesktopMotion();
   const [localSearch, setLocalSearch] = useState(searchQuery);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
   // Sinkronkan input lokal saat searchQuery di context berubah (misal tombol reset filter ditekan)
   useEffect(() => {
@@ -105,7 +112,7 @@ export default function NotebookPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const hasActiveFilters = Boolean(searchQuery.trim()) || dateFilter !== 'all';
+  const hasActiveFilters = Boolean(searchQuery.trim()) || dateFilter !== 'all' || (selectedCategory && selectedCategory !== 'all');
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -124,7 +131,7 @@ export default function NotebookPage() {
                 {stats.total} Catatan
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-zinc-400 [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium max-w-2xl leading-relaxed">
+            <p className="hidden sm:block text-xs sm:text-sm text-zinc-400 [html[data-theme='celestial-sky']_&]:text-[#334155] [html[data-theme='celestial-sky']_&]:font-medium max-w-2xl leading-relaxed">
               Pusat catatan kuliah, ringkasan materi, dan referensi belajar terstruktur dengan Markdown.
             </p>
           </div>
@@ -142,199 +149,332 @@ export default function NotebookPage() {
         </div>
       </MotionContainer>
 
-      {/* Filter & Search Bar */}
-      <MotionContainer delay={1} className="rounded-2xl">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Search input with Ctrl+K shortcut */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Cari materi atau topik... (Ctrl+K)"
-              className={cn(
-                'w-full pl-10 pr-16 py-2.5 rounded-xl text-xs sm:text-sm font-medium glass-card',
-                'bg-white/[0.04] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-500',
-                '[html[data-theme="celestial-sky"]_&]:bg-white/80 [html[data-theme="celestial-sky"]_&]:text-slate-900 [html[data-theme="celestial-sky"]_&]:placeholder:text-slate-500 [html[data-theme="celestial-sky"]_&]:border-sky-200/70',
-                'focus:outline-none focus:border-[var(--theme-accent,#0284C7)] focus:ring-1 focus:ring-[var(--theme-accent,#0284C7)]/50',
-                'transition-all duration-150 shadow-sm'
-              )}
-            />
-            {localSearch ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setLocalSearch('');
-                  setSearchQuery('');
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-zinc-400 [html[data-theme='celestial-sky']_&]:bg-slate-100 [html[data-theme='celestial-sky']_&]:text-slate-600 [html[data-theme='celestial-sky']_&]:border-slate-300 pointer-events-none">
-                Ctrl+K
-              </kbd>
-            )}
-          </div>
+      {/* 2-Column Master-Detail Layout on Desktop (≥1024px) / Responsive Stack on Mobile */}
+      <div className="flex flex-col lg:flex-row items-start gap-6">
+        {/* Desktop Left Sidebar for Categories */}
+        <NotebookCategorySidebar className="hidden lg:flex" />
 
-          {/* Date Filter Pills & Sort Selector */}
-          <div className="flex items-center flex-wrap gap-2">
-            {/* Date Filter Pills with Apple Sliding Pill */}
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.08] glass-card [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 shadow-sm">
-              {DATE_FILTER_OPTIONS.map((opt) => {
-                const isSelected = dateFilter === opt.value;
-                return (
+        {/* Right Content Area: Mobile Category Pills + Search/Filter + Notes Grid */}
+        <div className="flex-1 w-full min-w-0 space-y-6">
+          {/* Mobile Category Chips (Horizontal Scrollable) */}
+          <NotebookCategoryPills className="lg:hidden" />
+
+          {/* Filter & Search Bar */}
+          <MotionContainer delay={1} overflowVisible className="rounded-2xl relative z-20 overflow-visible">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              {/* Search input with Ctrl+K shortcut */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
+                  placeholder="Cari materi atau topik... (Ctrl+K)"
+                  className={cn(
+                    'w-full pl-10 pr-16 py-2.5 rounded-xl text-xs sm:text-sm font-medium glass-card',
+                    'bg-white/[0.04] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-500',
+                    '[html[data-theme="celestial-sky"]_&]:bg-white/80 [html[data-theme="celestial-sky"]_&]:text-slate-900 [html[data-theme="celestial-sky"]_&]:placeholder:text-slate-500 [html[data-theme="celestial-sky"]_&]:border-sky-200/70',
+                    'focus:outline-none focus:border-[var(--theme-accent,#0284C7)] focus:ring-1 focus:ring-[var(--theme-accent,#0284C7)]/50',
+                    'transition-all duration-150 shadow-sm'
+                  )}
+                />
+                {localSearch ? (
                   <button
-                    key={opt.value}
                     type="button"
-                    onClick={() => setDateFilter(opt.value)}
-                    className={cn(
-                      'relative px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.97] select-none',
-                      isSelected
-                        ? 'text-white [html[data-theme="abyssal-teal"]_&]:text-slate-950 [html[data-theme="soft-aurora"]_&]:text-slate-950 [html[data-theme="dark-chocolate"]_&]:text-slate-950 font-semibold shadow-sm'
-                        : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:hover:text-slate-900'
-                    )}
-                  >
-                    {isSelected && (
-                      <motion.div
-                        layoutId="notebook-date-filter-pill"
-                        className="absolute inset-0 bg-[var(--theme-accent,#0284C7)] rounded-lg pointer-events-none z-0"
-                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                      />
-                    )}
-                    <span className="relative z-10">{opt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Custom Apple Glass Sort Dropdown */}
-            <NotebookSortDropdown value={sortBy} onChange={setSortBy} />
-          </div>
-        </div>
-      </MotionContainer>
-
-      {/* Main Content Area */}
-      {filteredNotebooks.length === 0 ? (
-        <MotionContainer delay={1}>
-          {/* Actionable Empty State (SielloMita Protocol: Never lazy empty text) */}
-          <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 space-y-4 shadow-sm">
-            <div className="w-14 h-14 rounded-2xl bg-[var(--theme-accent,#0284C7)]/15 border border-[var(--theme-accent,#0284C7)]/30 flex items-center justify-center text-[var(--theme-accent,#0284C7)] shadow-inner">
-              <BookBookmark weight="duotone" className="w-7 h-7" />
-            </div>
-
-            <div className="space-y-1.5 max-w-sm">
-              <h3 className="text-base sm:text-lg font-bold text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
-                {hasActiveFilters
-                  ? 'Tidak ada catatan materi yang cocok'
-                  : 'Belum ada catatan materi'}
-              </h3>
-              <p className="text-xs sm:text-sm text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 leading-relaxed">
-                {hasActiveFilters
-                  ? 'Coba ganti kata kunci pencarian atau reset filter tanggal Anda.'
-                  : 'Mulai tulis ringkasan materi kuliah, belajar, atau catatan penting Anda di sini.'}
-              </p>
-            </div>
-
-            <div className="pt-2">
-              {hasActiveFilters ? (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setLocalSearch('');
-                    setSearchQuery('');
-                    setDateFilter('all');
-                  }}
-                >
-                  Reset Filter Pencarian
-                </Button>
-              ) : (
-                <SpecularButton onClick={openAddNotebook}>
-                  <Plus className="w-4 h-4 mr-1.5 stroke-[2.5]" />
-                  <span>Tulis Materi Pertama</span>
-                </SpecularButton>
-              )}
-            </div>
-          </div>
-        </MotionContainer>
-      ) : (
-        <div className="space-y-8">
-          {/* Section 1: Pinned / Important Notebooks (If any) */}
-          {pinnedNotebooks.length > 0 && (
-            <section className="space-y-3.5">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--theme-accent,#0284C7)]">
-                <Star className="w-3.5 h-3.5 fill-[var(--theme-accent,#0284C7)]" />
-                <span>Materi Penting Dipin ({pinnedNotebooks.length})</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {pinnedNotebooks.map((nb, idx) => (
-                  <motion.div
-                    key={nb.id}
-                    initial={{ y: 28 }}
-                    animate={{ y: 0 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 30,
-                      delay: Math.min(0.08 + idx * 0.12, 0.7),
+                    onClick={() => {
+                      setLocalSearch('');
+                      setSearchQuery('');
                     }}
-                    className="h-full relative rounded-2xl overflow-hidden"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-white"
                   >
-                    {/* Subtle Ambient Accent Glow (SielloMita Standard) */}
-                    <div
-                      className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent opacity-25 z-0"
-                      aria-hidden="true"
-                    />
-                    <div className="relative z-10 h-full">
-                      <NotebookCard notebook={nb} />
-                    </div>
-                  </motion.div>
-                ))}
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-zinc-400 [html[data-theme='celestial-sky']_&]:bg-slate-100 [html[data-theme='celestial-sky']_&]:text-slate-600 [html[data-theme='celestial-sky']_&]:border-slate-300 pointer-events-none">
+                    Ctrl+K
+                  </kbd>
+                )}
               </div>
-            </section>
-          )}
 
-          {/* Section 2: Other / All Notebooks */}
-          {otherNotebooks.length > 0 && (
-            <section className="space-y-3.5">
-              {pinnedNotebooks.length > 0 && (
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500">
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Catatan Lainnya ({otherNotebooks.length})</span>
+              {/* Date Filter Pills & Sort Selector */}
+              <div className="flex items-center flex-wrap gap-2">
+                {/* Date Filter Pills with Apple Sliding Pill */}
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.08] glass-card [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 shadow-sm">
+                  {DATE_FILTER_OPTIONS.map((opt) => {
+                    const isSelected = dateFilter === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setDateFilter(opt.value)}
+                        className={cn(
+                          'relative px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.97] select-none',
+                          isSelected
+                            ? 'text-white [html[data-theme="abyssal-teal"]_&]:text-slate-950 [html[data-theme="soft-aurora"]_&]:text-slate-950 [html[data-theme="dark-chocolate"]_&]:text-slate-950 font-semibold shadow-sm'
+                            : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:hover:text-slate-900'
+                        )}
+                      >
+                        {isSelected && (
+                          <motion.div
+                            layoutId="notebook-date-filter-pill"
+                            className="absolute inset-0 bg-[var(--theme-accent,#0284C7)] rounded-lg pointer-events-none z-0"
+                            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                          />
+                        )}
+                        <span className="relative z-10">{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Apple Glass Sort Dropdown */}
+                <NotebookSortDropdown value={sortBy} onChange={setSortBy} />
+
+                {/* Quick Contextual Action: Masukkan Catatan yang Ada (Hanya saat kategori kustom aktif) */}
+                {selectedCategory !== 'all' && selectedCategory !== '_uncategorized' && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsAssignModalOpen(true)}
+                    className="text-xs py-1.5 px-2.5 inline-flex items-center gap-1.5 cursor-pointer font-medium shrink-0"
+                  >
+                    <FolderPlus weight="bold" className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)]" />
+                    <span>+ Masukkan Catatan</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </MotionContainer>
+
+          {/* Main Content Area */}
+          {filteredNotebooks.length === 0 ? (
+            <MotionContainer delay={1}>
+              {/* Actionable Empty State (SielloMita Protocol: Never lazy empty text) */}
+              <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl bg-white/[0.02] border border-white/[0.06] [html[data-theme='celestial-sky']_&]:bg-white/80 [html[data-theme='celestial-sky']_&]:border-sky-200/60 space-y-4 shadow-sm">
+                <div className="w-14 h-14 rounded-2xl bg-[var(--theme-accent,#0284C7)]/15 border border-[var(--theme-accent,#0284C7)]/30 flex items-center justify-center text-[var(--theme-accent,#0284C7)] shadow-inner">
+                  <BookBookmark weight="duotone" className="w-7 h-7" />
+                </div>
+
+                {Boolean(searchQuery.trim()) || dateFilter !== 'all' ? (
+                  <>
+                    <div className="space-y-1.5 max-w-sm">
+                      <h3 className="text-base sm:text-lg font-bold text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
+                        Tidak ada catatan materi yang cocok
+                      </h3>
+                      <p className="text-xs sm:text-sm text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 leading-relaxed">
+                        Coba ganti kata kunci pencarian atau reset filter tanggal Anda.
+                      </p>
+                    </div>
+
+                    <div className="pt-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setLocalSearch('');
+                          setSearchQuery('');
+                          setDateFilter('all');
+                        }}
+                      >
+                        Reset Filter Pencarian
+                      </Button>
+                    </div>
+                  </>
+                ) : selectedCategory && selectedCategory !== 'all' && selectedCategory !== '_uncategorized' ? (
+                  <>
+                    <div className="space-y-1.5 max-w-md">
+                      <h3 className="text-base sm:text-lg font-bold text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
+                        Belum ada materi di kategori &ldquo;{selectedCategory}&rdquo;
+                      </h3>
+                      <p className="text-xs sm:text-sm text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 leading-relaxed">
+                        Mulai tulis catatan baru untuk kategori ini, atau masukkan materi yang sudah Anda buat sebelumnya ke sini.
+                      </p>
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+                      <SpecularButton onClick={openAddNotebook} className="w-full sm:w-auto cursor-pointer">
+                        <Plus className="w-4 h-4 mr-1.5 stroke-[2.5]" />
+                        <span>Catatan Baru di {selectedCategory}</span>
+                      </SpecularButton>
+                      <Button
+                        variant="secondary"
+                        onClick={() => setIsAssignModalOpen(true)}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <FolderPlus weight="bold" className="w-4 h-4 text-[var(--theme-accent,#0284C7)]" />
+                        <span>Masukkan Catatan yang Ada</span>
+                      </Button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory('all')}
+                      className="text-xs text-zinc-400 hover:text-zinc-200 [html[data-theme='celestial-sky']_&]:text-slate-600 [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:underline cursor-pointer pt-1"
+                    >
+                      Lihat Semua Catatan
+                    </button>
+                  </>
+                ) : selectedCategory === '_uncategorized' ? (
+                  <>
+                    <div className="space-y-1.5 max-w-sm">
+                      <h3 className="text-base sm:text-lg font-bold text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
+                        Semua Catatan Sudah Berkategori
+                      </h3>
+                      <p className="text-xs sm:text-sm text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 leading-relaxed">
+                        Bagus! Seluruh catatan materi Anda sudah terorganisir rapi dalam kategori.
+                      </p>
+                    </div>
+
+                    <div className="pt-2">
+                      <Button variant="secondary" onClick={() => setSelectedCategory('all')}>
+                        Lihat Semua Catatan
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-1.5 max-w-sm">
+                      <h3 className="text-base sm:text-lg font-bold text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A]">
+                        Belum ada catatan materi
+                      </h3>
+                      <p className="text-xs sm:text-sm text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 leading-relaxed">
+                        Mulai tulis ringkasan materi kuliah, belajar, atau catatan penting Anda di sini.
+                      </p>
+                    </div>
+
+                    <div className="pt-2">
+                      <SpecularButton onClick={openAddNotebook} className="cursor-pointer">
+                        <Plus className="w-4 h-4 mr-1.5 stroke-[2.5]" />
+                        <span>Tulis Materi Pertama</span>
+                      </SpecularButton>
+                    </div>
+                  </>
+                )}
+              </div>
+            </MotionContainer>
+          ) : (
+            <div className="space-y-6">
+              {/* Category Context Banner with Quick Action to Assign Notes (Desktop Only, Mobile uses Contextual Button) */}
+              {selectedCategory !== 'all' && selectedCategory !== '_uncategorized' && (
+                <div className="hidden lg:flex glass-card p-4 rounded-2xl relative overflow-hidden items-center justify-between gap-3 shadow-md">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 rounded-xl bg-[var(--theme-accent,#0284C7)]/15 text-[var(--theme-accent,#0284C7)] shrink-0 shadow-sm">
+                      <FolderSimple weight="fill" className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500">Kategori:</span>
+                      <span className="text-xs sm:text-sm font-bold text-zinc-100 [html[data-theme='celestial-sky']_&]:text-slate-900 truncate">
+                        {selectedCategory}
+                      </span>
+                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-white/[0.08] text-zinc-300 [html[data-theme='celestial-sky']_&]:bg-sky-100 [html[data-theme='celestial-sky']_&]:text-sky-800">
+                        {filteredNotebooks.length} Catatan
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setIsAssignModalOpen(true)}
+                      className="flex-1 sm:flex-none text-xs py-2 px-3 inline-flex items-center justify-center gap-1.5 cursor-pointer font-semibold min-h-[38px]"
+                    >
+                      <FolderPlus weight="bold" className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)]" />
+                      <span>Masukkan Catatan yang Ada</span>
+                    </Button>
+
+                    {deleteCustomCategory && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`Hapus kategori "${selectedCategory}"? Seluruh catatan di dalamnya akan dialihkan menjadi Tanpa Kategori.`)) {
+                            deleteCustomCategory(selectedCategory);
+                          }
+                        }}
+                        title={`Hapus kategori "${selectedCategory}"`}
+                        aria-label={`Hapus kategori "${selectedCategory}"`}
+                        className="p-2 rounded-xl text-zinc-400 hover:text-rose-400 bg-white/[0.06] hover:bg-rose-500/10 border border-white/[0.08] transition-colors cursor-pointer shrink-0 min-h-[38px] min-w-[38px] flex items-center justify-center"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {otherNotebooks.map((nb, idx) => (
-                  <motion.div
-                    key={nb.id}
-                    initial={{ y: 28 }}
-                    animate={{ y: 0 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 30,
-                      delay: Math.min(0.08 + idx * 0.12, 0.7),
-                    }}
-                    className="h-full relative rounded-2xl overflow-hidden"
-                  >
-                    {/* Subtle Ambient Accent Glow (SielloMita Standard) */}
-                    <div
-                      className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent opacity-25 z-0"
-                      aria-hidden="true"
-                    />
-                    <div className="relative z-10 h-full">
-                      <NotebookCard notebook={nb} />
+
+              {/* Section 1: Pinned / Important Notebooks (If any) */}
+              {pinnedNotebooks.length > 0 && (
+                <section className="space-y-3.5">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--theme-accent,#0284C7)]">
+                    <Star className="w-3.5 h-3.5 fill-[var(--theme-accent,#0284C7)]" />
+                    <span>Materi Penting Dipin ({pinnedNotebooks.length})</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {pinnedNotebooks.map((nb, idx) => (
+                      <motion.div
+                        key={nb.id}
+                        initial={{ y: 28 }}
+                        animate={{ y: 0 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 30,
+                          delay: Math.min(0.08 + idx * 0.12, 0.7),
+                        }}
+                        className="h-full relative rounded-2xl overflow-hidden"
+                      >
+                        {/* Subtle Ambient Accent Glow (SielloMita Standard) */}
+                        <div
+                          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent opacity-25 z-0"
+                          aria-hidden="true"
+                        />
+                        <div className="relative z-10 h-full">
+                          <NotebookCard notebook={nb} />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Section 2: Other / All Notebooks */}
+              {otherNotebooks.length > 0 && (
+                <section className="space-y-3.5">
+                  {pinnedNotebooks.length > 0 && (
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-zinc-500">
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Catatan Lainnya ({otherNotebooks.length})</span>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            </section>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {otherNotebooks.map((nb, idx) => (
+                      <motion.div
+                        key={nb.id}
+                        initial={{ y: 28 }}
+                        animate={{ y: 0 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 30,
+                          delay: Math.min(0.08 + idx * 0.12, 0.7),
+                        }}
+                        className="h-full relative rounded-2xl overflow-hidden"
+                      >
+                        {/* Subtle Ambient Accent Glow (SielloMita Standard) */}
+                        <div
+                          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent opacity-25 z-0"
+                          aria-hidden="true"
+                        />
+                        <div className="relative z-10 h-full">
+                          <NotebookCard notebook={nb} />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* Confirmation Dialog for Delete (Aegis Standard) */}
       <ConfirmDialog
@@ -346,6 +486,13 @@ export default function NotebookPage() {
         confirmLabel="Ya, Hapus Catatan"
         cancelLabel="Batal"
         isDanger={true}
+      />
+
+      {/* Assign Existing Notes to Selected Category Modal */}
+      <AssignNotesModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        targetCategoryName={selectedCategory !== 'all' && selectedCategory !== '_uncategorized' ? selectedCategory : ''}
       />
     </div>
   );

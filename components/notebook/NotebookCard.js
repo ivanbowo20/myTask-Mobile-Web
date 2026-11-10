@@ -10,7 +10,7 @@ import {
   Check,
   Clock,
 } from 'lucide-react';
-import { PushPin } from '@phosphor-icons/react';
+import { PushPin, FolderSimple } from '@phosphor-icons/react';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 import { toast } from '@/lib/use-toast';
@@ -19,9 +19,17 @@ import { cn, formatTanggal, htmlToChatFormattedText } from '@/lib/utils';
 import { triggerStarBurst } from '@/lib/dopamine-fx';
 
 function NotebookCard({ notebook }) {
-  const { openPreviewNotebook, openEditNotebook, openDeleteConfirm, toggleImportant } = useNotebooks();
+  const {
+    openPreviewNotebook,
+    openEditNotebook,
+    openDeleteConfirm,
+    toggleImportant,
+    allCategories,
+    moveNoteToCategory,
+  } = useNotebooks();
   const [isCopied, setIsCopied] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   // Extract clean chat-formatted text (no &nbsp;, bold to *bold*, etc.)
   const formattedText = useMemo(() => {
@@ -122,11 +130,9 @@ function NotebookCard({ notebook }) {
       aria-label={`Buka preview catatan ${notebook.judul}`}
       className={cn(
         'group relative flex flex-col justify-between rounded-2xl p-5 cursor-pointer glass-card',
-        'bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.08] hover:border-white/[0.16]',
-        '[html[data-theme="celestial-sky"]_&]:bg-white/85 [html[data-theme="celestial-sky"]_&]:hover:bg-white/95 [html[data-theme="celestial-sky"]_&]:border-sky-200/60',
-        'sm:backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.18)] [html[data-theme="celestial-sky"]_&]:shadow-[0_8px_24px_rgba(2,132,199,0.12)]',
+        'shadow-[0_4px_24px_rgba(0,0,0,0.30)] [html[data-theme="celestial-sky"]_&]:shadow-[0_8px_24px_rgba(2,132,199,0.12)]',
         'transition-all duration-200 active:scale-[0.985] lg:hover:-translate-y-1 lg:hover:shadow-xl will-change-transform select-none',
-        notebook.penting && 'ring-1 ring-[var(--theme-accent,#0284C7)]/30 border-[var(--theme-accent,#0284C7)]/20 bg-[var(--theme-accent,#0284C7)]/[0.03] [html[data-theme="celestial-sky"]_&]:bg-sky-50/70 [html[data-theme="celestial-sky"]_&]:border-sky-300'
+        notebook.penting && 'ring-1 ring-[var(--theme-accent,#0284C7)]/30 border-[var(--theme-accent,#0284C7)]/35'
       )}
     >
       {/* Top Bar: Accent Tag + Quick Actions */}
@@ -155,6 +161,16 @@ function NotebookCard({ notebook }) {
               <span>Materi</span>
             )}
           </span>
+
+          {notebook.kategori && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/10 text-zinc-300 [html[data-theme='celestial-sky']_&]:bg-sky-50 [html[data-theme='celestial-sky']_&]:text-sky-800 [html[data-theme='celestial-sky']_&]:border-sky-200 truncate max-w-[130px]"
+              title={`Kategori: ${notebook.kategori}`}
+            >
+              <FolderSimple weight="fill" className="w-2.5 h-2.5 shrink-0 text-[var(--theme-accent,#0284C7)]" />
+              <span className="truncate">{notebook.kategori}</span>
+            </span>
+          )}
         </div>
 
         {/* Action icons */}
@@ -211,25 +227,92 @@ function NotebookCard({ notebook }) {
               <>
                 <div
                   className="fixed inset-0 z-20"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setShowCategoryPicker(false);
+                  }}
                 />
-                <div className="absolute right-0 top-8 z-30 w-36 rounded-xl bg-[var(--theme-nav-bg,#1A130E)] border border-white/10 [html[data-theme='celestial-sky']_&]:bg-white/95 [html[data-theme='celestial-sky']_&]:border-slate-200 shadow-2xl p-1 space-y-0.5 animate-in fade-in duration-100">
-                  <button
-                    type="button"
-                    onClick={handleOpenEdit}
-                    className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-200 [html[data-theme='celestial-sky']_&]:text-slate-700 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-100 transition-colors text-left cursor-pointer"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500" />
-                    <span>Edit Catatan</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-400 [html[data-theme='celestial-sky']_&]:text-rose-600 hover:bg-rose-500/10 [html[data-theme='celestial-sky']_&]:hover:bg-rose-50 transition-colors text-left cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-400 [html[data-theme='celestial-sky']_&]:text-rose-600" />
-                    <span>Hapus</span>
-                  </button>
+                <div className="absolute right-0 top-8 z-30 min-w-[170px] rounded-xl bg-[var(--theme-nav-bg,#1A130E)] border border-white/10 [html[data-theme='celestial-sky']_&]:bg-white/95 [html[data-theme='celestial-sky']_&]:border-slate-200 shadow-2xl p-1.5 space-y-0.5 animate-in fade-in duration-100">
+                  {showCategoryPicker ? (
+                    <div className="space-y-1">
+                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 border-b border-white/[0.06] mb-1 flex items-center justify-between">
+                        <span>Pindah Kategori</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowCategoryPicker(false)}
+                          className="hover:text-white text-[10px]"
+                        >
+                          Kembali
+                        </button>
+                      </div>
+
+                      <div className="max-h-36 overflow-y-auto space-y-0.5">
+                        {allCategories.map((c) => (
+                          <button
+                            key={c.name}
+                            type="button"
+                            onClick={() => {
+                              moveNoteToCategory(notebook.id, c.name);
+                              setIsMenuOpen(false);
+                              setShowCategoryPicker(false);
+                            }}
+                            className={cn(
+                              'flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-medium text-left cursor-pointer transition-colors',
+                              (notebook.kategori || '').toLowerCase() === c.name.toLowerCase()
+                                ? 'bg-[var(--theme-accent,#0284C7)]/15 text-[var(--theme-accent,#0284C7)] font-semibold'
+                                : 'text-zinc-300 hover:bg-white/[0.08]'
+                            )}
+                          >
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: c.color || '#0284C7' }}
+                            />
+                            <span className="truncate">{c.name}</span>
+                          </button>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            moveNoteToCategory(notebook.id, '');
+                            setIsMenuOpen(false);
+                            setShowCategoryPicker(false);
+                          }}
+                          className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs italic text-zinc-400 hover:bg-white/[0.08] text-left cursor-pointer transition-colors"
+                        >
+                          <FolderSimple className="w-3.5 h-3.5 text-zinc-500" />
+                          <span>Tanpa Kategori</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleOpenEdit}
+                        className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-200 [html[data-theme='celestial-sky']_&]:text-slate-700 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-100 transition-colors text-left cursor-pointer"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500" />
+                        <span>Edit Catatan</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowCategoryPicker(true)}
+                        className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-200 [html[data-theme='celestial-sky']_&]:text-slate-700 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-100 transition-colors text-left cursor-pointer"
+                      >
+                        <FolderSimple className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)]" />
+                        <span>Pindah Kategori</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-400 [html[data-theme='celestial-sky']_&]:text-rose-600 hover:bg-rose-500/10 [html[data-theme='celestial-sky']_&]:hover:bg-rose-50 transition-colors text-left cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-400 [html[data-theme='celestial-sky']_&]:text-rose-600" />
+                        <span>Hapus</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             )}

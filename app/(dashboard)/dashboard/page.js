@@ -10,7 +10,6 @@ import {
   Clock,
   Star,
   ArrowRight,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import {
@@ -655,7 +654,7 @@ export default function DashboardPage() {
           <div className="glass-panel h-full p-5 sm:p-6 rounded-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--glass-border)]">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
+                <Clock className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
                 <h2 className="font-heading text-base font-bold text-[var(--text-primary)]">Tugas Terbaru</h2>
               </div>
               <Link

@@ -11,7 +11,7 @@ import {
   Clock,
   Trash2,
 } from 'lucide-react';
-import { PushPin } from '@phosphor-icons/react';
+import { PushPin, FolderSimple } from '@phosphor-icons/react';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 import { toast } from '@/lib/use-toast';
@@ -173,6 +173,17 @@ export default function NotebookPreviewModal({
                 <span className="text-[11px] text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600">
                   {wordCount} kata (~{readTimeMinutes} mnt baca)
                 </span>
+
+                {/* Category Badge if assigned */}
+                {notebook.kategori && (
+                  <>
+                    <span className="text-zinc-600 [html[data-theme='celestial-sky']_&]:text-slate-400">•</span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/[0.08] text-zinc-200 border border-white/10 [html[data-theme='celestial-sky']_&]:bg-sky-100 [html[data-theme='celestial-sky']_&]:text-sky-900 [html[data-theme='celestial-sky']_&]:border-sky-300">
+                      <FolderSimple weight="fill" className="w-3 h-3 text-[var(--theme-accent,#0284C7)]" />
+                      <span>{notebook.kategori}</span>
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Note Title */}

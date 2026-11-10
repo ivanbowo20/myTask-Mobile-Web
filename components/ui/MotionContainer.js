@@ -19,9 +19,11 @@ export default function MotionContainer({
   className = '',
   gradient = true,
   yOffset = 28,
+  overflowVisible = false,
   ...props
 }) {
   const shouldReduceMotion = useReducedMotion();
+  const isOverflowVisible = overflowVisible || className.includes('overflow-visible');
 
   return (
     <motion.div
@@ -33,7 +35,11 @@ export default function MotionContainer({
         damping: 30,
         delay: shouldReduceMotion ? 0 : delay * 0.12,
       }}
-      className={cn('relative overflow-hidden', className)}
+      className={cn(
+        'relative',
+        isOverflowVisible ? 'overflow-visible' : 'overflow-hidden',
+        className
+      )}
       {...props}
     >
       {/* Subtle Ambient Accent Gradient (code.xr standard) */}

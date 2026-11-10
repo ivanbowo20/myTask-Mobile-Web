@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen,
-  Sparkles,
+  Type,
   Star,
   Zap,
   Copy,
@@ -22,7 +22,7 @@ const WHATS_NEW_KEY_PREFIX = 'mytask_whatsnew_v1_3_';
 
 const FEATURES = [
   {
-    icon: Sparkles,
+    icon: Type,
     color: 'text-amber-400 bg-amber-500/10 border-amber-500/20 [html[data-theme="celestial-sky"]_&]:text-amber-800 [html[data-theme="celestial-sky"]_&]:bg-amber-100 [html[data-theme="celestial-sky"]_&]:border-amber-300',
     title: 'Format Teks Visual Kaya',
     desc: 'Tulis catatan dengan bold, italic, heading, daftar poin, dan quote langsung tanpa pusing kode Markdown.',

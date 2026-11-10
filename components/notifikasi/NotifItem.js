@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Clock, AlertTriangle, Calendar, Sparkles } from "lucide-react";
+import { Check, Clock, AlertTriangle, Calendar, BellRing } from "lucide-react";
 import { hitungSisaWaktu, cn } from "@/lib/utils";
 
 export default function NotifItem({ task, type, kategori, onMarkDone }) {
@@ -12,7 +12,7 @@ export default function NotifItem({ task, type, kategori, onMarkDone }) {
   let statusColor = "text-zinc-400";
 
   if (isReengagement) {
-    icon = <Sparkles className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />;
+    icon = <BellRing className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />;
     statusText = "Ajakan Pekan";
     statusColor = "text-[var(--theme-accent,#D97706)] font-medium";
   } else if (type === "terlewat") {

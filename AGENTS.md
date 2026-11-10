@@ -25,15 +25,19 @@ Project ini telah terintegrasi dengan shadcn registry untuk animasi & visual mod
 Saat user meminta rekomendasi atau penambahan animasi, AI HARUS merujuk pada katalog di atas atau skill `animation-components-registry` untuk memberikan opsi visual terbaik yang sesuai dengan konteks desain.
 
 ### ATURAN EMAS PERFORMA ANIMASI & MOBILE INTERACTION (ANTI-COMPROMISE ANIMATION)
-1. **Dilarang Mengorbankan Kehalusan & Keindahan Animasi demi Optimasi:**
+1. **Mandat Mutlak Mobile-First Supremacy (Utamakan HP Dulu):**
+   - Setiap penambahan fitur baru, perombakan antarmuka, dan perbaikan bug WAJIB dirancang, diuji, dan berfungsi 100% sempurna di layar HP ($\le 640\text{px}$, perangkat mobile seperti Infinix Smart 6) terlebih dahulu sebelum desktop.
+   - DILARANG KERAS menyembunyikan tombol aksi utama (seperti tombol Tambah Kategori, Kelola, atau Filter) hanya pada sidebar atau mode desktop. Setiap kontrol penting wajib memiliki padanan yang jelas terlihat, mudah dijangkau satu tangan, dan tidak boleh terpotong atau tersembunyi di ujung scroll horizontal tanpa indikator.
+   - Semua elemen interaktif di HP wajib memenuhi ukuran sentuh minimal 44×44px (touch target), bebas jebakan horizontal overflow, dan dilarang menggunakan latar belakang ultra-transparan (`bg-white/[0.03]`) yang tenggelam di kanvas dinamis. Kartu dan banner wajib menggunakan permukaan solid grounded (`.glass-card` opasitas 92-96%) agar kontras teks tajam dan nyaman dibaca di seluruh tema.
+2. **Dilarang Mengorbankan Kehalusan & Keindahan Animasi demi Optimasi:**
    - Optimasi performa TIDAK BOLEH memangkas elemen visual yang menjadi daya tarik aplikasi (misal: menghilangkan kereta api, salju lebat, atau awan bergerak).
    - DILARANG menggunakan teknik "pause/freeze on scroll" (mematikan animasi saat layar disentuh/digulir) karena merusak kepuasan interaksi pengguna dan menimbulkan kesan aplikasi sering lag/macet.
-2. **Mandat Zero-React-Diffing untuk Animasi Bergerak:**
+3. **Mandat Zero-React-Diffing untuk Animasi Bergerak:**
    - Animasi kontinu (salju, partikel, awan, objek melintas) DILARANG KERAS digerakkan melalui React state loop (`useState` di dalam `requestAnimationFrame`).
    - Wajib menggunakan HTML5 Canvas 2D langsung, WebGL shader, atau CSS GPU transforms (`transform: translate3d()`, `@keyframes`) yang 100% independen dari siklus re-render Virtual DOM React.
-3. **Imunitas Terhadap Dynamic Address Bar Mobile:**
+4. **Imunitas Terhadap Dynamic Address Bar Mobile:**
    - Dimensi kanvas atau container animasi latar belakang wajib terkunci stabil di layar mobile untuk mencegah pembatalan loop render (`cancelAnimationFrame`) saat bilah alamat peramban naik atau turun saat scrolling.
-4. **Standar Animasi Premium (Framer Motion & React Mandate):**
+5. **Standar Animasi Premium (Framer Motion & React Mandate):**
    - Setiap animasi transisi tab, container masuk (cascading entrance), dan kartu berkelas WAJIB menggunakan React dan Framer Motion (`motion.div`, `AnimatePresence`, spring physics) dengan GPU transforms (`opacity`, `y`, `scale`), BUKAN skrip manipulasi DOM JS murni (seperti manipulasi style manual di requestAnimationFrame).
    - Animasi transisi antar-halaman/rute DILARANG menggunakan CSS `filter: blur()` di container induk karena merusak stabilitas compositing layer kaca es (`backdrop-filter`) di peramban Chromium/WebKit.
 
@@ -41,7 +45,8 @@ Saat user meminta rekomendasi atau penambahan animasi, AI HARUS merujuk pada kat
 Untuk seluruh perancangan antarmuka, styling komponen, dan review visual:
 1. Gunakan skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine).
 2. Terapkan prinsip:
-   - **Banned AI Slop Tells**: Dilarang menggunakan 16 AI slop tells (gradien ungu default tanpa identitas brand, judul hero 6-baris, tombol pill berlebih pada semua elemen, bento berlubang/kosong, 3 kartu fitur simetris identik tanpa visual anchor, dual competing primary CTAs, shouty hype copy, chaotic ambient pulsing, *Card-in-Card Nesting Hell*, dan *Divider Line Clutter*).
+   - **Banned AI Slop Tells**: Dilarang menggunakan 16 AI slop tells (gradien ungu default tanpa identitas brand, judul hero 6-baris, tombol pill berlebih pada semua elemen, bento berlubang/kosong, 3 kartu fitur simetris identik tanpa visual anchor, dual competing primary CTAs, shouty hype copy, chaotic ambient pulsing, *Card-in-Card Nesting Hell*, *Divider Line Clutter*, dan icon bintang Sparkles/Gemini dekoratif).
+   - **Mandat Anti-Sparkles AI (No Decorative AI Stars)**: DILARANG KERAS menyematkan icon bintang 4-sudut (`Sparkles`, `Sparkle`, Gemini star) sebagai pemanis/dekorasi heading section, judul modal, badge fitur, atau tombol. Gunakan icon semantik nyata sesuai konteks domain (misal: `Clock` untuk waktu terbaru, `FolderPlus` untuk berkas, `ShieldCheck` untuk kepatuhan sistem/WCAG, `Type` untuk pemformatan teks) atau terapkan *Ruthless Visual Subtraction* (tanpa icon dekoratif).
    - **Ruthless Visual Subtraction (oil-ui Protocol)**: Wajib menerapkan *The Subtraction Test* & *Card/Border Diet* — maksimal 1 tingkat elevation card per section, hapus 80% border pemisah, dan gunakan whitespace ritmis alih-alih garis mati.
    - **Awwwards Design DNA & Kinetic Choreography**: Kontras skala tipografi ekstrem (*oversized headline clamp* dipadu *micro monospaced data*), *rhythmic color band-mapping*, dan koreografi motion 3-tier (*micro-tactile 80-120ms*, *staggered entrance 150-300ms*, dan *spatial kinetic*).
    - **The 9-Pass Unslopping Protocol**: Setiap audit & refactor UI wajib mengikuti urutan 9 lapis redline (Spacing -> Color -> Icons -> Copy -> Type -> Layout -> Details -> Visuals -> Motion).

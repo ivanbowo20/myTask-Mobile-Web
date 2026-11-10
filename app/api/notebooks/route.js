@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 const MAX_JUDUL_LENGTH = 255;
 const MAX_KONTEN_LENGTH = 100000;
 const MAX_WARNA_LENGTH = 30;
+const MAX_KATEGORI_LENGTH = 50;
 
 function mapRowToNotebook(row) {
   const parseDbDate = (d) => {
@@ -21,6 +22,7 @@ function mapRowToNotebook(row) {
     konten: row.konten || "",
     penting: Boolean(row.penting),
     warna: row.warna || "#D97706",
+    kategori: row.kategori || "",
     dibuatPada: parseDbDate(row.dibuat_pada) || new Date().toISOString(),
     diperbaruiPada: parseDbDate(row.diperbarui_pada) || new Date().toISOString(),
   };
@@ -115,6 +117,7 @@ export async function POST(request) {
       konten = "",
       penting = false,
       warna = "#D97706",
+      kategori = "",
     } = body || {};
 
     if (!judul || typeof judul !== "string" || !judul.trim()) {
@@ -141,6 +144,7 @@ export async function POST(request) {
     }
 
     const cleanWarna = typeof warna === "string" && warna.trim() ? warna.trim().slice(0, MAX_WARNA_LENGTH) : "#D97706";
+    const cleanKategori = typeof kategori === "string" ? kategori.trim().slice(0, MAX_KATEGORI_LENGTH) : "";
 
     const insertResult = await query(
       `
@@ -150,9 +154,10 @@ export async function POST(request) {
         konten,
         penting,
         warna,
+        kategori,
         dibuat_pada,
         diperbarui_pada
-      ) VALUES ($1, $2, $3, $4, $5, timezone('utc'::text, now()), timezone('utc'::text, now()))
+      ) VALUES ($1, $2, $3, $4, $5, $6, timezone('utc'::text, now()), timezone('utc'::text, now()))
       RETURNING *;
       `,
       [
@@ -161,6 +166,7 @@ export async function POST(request) {
         cleanKonten,
         Boolean(penting),
         cleanWarna,
+        cleanKategori,
       ]
     );
 
@@ -195,7 +201,7 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { id, judul, konten, penting, warna } = body || {};
+    const { id, judul, konten, penting, warna, kategori } = body || {};
 
     if (!id || isNaN(Number(id))) {
       return NextResponse.json({ error: "ID notebook tidak valid." }, { status: 400 });
@@ -245,6 +251,9 @@ export async function PUT(request) {
     const newWarna = warna !== undefined && typeof warna === "string" && warna.trim()
       ? warna.trim().slice(0, MAX_WARNA_LENGTH)
       : existing.warna;
+    const newKategori = kategori !== undefined && typeof kategori === "string"
+      ? kategori.trim().slice(0, MAX_KATEGORI_LENGTH)
+      : (existing.kategori || "");
 
     const updateRes = await query(
       `
@@ -254,11 +263,12 @@ export async function PUT(request) {
         konten = $2,
         penting = $3,
         warna = $4,
+        kategori = $5,
         diperbarui_pada = timezone('utc'::text, now())
-      WHERE id = $5 AND user_id = $6
+      WHERE id = $6 AND user_id = $7
       RETURNING *;
       `,
-      [newJudul, newKonten, newPenting, newWarna, Number(id), session.user.id]
+      [newJudul, newKonten, newPenting, newWarna, newKategori, Number(id), session.user.id]
     );
 
     const updated = mapRowToNotebook(updateRes.rows[0]);

@@ -14,7 +14,7 @@ import {
   Loader2,
   ChevronDown,
   Info,
-  Sparkles,
+  BellRing,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { toast } from "@/lib/use-toast";
@@ -231,7 +231,7 @@ export default function NotificationBanner({ dismissible = false, className = ""
               ) : testReengageSuccess ? (
                 <Check className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />
               ) : (
-                <Sparkles className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />
+                <BellRing className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />
               )}
               <span>
                 {isTestingReengagement
