@@ -10,6 +10,7 @@ import {
   Check,
   Clock,
 } from 'lucide-react';
+import { PushPin } from '@phosphor-icons/react';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 import { toast } from '@/lib/use-toast';
@@ -137,8 +138,22 @@ function NotebookCard({ notebook }) {
             style={{ backgroundColor: accentColor }}
             aria-hidden="true"
           />
-          <span className="text-[11px] font-semibold text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-700 bg-white/[0.04] [html[data-theme='celestial-sky']_&]:bg-slate-100/80 px-2 py-0.5 rounded-md border border-white/[0.06] [html[data-theme='celestial-sky']_&]:border-slate-200/60 truncate">
-            {notebook.penting ? '📌 Penting' : 'Materi'}
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-md border transition-colors select-none truncate',
+              notebook.penting
+                ? 'text-[var(--theme-accent,#0284C7)] bg-[var(--theme-accent,#0284C7)]/10 border-[var(--theme-accent,#0284C7)]/25 [html[data-theme="celestial-sky"]_&]:bg-sky-50 [html[data-theme="celestial-sky"]_&]:border-sky-300 [html[data-theme="celestial-sky"]_&]:text-sky-800'
+                : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-700 bg-white/[0.04] [html[data-theme="celestial-sky"]_&]:bg-slate-100/80 border-white/[0.06] [html[data-theme="celestial-sky"]_&]:border-slate-200/60'
+            )}
+          >
+            {notebook.penting ? (
+              <>
+                <PushPin weight="fill" className="w-3 h-3 shrink-0 text-[var(--theme-accent,#0284C7)] [html[data-theme='celestial-sky']_&]:text-sky-700" />
+                <span>Penting</span>
+              </>
+            ) : (
+              <span>Materi</span>
+            )}
           </span>
         </div>
 

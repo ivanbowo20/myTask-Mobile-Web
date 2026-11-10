@@ -11,6 +11,7 @@ import {
   Clock,
   Trash2,
 } from 'lucide-react';
+import { PushPin } from '@phosphor-icons/react';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 import { toast } from '@/lib/use-toast';
@@ -135,14 +136,28 @@ export default function NotebookPreviewModal({
               {/* Category, Date & Word Count Badges */}
               <div className="flex items-center gap-2 flex-wrap text-xs">
                 {/* Accent Tag */}
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.06] [html[data-theme='celestial-sky']_&]:bg-white border border-white/[0.08] [html[data-theme='celestial-sky']_&]:border-sky-200/80 shadow-sm font-semibold">
+                <div
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border shadow-sm font-semibold transition-colors',
+                    notebook.penting
+                      ? 'text-[var(--theme-accent,#0284C7)] bg-[var(--theme-accent,#0284C7)]/10 border-[var(--theme-accent,#0284C7)]/25 [html[data-theme="celestial-sky"]_&]:bg-sky-50 [html[data-theme="celestial-sky"]_&]:border-sky-300 [html[data-theme="celestial-sky"]_&]:text-sky-800'
+                      : 'text-zinc-300 bg-white/[0.06] border-white/[0.08] [html[data-theme="celestial-sky"]_&]:bg-white [html[data-theme="celestial-sky"]_&]:border-sky-200/80 [html[data-theme="celestial-sky"]_&]:text-slate-700'
+                  )}
+                >
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: accentColor }}
                     aria-hidden="true"
                   />
-                  <span className="text-[11px] text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-700">
-                    {notebook.penting ? '📌 Penting' : 'Materi'}
+                  <span className="text-[11px] inline-flex items-center gap-1">
+                    {notebook.penting ? (
+                      <>
+                        <PushPin weight="fill" className="w-3 h-3 shrink-0 text-[var(--theme-accent,#0284C7)] [html[data-theme='celestial-sky']_&]:text-sky-700" />
+                        <span>Penting</span>
+                      </>
+                    ) : (
+                      <span>Materi</span>
+                    )}
                   </span>
                 </div>
 
