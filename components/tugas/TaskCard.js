@@ -13,19 +13,30 @@ import { formatTanggal, hitungSisaWaktu, hitungStatusDeadline, cn } from "@/lib/
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { triggerConfettiBurst, triggerStarBurst } from "@/lib/dopamine-fx";
 import { useDesktopMotion } from "@/lib/use-desktop-motion";
+import { useTasks } from "@/lib/task-context";
 
 const TaskCard = memo(function TaskCard({
   task,
   kategori,
   onToggleSelesai,
   onTogglePrioritas,
+  onToggleSubtask,
   onEdit,
   onDelete,
   index = 0,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
   const isDesktop = useDesktopMotion();
   const shouldReduceMotion = useReducedMotion();
+  const tasksCtx = useTasks();
+  const handleToggleSubtask = onToggleSubtask || tasksCtx?.toggleSubtask;
+
+  const subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
+  const totalSubtasks = subtasks.length;
+  const completedSubtasks = subtasks.filter((st) => st.selesai).length;
+  const hasSubtasks = totalSubtasks > 0;
+  const subtaskPercent = hasSubtasks ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
   const CardContainer = motion.div;
 
   const containerMotionProps = shouldReduceMotion
@@ -162,6 +173,17 @@ const TaskCard = memo(function TaskCard({
               ) : (
                 <span className="text-[var(--text-muted)] shrink-0">Tanpa deadline</span>
               )}
+
+              {/* Subtasks mini badge on mobile */}
+              {hasSubtasks && (
+                <>
+                  <span className="text-[var(--text-muted)] shrink-0">·</span>
+                  <span className="inline-flex items-center gap-1 font-semibold text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)]/15 text-[var(--theme-accent,#D97706)] shrink-0">
+                    <Check className="w-2.5 h-2.5" />
+                    <span>{completedSubtasks}/{totalSubtasks}</span>
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -244,6 +266,67 @@ const TaskCard = memo(function TaskCard({
                   )}
                 </span>
               </div>
+
+              {/* Sub-Tugas Section Mobile */}
+              {hasSubtasks && (
+                <div className="space-y-2 pt-1 border-t border-[var(--glass-border)]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold inline-flex items-center gap-1.5">
+                      <span>Sub-Tugas ({completedSubtasks}/{totalSubtasks})</span>
+                    </span>
+                    <span className="text-[11px] font-medium text-[var(--theme-accent,#D97706)]">
+                      {subtaskPercent}%
+                    </span>
+                  </div>
+
+                  {/* Mini Progress Bar Line */}
+                  <div className="w-full h-1 rounded-full bg-white/[0.08] overflow-hidden">
+                    <div
+                      className="h-full bg-[var(--theme-accent,#D97706)] transition-all duration-300 rounded-full"
+                      style={{ width: `${subtaskPercent}%` }}
+                    />
+                  </div>
+
+                  {/* List of subtasks with tap targets >= 44px */}
+                  <div className="space-y-1 pt-0.5">
+                    {subtasks.map((st, sIdx) => (
+                      <button
+                        key={st.id || sIdx}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!st.selesai && completedSubtasks + 1 === totalSubtasks) {
+                            triggerConfettiBurst(e.currentTarget);
+                          }
+                          handleToggleSubtask?.(task.id, st.id);
+                        }}
+                        className="w-full min-h-[44px] flex items-center gap-3 px-3 py-2 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] hover:border-[var(--text-primary)] transition-colors text-left cursor-pointer active:scale-[0.98]"
+                      >
+                        <span
+                          className={cn(
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                            st.selesai
+                              ? "bg-[#8FB88F] border-[#8FB88F] text-[#0A0A0A]"
+                              : "border-[var(--glass-border)] bg-transparent"
+                          )}
+                        >
+                          {st.selesai && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </span>
+                        <span
+                          className={cn(
+                            "text-xs leading-snug break-words flex-1 transition-colors",
+                            st.selesai
+                              ? "line-through text-[var(--text-muted)]"
+                              : "text-[var(--text-primary)] font-medium"
+                          )}
+                        >
+                          {st.judul}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Tombol Aksi: Ubah & Hapus (Tap Target >= 44px) */}
               <div className="grid grid-cols-2 gap-2 pt-1.5">
@@ -364,6 +447,88 @@ const TaskCard = memo(function TaskCard({
           <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed pl-8 -mt-1">
             {task.deskripsi}
           </p>
+        )}
+
+        {/* Desktop Subtasks Section */}
+        {hasSubtasks && (
+          <div className="pl-8 pt-0.5 space-y-1.5">
+            {/* Trigger Button: Mini Progress Badge with Accordion Toggle */}
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setIsSubtasksExpanded((prev) => !prev)}
+                className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[var(--glass-bg)] hover:bg-[var(--glass-bg-hover)] border border-[var(--glass-border)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer group"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-accent,#D97706)]" />
+                <span>
+                  Sub-tugas: <strong className="text-[var(--text-primary)]">{completedSubtasks}/{totalSubtasks}</strong> ({subtaskPercent}%)
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 transition-transform duration-200 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]",
+                    isSubtasksExpanded && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {/* Mini Progress Bar Track */}
+              <div className="w-24 sm:w-32 h-1.5 rounded-full bg-white/[0.08] overflow-hidden shrink-0">
+                <div
+                  className="h-full bg-[var(--theme-accent,#D97706)] transition-all duration-300 rounded-full"
+                  style={{ width: `${subtaskPercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Expandable Subtask Checklist */}
+            <AnimatePresence>
+              {isSubtasksExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="overflow-hidden pt-1 space-y-1"
+                >
+                  {subtasks.map((st, sIdx) => (
+                    <div
+                      key={st.id || sIdx}
+                      className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] transition-colors"
+                    >
+                      <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.8 }}
+                        onClick={(e) => {
+                          if (!st.selesai && completedSubtasks + 1 === totalSubtasks) {
+                            triggerConfettiBurst(e.currentTarget);
+                          }
+                          handleToggleSubtask?.(task.id, st.id);
+                        }}
+                        aria-label={st.selesai ? "Tandai sub-tugas belum selesai" : "Tandai sub-tugas selesai"}
+                        className="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 cursor-pointer focus:outline-none transition-colors"
+                        style={{
+                          borderColor: st.selesai ? "#8FB88F" : "var(--glass-border)",
+                          backgroundColor: st.selesai ? "#8FB88F" : "transparent",
+                        }}
+                      >
+                        {st.selesai && <Check className="w-2.5 h-2.5 text-[#0A0A0A] stroke-[3]" />}
+                      </motion.button>
+                      <span
+                        className={cn(
+                          "text-xs leading-snug break-words flex-1 select-none transition-colors",
+                          st.selesai
+                            ? "line-through text-[var(--text-muted)]"
+                            : "text-[var(--text-primary)]"
+                        )}
+                      >
+                        {st.judul}
+                      </span>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         )}
 
         {/* Footer Metadata & Actions */}

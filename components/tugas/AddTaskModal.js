@@ -8,7 +8,7 @@ import ReminderPicker from "./ReminderPicker";
 import DateTimePicker from "@/components/ui/DateTimePicker";
 import CustomSelect from "@/components/ui/CustomSelect";
 import Magnet from "@/components/ui/Magnet";
-import { Plus, Loader2, Star, Calendar, Bell, Folder, AlignLeft } from "lucide-react";
+import { Plus, Loader2, Star, Calendar, Bell, Folder, AlignLeft, Trash2, Check } from "lucide-react";
 import { cn, formatTanggalSederhana } from "@/lib/utils";
 import { REMINDER_OPTIONS } from "@/lib/constants";
 
@@ -26,6 +26,8 @@ export default function AddTaskModal({
   const [kategoriId, setKategoriId] = useState("");
   const [prioritas, setPrioritas] = useState(false);
   const [errorJudul, setErrorJudul] = useState("");
+  const [subtasks, setSubtasks] = useState([]);
+  const [newSubtaskJudul, setNewSubtaskJudul] = useState("");
 
   // Mobile quick-capture disclosure states
   const [showDeskripsi, setShowDeskripsi] = useState(false);
@@ -51,6 +53,25 @@ export default function AddTaskModal({
   const selectedCategory = categories?.find((c) => String(c.id) === String(kategoriId));
   const reminderLabel = REMINDER_OPTIONS?.find((r) => r.value === reminder)?.label || reminder;
 
+  function handleAddSubtask() {
+    const trimmed = newSubtaskJudul.trim();
+    if (!trimmed) return;
+    if (subtasks.length >= 15) return;
+    setSubtasks((prev) => [
+      ...prev,
+      {
+        id: `sub_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        judul: trimmed.slice(0, 150),
+        selesai: false,
+      },
+    ]);
+    setNewSubtaskJudul("");
+  }
+
+  function handleRemoveSubtask(id) {
+    setSubtasks((prev) => prev.filter((st) => st.id !== id));
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
 
@@ -70,6 +91,7 @@ export default function AddTaskModal({
       kategoriId: kategoriId ? Number(kategoriId) : null,
       prioritas,
       selesai: false,
+      subtasks,
     };
 
     // 1. Reset form & TUTUP MODAL INSTAN (0ms) untuk sensasi kilat di HP
@@ -91,6 +113,8 @@ export default function AddTaskModal({
     setErrorJudul("");
     setShowDeskripsi(false);
     setActiveMobileSection(null);
+    setSubtasks([]);
+    setNewSubtaskJudul("");
     onClose();
   }
 
@@ -130,7 +154,7 @@ export default function AddTaskModal({
 
         {/* Mobile Horizontal Quick-Action Chips */}
         <div className="lg:hidden flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {/* Priority Chip */}
+          {/* 1. Priority Chip */}
           <button
             type="button"
             onClick={() => setPrioritas((prev) => !prev)}
@@ -145,7 +169,26 @@ export default function AddTaskModal({
             <span>{prioritas ? "Penting" : "Prioritas"}</span>
           </button>
 
-          {/* Notes Toggle Chip */}
+          {/* 2. Subtasks Chip (Posisi Urutan Ke-2 Sesuai Permintaan) */}
+          <button
+            type="button"
+            onClick={() =>
+              setActiveMobileSection((prev) => (prev === "subtasks" ? null : "subtasks"))
+            }
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 cursor-pointer",
+              subtasks.length > 0
+                ? "bg-[var(--theme-accent,#D97706)]/20 border-[var(--theme-accent,#D97706)]/40 text-[var(--theme-accent,#D97706)] font-semibold"
+                : activeMobileSection === "subtasks"
+                ? "bg-white/[0.12] border-white/[0.24] text-white"
+                : "bg-white/[0.04] border-white/[0.08] text-zinc-400 hover:text-zinc-200"
+            )}
+          >
+            <Check className="w-3.5 h-3.5" />
+            <span>Sub-tugas {subtasks.length > 0 ? `(${subtasks.length})` : ""}</span>
+          </button>
+
+          {/* 3. Notes Toggle Chip */}
           <button
             type="button"
             onClick={() => setShowDeskripsi((prev) => !prev)}
@@ -162,7 +205,7 @@ export default function AddTaskModal({
             <span>{deskripsi ? "Catatan ✓" : "+ Catatan"}</span>
           </button>
 
-          {/* Deadline Chip */}
+          {/* 4. Deadline Chip */}
           <button
             type="button"
             onClick={() =>
@@ -181,7 +224,7 @@ export default function AddTaskModal({
             <span>{deadline ? formatTanggalSederhana(deadline) : "Tenggat"}</span>
           </button>
 
-          {/* Reminder Chip */}
+          {/* 5. Reminder Chip */}
           <button
             type="button"
             onClick={() =>
@@ -198,7 +241,7 @@ export default function AddTaskModal({
             <span>{reminderLabel || "Pengingat"}</span>
           </button>
 
-          {/* Category Chip */}
+          {/* 6. Category Chip */}
           <button
             type="button"
             onClick={() =>
@@ -257,6 +300,86 @@ export default function AddTaskModal({
             onChange={(e) => setDeskripsi(e.target.value)}
             className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.05] border border-white/[0.08] hover:border-white/[0.16] focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-white/20 text-base sm:text-sm text-[#FAFAFA] placeholder:text-zinc-400 transition-all duration-200 resize-y"
           />
+        </div>
+
+        {/* Sub-Tugas / Checklist (Langkah Kecil) */}
+        <div
+          className={cn(
+            "space-y-2 transition-all duration-200",
+            activeMobileSection === "subtasks" ? "block" : "hidden lg:block"
+          )}
+        >
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-300 inline-flex items-center gap-1.5">
+              <span>Sub-Tugas (Langkah Kecil)</span>
+              {subtasks.length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-white/[0.08] text-[var(--theme-accent,#D97706)]">
+                  {subtasks.length}/15
+                </span>
+              )}
+            </label>
+            <button
+              type="button"
+              onClick={() => setActiveMobileSection(null)}
+              className="text-[11px] text-zinc-400 hover:text-white lg:hidden cursor-pointer"
+            >
+              Tutup
+            </button>
+          </div>
+
+          {/* Quick Input Bar */}
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Tambah sub-tugas kecil... (tekan Enter)"
+              value={newSubtaskJudul}
+              onChange={(e) => setNewSubtaskJudul(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddSubtask();
+                }
+              }}
+              disabled={subtasks.length >= 15}
+              maxLength={150}
+              className="flex-1 min-h-[44px] px-3.5 py-2 rounded-xl bg-white/[0.05] border border-white/[0.08] hover:border-white/[0.16] focus:border-[#FAFAFA] focus:outline-none focus:ring-1 focus:ring-white/20 text-sm text-[#FAFAFA] placeholder:text-zinc-400 transition-all duration-200"
+            />
+            <button
+              type="button"
+              onClick={handleAddSubtask}
+              disabled={!newSubtaskJudul.trim() || subtasks.length >= 15}
+              aria-label="Tambah sub-tugas"
+              className="min-h-[44px] px-3.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.16] text-[#FAFAFA] border border-white/[0.1] text-xs font-medium inline-flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Tambah</span>
+            </button>
+          </div>
+
+          {/* Subtasks Item List */}
+          {subtasks.length > 0 && (
+            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+              {subtasks.map((st, idx) => (
+                <div
+                  key={st.id || idx}
+                  className="flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs text-zinc-200"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-accent,#D97706)] shrink-0" />
+                    <span className="truncate">{st.judul}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSubtask(st.id)}
+                    aria-label={`Hapus sub-tugas ${st.judul}`}
+                    className="min-h-[32px] min-w-[32px] inline-flex items-center justify-center text-zinc-400 hover:text-[#E88B8B] p-1 rounded transition-colors cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Tenggat Waktu & Pengingat */}

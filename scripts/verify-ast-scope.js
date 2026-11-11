@@ -17,6 +17,10 @@ const filesToCheck = [
   'app/(dashboard)/notebook/page.js',
   'app/(dashboard)/kategori/page.js',
   'components/tugas/TaskCard.js',
+  'components/tugas/AddTaskModal.js',
+  'components/tugas/EditTaskModal.js',
+  'lib/task-context.js',
+  'app/(dashboard)/tugas/page.js',
   'components/kategori/CategoryCard.js',
   'components/notebook/NotebookCard.js',
 ];
@@ -35,6 +39,8 @@ const allowedGlobals = new Set([
   'Boolean',
   'Array',
   'Object',
+  'Set',
+  'Map',
   'JSON',
   'console',
   'fetch',
@@ -109,6 +115,9 @@ for (const relPath of filesToCheck) {
       // Periksa apakah nama komponen JSX (huruf kapital) terdefinisi dalam scope
       const name = jsxPath.node.name;
       if (/^[A-Z]/.test(name)) {
+        if (jsxPath.parentPath.isJSXMemberExpression() && jsxPath.parentPath.node.property === jsxPath.node) {
+          return;
+        }
         const binding = jsxPath.scope.getBinding(name);
         if (!binding && !allowedGlobals.has(name)) {
           unboundIdentifiers.add(name);

@@ -64,7 +64,10 @@ function AllTasksContent() {
         const query = search.toLowerCase();
         const matchTitle = task.judul.toLowerCase().includes(query);
         const matchDesc = task.deskripsi?.toLowerCase().includes(query);
-        if (!matchTitle && !matchDesc) return false;
+        const matchSubtask =
+          Array.isArray(task.subtasks) &&
+          task.subtasks.some((st) => st.judul?.toLowerCase().includes(query));
+        if (!matchTitle && !matchDesc && !matchSubtask) return false;
       }
 
       // Category

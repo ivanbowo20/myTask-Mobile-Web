@@ -101,6 +101,7 @@ create table if not exists public.tasks (
   reminder text default null,
   reminder_sent boolean not null default false,
   deadline_sent boolean not null default false,
+  subtasks jsonb not null default '[]'::jsonb,
   dibuat_pada timestamp with time zone default timezone('utc'::text, now()) not null,
   selesai_pada timestamp with time zone default null
 );
