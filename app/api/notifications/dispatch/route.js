@@ -210,8 +210,8 @@ export async function handleDispatch(request) {
           const isDeadline = task.notif_type === "deadline";
 
           const title = isDeadline
-            ? `🚨 Waktu Habis: ${task.judul}`
-            : `⏰ Pengingat: ${task.judul}`;
+            ? `Waktu Habis: ${task.judul}`
+            : `Pengingat: ${task.judul}`;
 
           const body = isDeadline
             ? `Tenggat waktu (${formattedDeadline}) telah tiba sekarang! Segera kerjakan dan selesaikan tugas ini.`

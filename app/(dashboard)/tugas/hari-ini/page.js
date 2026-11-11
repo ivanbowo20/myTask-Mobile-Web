@@ -62,7 +62,7 @@ export default function TodayTasksPage() {
         <MotionContainer delay={1}>
           <EmptyState
             icon={CheckCircle2}
-            title="Bebas tugas untuk hari ini! 🎉"
+            title="Bebas tugas untuk hari ini!"
             description="Tidak ada tugas tertunda yang memiliki tenggat waktu hari ini. Nikmati waktu luang Anda!"
             actionLabel="Tambah Tugas Baru"
             onAction={openAddTask}

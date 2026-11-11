@@ -2,7 +2,15 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, ChevronLeft, ChevronRight, Check, X, Clock, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Check, X, Clock, ArrowRight, ArrowLeft, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
+
+const POPULAR_TIMES = [
+  { label: '09:00', title: 'Pagi', h: 9, m: 0 },
+  { label: '12:00', title: 'Siang', h: 12, m: 0 },
+  { label: '17:00', title: 'Sore', h: 17, m: 0 },
+  { label: '20:00', title: 'Malam', h: 20, m: 0 },
+  { label: '23:59', title: 'Akhir Hari', h: 23, m: 59 },
+];
 
 const MONTH_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -77,6 +85,7 @@ export default function DateTimePicker({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState('date'); // 'date' | 'time'
+  const [timeSaved, setTimeSaved] = useState(false);
   const containerRef = useRef(null);
   const timeInputRef = useRef(null);
   const dateInputRef = useRef(null);
@@ -117,6 +126,7 @@ export default function DateTimePicker({
       setViewMonth(validDate.getMonth());
       setViewYear(validDate.getFullYear());
       setMobileTab('date');
+      setTimeSaved(true);
     }
   }, [isOpen, value, initialDate]);
 
@@ -260,6 +270,22 @@ export default function DateTimePicker({
         timeInputRef.current.focus();
       }
     }
+  }
+
+  function stepHour(delta) {
+    setSelectedHour((prev) => {
+      let next = (prev + delta) % 24;
+      if (next < 0) next += 24;
+      return next;
+    });
+  }
+
+  function stepMinute(delta) {
+    setSelectedMinute((prev) => {
+      let next = (prev + delta) % 60;
+      if (next < 0) next += 60;
+      return next;
+    });
   }
 
   function handleApply() {
@@ -560,113 +586,191 @@ export default function DateTimePicker({
     </div>
   );
 
-  // Reusable Time Picker Content (Clean Native Clock & 4 Quick Presets)
-  const renderTimePicker = (isMobile = false) => (
-    <div className={`w-full ${isMobile ? 'space-y-4' : 'flex flex-col justify-between'}`}>
-      <div>
-        <div className="flex items-center justify-between mb-2.5 px-1">
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)]" />
-            <span className="text-xs font-semibold text-[var(--text-primary,#FAFAFA)]">
-              Atur Jam Tenggat
+  // Reusable Time Picker Content (Clean Digital Clock Stepper & 5 Quick Presets)
+  const renderTimePicker = (isMobile = false) => {
+    const isToday =
+      selectedYear === currentYear &&
+      selectedMonth === currentMonth &&
+      selectedDay === currentDate;
+
+    return (
+      <div className={`w-full ${isMobile ? 'space-y-4' : 'flex flex-col justify-between'}`}>
+        <div>
+          {/* Header Time Picker with Live Badge */}
+          <div className="flex items-center justify-between mb-2.5 px-0.5">
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)]" />
+              <span className="text-xs font-semibold text-[var(--text-primary,#FAFAFA)]">
+                Pilih Jam Tenggat
+              </span>
+            </div>
+            <span className="text-xs font-mono font-bold text-[var(--theme-accent,#0284C7)] bg-[var(--theme-accent,#0284C7)]/10 border border-[var(--theme-accent,#0284C7)]/25 px-2 py-0.5 rounded-md">
+              {timeValueString} WIB
             </span>
           </div>
-          <span className="text-xs font-mono font-bold text-[var(--text-primary,#FAFAFA)] bg-black/[0.04] dark:bg-white/[0.08] border border-black/[0.08] dark:border-white/[0.08] px-2 py-0.5 rounded-md">
-            {timeValueString} WIB
-          </span>
-        </div>
 
-        {/* Big Clean Interactive Time Card (Opens Native OS Clock Picker on Mobile & Desktop) */}
-        <div
-          onClick={handleTimeCardClick}
-          className="relative flex flex-col items-center justify-center py-6 px-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.1] hover:border-[var(--theme-accent,#0284C7)] hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]"
-        >
-          <div className="text-4xl sm:text-5xl font-extrabold font-mono text-[var(--text-primary,#FAFAFA)] tracking-tight group-hover:text-[var(--theme-accent,#0284C7)] transition-colors flex items-baseline gap-2">
-            <span>{timeValueString}</span>
-            <span className="text-xs font-semibold font-sans text-[var(--text-muted,#71717A)]">WIB</span>
-          </div>
-
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] border border-black/[0.08] dark:border-white/[0.1] text-xs font-medium text-[var(--text-secondary,#A1A1AA)] shadow-xs mt-3 group-hover:bg-[var(--theme-accent,#0284C7)] group-hover:text-white group-hover:border-transparent transition-all">
-            <Clock className="w-3.5 h-3.5 text-[var(--theme-accent,#0284C7)] group-hover:text-white" />
-            <span>Sentuh untuk ganti jam</span>
-          </div>
-
-          {/* Invisible Native Input Overlaid on the Card for Instant Tap Detection */}
-          <input
-            ref={timeInputRef}
-            type="time"
-            value={timeValueString}
-            onChange={handleNativeTimeChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            aria-label="Pilih Jam dan Menit"
-          />
-        </div>
-
-        {/* 4 Clean Quick Presets (1-Tap Selection) */}
-        <div className="mt-4">
-          <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-muted,#71717A)] block mb-1.5 px-0.5">
-            Pilihan Jam Cepat:
-          </span>
-          <div className="grid grid-cols-4 gap-2">
-            {QUICK_TIMES.map((t) => {
-              const isActive = selectedHour === t.h && selectedMinute === t.m;
-              const isTimePast =
-                selectedYear === currentYear &&
-                selectedMonth === currentMonth &&
-                selectedDay === currentDate &&
-                (t.h < currentHour || (t.h === currentHour && t.m <= currentMinute));
-
-              return (
+          {/* Digital Clock Stepper (Clean, Large, Zero Scrollbars) */}
+          <div className="rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] p-4 flex flex-col items-center justify-center">
+            <div className="flex items-center justify-center gap-3">
+              {/* Hour Stepper Block */}
+              <div className="flex flex-col items-center">
                 <button
-                  key={t.label}
                   type="button"
-                  disabled={isTimePast}
-                  onClick={() => {
-                    if (isTimePast) return;
-                    setSelectedHour(t.h);
-                    setSelectedMinute(t.m);
-                  }}
-                  className={`py-2 px-1 rounded-xl text-center border transition-all flex flex-col items-center justify-center ${
-                    isTimePast
-                      ? 'opacity-30 cursor-not-allowed bg-black/[0.02] dark:bg-white/[0.02] text-[var(--text-muted,#71717A)] border-black/[0.04] dark:border-white/[0.04] pointer-events-none'
-                      : isActive
-                      ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-bold shadow-md shadow-[var(--theme-glow,rgba(2,132,199,0.3))] active:scale-95 cursor-pointer'
-                      : 'bg-black/[0.03] dark:bg-white/[0.04] text-[var(--text-primary,#FAFAFA)] border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] active:scale-95 cursor-pointer'
-                  }`}
-                  title={isTimePast ? 'Waktu sudah lewat hari ini' : undefined}
+                  onClick={() => stepHour(1)}
+                  className="w-10 h-7 rounded-lg hover:bg-black/[0.06] dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-[var(--text-muted,#71717A)] hover:text-[var(--text-primary,#FAFAFA)] transition-colors cursor-pointer"
+                  aria-label="Tambah jam"
                 >
-                  <span className="text-xs font-mono font-bold leading-tight">{t.label}</span>
-                  <span className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-white/90' : 'text-[var(--text-muted,#71717A)]'}`}>
-                    {t.desc}
-                  </span>
+                  <ChevronUp className="w-4 h-4" />
                 </button>
-              );
-            })}
+
+                <div className="w-16 h-14 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.1] flex items-center justify-center shadow-xs focus-within:border-[var(--theme-accent,#0284C7)] focus-within:ring-1 focus-within:ring-[var(--theme-accent,#0284C7)] transition-all">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={String(selectedHour).padStart(2, '0')}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value.replace(/\D/g, ''), 10);
+                      if (!isNaN(val)) {
+                        setSelectedHour(Math.min(23, Math.max(0, val)));
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowUp') { e.preventDefault(); stepHour(1); }
+                      if (e.key === 'ArrowDown') { e.preventDefault(); stepHour(-1); }
+                    }}
+                    className="w-full text-center text-3xl font-extrabold font-mono text-[var(--text-primary,#FAFAFA)] bg-transparent outline-none cursor-pointer select-all"
+                    aria-label="Jam"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => stepHour(-1)}
+                  className="w-10 h-7 rounded-lg hover:bg-black/[0.06] dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-[var(--text-muted,#71717A)] hover:text-[var(--text-primary,#FAFAFA)] transition-colors cursor-pointer"
+                  aria-label="Kurang jam"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-muted,#71717A)] -mt-0.5">
+                  Jam
+                </span>
+              </div>
+
+              {/* Colon Separator */}
+              <span className="text-2xl font-bold font-mono text-[var(--text-secondary,#A1A1AA)] mb-4">
+                :
+              </span>
+
+              {/* Minute Stepper Block */}
+              <div className="flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={() => stepMinute(5)}
+                  className="w-10 h-7 rounded-lg hover:bg-black/[0.06] dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-[var(--text-muted,#71717A)] hover:text-[var(--text-primary,#FAFAFA)] transition-colors cursor-pointer"
+                  aria-label="Tambah menit"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+
+                <div className="w-16 h-14 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.08] dark:border-white/[0.1] flex items-center justify-center shadow-xs focus-within:border-[var(--theme-accent,#0284C7)] focus-within:ring-1 focus-within:ring-[var(--theme-accent,#0284C7)] transition-all">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={String(selectedMinute).padStart(2, '0')}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value.replace(/\D/g, ''), 10);
+                      if (!isNaN(val)) {
+                        setSelectedMinute(Math.min(59, Math.max(0, val)));
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowUp') { e.preventDefault(); stepMinute(5); }
+                      if (e.key === 'ArrowDown') { e.preventDefault(); stepMinute(-5); }
+                    }}
+                    className="w-full text-center text-3xl font-extrabold font-mono text-[var(--text-primary,#FAFAFA)] bg-transparent outline-none cursor-pointer select-all"
+                    aria-label="Menit"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => stepMinute(-5)}
+                  className="w-10 h-7 rounded-lg hover:bg-black/[0.06] dark:hover:bg-white/[0.08] active:scale-95 flex items-center justify-center text-[var(--text-muted,#71717A)] hover:text-[var(--text-primary,#FAFAFA)] transition-colors cursor-pointer"
+                  aria-label="Kurang menit"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <span className="text-[10px] font-mono uppercase font-bold text-[var(--text-muted,#71717A)] -mt-0.5">
+                  Menit
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-2 text-center text-[11px] text-[var(--text-muted,#71717A)] font-mono">
+              Ketik angka langsung atau gunakan panah
+            </div>
+          </div>
+
+          {/* 5 Clean Quick Presets */}
+          <div className="mt-3">
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--text-muted,#71717A)] block mb-1.5 px-0.5">
+              Pilihan Jam Cepat:
+            </span>
+            <div className="grid grid-cols-5 gap-1">
+              {POPULAR_TIMES.map((t) => {
+                const isActive = selectedHour === t.h && selectedMinute === t.m;
+                const isTimePast =
+                  isToday && (t.h < currentHour || (t.h === currentHour && t.m <= currentMinute));
+
+                return (
+                  <button
+                    key={t.label}
+                    type="button"
+                    disabled={isTimePast}
+                    onClick={() => {
+                      if (isTimePast) return;
+                      setSelectedHour(t.h);
+                      setSelectedMinute(t.m);
+                    }}
+                    className={`py-1.5 px-0.5 rounded-lg text-center border transition-all flex flex-col items-center justify-center cursor-pointer active:scale-95 ${
+                      isTimePast
+                        ? 'opacity-25 cursor-not-allowed bg-black/[0.02] dark:bg-white/[0.02] text-[var(--text-muted,#71717A)] border-transparent pointer-events-none'
+                        : isActive
+                        ? 'bg-[var(--theme-accent,#0284C7)] text-white border-[var(--theme-accent,#0284C7)] font-bold shadow-xs'
+                        : 'bg-black/[0.03] dark:bg-white/[0.04] text-[var(--text-primary,#FAFAFA)] border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
+                    }`}
+                    title={isTimePast ? 'Waktu sudah lewat hari ini' : undefined}
+                  >
+                    <span className="text-[11px] font-mono font-bold leading-tight">{t.label}</span>
+                    <span className={`text-[9px] mt-0.5 leading-tight truncate max-w-full ${isActive ? 'text-white/90' : 'text-[var(--text-muted,#71717A)]'}`}>
+                      {t.title}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
 
-      {isMobile ? (
-        <div className="pt-3 flex items-center justify-between border-t border-black/[0.08] dark:border-white/[0.06]">
-          <button
-            type="button"
-            onClick={() => setMobileTab('date')}
-            className="inline-flex items-center gap-1 text-xs font-medium text-[var(--text-secondary,#A1A1AA)] hover:text-[var(--text-primary,#FAFAFA)] cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Pilih Tanggal</span>
-          </button>
-          <span className="text-[11px] text-[var(--text-muted,#71717A)] font-mono">
-            Jam bawaan HP Android
-          </span>
-        </div>
-      ) : (
-        <div className="mt-3 text-center text-[11px] text-[var(--text-secondary,#A1A1AA)] font-mono py-1 rounded bg-black/[0.03] dark:bg-white/[0.02] border border-black/[0.08] dark:border-white/[0.04]">
-          {timeValueString} WIB
-        </div>
-      )}
-    </div>
-  );
+        {isMobile && (
+          <div className="pt-2 flex items-center justify-between border-t border-black/[0.08] dark:border-white/[0.06]">
+            <button
+              type="button"
+              onClick={() => setMobileTab('date')}
+              className="inline-flex items-center gap-1 text-xs font-medium text-[var(--text-secondary,#A1A1AA)] hover:text-[var(--text-primary,#FAFAFA)] cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Kembali ke Kalender</span>
+            </button>
+            <span className="text-[11px] text-emerald-500 font-mono font-semibold flex items-center gap-1">
+              <Check className="w-3 h-3" />
+              <span>Siap Diterapkan</span>
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div ref={containerRef} className={`relative ${isOpen ? 'z-30' : 'z-10'} ${className}`}>
@@ -711,7 +815,7 @@ export default function DateTimePicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[490px] max-w-[calc(100vw-2rem)] rounded-2xl glass-dropdown p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl overscroll-contain"
+            className="absolute top-full left-0 mt-2 z-50 w-full sm:w-[540px] max-w-[calc(100vw-2rem)] rounded-2xl glass-dropdown p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl overscroll-contain"
           >
             {/* Header Dialog */}
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-black/[0.08] dark:border-white/[0.08]">
@@ -822,7 +926,7 @@ export default function DateTimePicker({
                 {renderCalendar(false)}
               </div>
               <div className="w-[1px] bg-black/[0.08] dark:bg-white/[0.08] self-stretch" />
-              <div className="w-48 flex flex-col justify-between">
+              <div className="w-64 flex flex-col justify-between">
                 {renderTimePicker(false)}
               </div>
             </div>
@@ -831,7 +935,7 @@ export default function DateTimePicker({
             {isSelectedTimePast && (
               <div className="pt-2 px-1">
                 <span className="text-[11px] text-amber-500 dark:text-amber-400 font-medium flex items-center gap-1.5">
-                  <span>⚠️</span>
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                   <span>Waktu tenggat yang dipilih sudah terlewat dari saat ini.</span>
                 </span>
               </div>

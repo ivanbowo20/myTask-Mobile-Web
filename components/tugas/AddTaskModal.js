@@ -7,6 +7,7 @@ import DeadlineAlert from "./DeadlineAlert";
 import ReminderPicker from "./ReminderPicker";
 import DateTimePicker from "@/components/ui/DateTimePicker";
 import CustomSelect from "@/components/ui/CustomSelect";
+import AnimatedCheckbox from "@/components/ui/AnimatedCheckbox";
 import Magnet from "@/components/ui/Magnet";
 import { Plus, Loader2, Star, Calendar, Bell, Folder, AlignLeft, Trash2, Check } from "lucide-react";
 import { cn, formatTanggalSederhana } from "@/lib/utils";
@@ -202,7 +203,7 @@ export default function AddTaskModal({
             )}
           >
             <AlignLeft className="w-3.5 h-3.5" />
-            <span>{deskripsi ? "Catatan ✓" : "+ Catatan"}</span>
+            <span>{deskripsi ? "Catatan Terisi" : "+ Catatan"}</span>
           </button>
 
           {/* 4. Deadline Chip */}
@@ -497,17 +498,12 @@ export default function AddTaskModal({
 
         {/* Prioritas Checkbox (Desktop only, mobile has horizontal chip) */}
         <div className="pt-1 hidden lg:block">
-          <label className="flex items-center gap-3 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={prioritas}
-              onChange={(e) => setPrioritas(e.target.checked)}
-              className="w-5 h-5 rounded border border-white/[0.16] bg-white/[0.04] text-[#FAFAFA] focus:ring-1 focus:ring-white/30 cursor-pointer accent-white"
-            />
-            <span className="text-sm font-medium text-[#FAFAFA]">
-              Tandai sebagai tugas penting (prioritas)
-            </span>
-          </label>
+          <AnimatedCheckbox
+            id="task-priority-desktop"
+            checked={prioritas}
+            onChange={setPrioritas}
+            label="Tandai sebagai tugas penting (prioritas)"
+          />
         </div>
 
         {/* Sticky Footer Actions (Stays anchored at bottom of screen / adapts above keyboard) */}

@@ -210,7 +210,7 @@ export default function NotificationBanner({ dismissible = false, className = ""
                 {isTesting
                   ? "Mengirim..."
                   : testSuccess
-                  ? "✓ Tes Deadline Terkirim"
+                  ? "Tes Deadline Terkirim"
                   : "Tes Deadline"}
               </span>
             </button>
@@ -237,7 +237,7 @@ export default function NotificationBanner({ dismissible = false, className = ""
                 {isTestingReengagement
                   ? "Mengirim..."
                   : testReengageSuccess
-                  ? "✓ Ajakan Terkirim"
+                  ? "Ajakan Terkirim"
                   : "Tes Notif Ajakan"}
               </span>
             </button>

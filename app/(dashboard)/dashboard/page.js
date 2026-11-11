@@ -505,7 +505,7 @@ export default function DashboardPage() {
 
           {upcomingDeadlines.length === 0 ? (
             <div className="py-8 text-center text-xs text-[var(--text-muted)]">
-              Tidak ada deadline terdekat saat ini. ✨
+              Tidak ada deadline terdekat saat ini.
             </div>
           ) : (
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 -mx-4 px-4 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-3 sm:overflow-visible sm:mx-0 sm:px-0 sm:pb-0">
@@ -628,7 +628,7 @@ export default function DashboardPage() {
               <EmptyState
                 icon={CheckCircle2}
                 title="Semua tugas hari ini selesai!"
-                description="Tidak ada tugas tertunda yang jatuh tempo hari ini. Istirahat sejenak! 🎉"
+                description="Tidak ada tugas tertunda yang jatuh tempo hari ini. Istirahat sejenak."
               />
             ) : (
               <div className="space-y-3">

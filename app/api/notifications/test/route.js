@@ -54,7 +54,7 @@ export async function POST(request) {
     webpush.setVapidDetails(subject, publicKey, privateKey);
 
     const payload = JSON.stringify({
-      title: "🎉 Notifikasi MyTask Aktif!",
+      title: "Notifikasi MyTask Aktif!",
       body: "Pengingat tenggat waktu tugas Anda sekarang berhasil tersambung ke perangkat ini.",
       url: "/dashboard",
       icon: "/favicon.ico",

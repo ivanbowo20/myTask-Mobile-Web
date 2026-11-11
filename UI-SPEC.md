@@ -603,7 +603,7 @@ Digunakan oleh **8 halaman** (`dashboard`, `tasks.index`, `tasks.today`, `tasks.
   3. **Seksi `Upcoming Deadline` (`L80-L140`)**:
      - Header: Ikon jam `amber-500` + judul `"Upcoming Deadline"` + keterangan kanan `"Maksimal 5 task terdekat"`.
      - **State Ada Data (`L99-L138`)**: Grid `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3`. Setiap kartu menampilkan judul (`truncate`), pill kategori, sisa waktu (`$task->human_time_remaining`), jam deadline (`Jam: HH:mm`), dan tombol cepat `✓ Done`. Jika status tugas adalah `'reminder'`, kartu diberi `border-amber-500/60 bg-amber-500/10 dark:bg-amber-950/30 animate-pulse`.
-     - **Empty State (`L94-L97`)**: Teks tengah `"Tidak ada deadline terdekat saat ini. ✨"`.
+     - **Empty State (`L94-L97`)**: Teks tengah `"Tidak ada deadline terdekat saat ini."`.
   4. **Grid 2 Kolom Bawah (`grid-cols-1 xl:grid-cols-2 gap-6`, `L143-L212`)**:
      - **Kolom Kiri — `Today's Tasks` (`L145-L173`)**:
        - Header dengan ikon kalender `amber-500` dan link `"View All →"` ke `route('tasks.today')`.

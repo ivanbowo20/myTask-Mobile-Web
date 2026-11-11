@@ -34,8 +34,33 @@
 
 ## Frontend Design & Anti-AI Slop (SielloMita Design)
 - Menggunakan standar skill `siellomita` (SielloMita Design System — powered by Mythra Radiant Anti-Slop Engine):
-  - **Anti-AI Slop Enforcement**: Melarang 16 AI slop tells (gradien generik ungu, judul hero membungkus 6 baris, pill shapes di semua tombol/kartu, glassmorphism kabur berlebih, bento berlubang, 3 kartu fitur simetris tanpa visual anchor, dual competing primary CTAs, shouty hype copy, chaotic ambient pulsing, *Card-in-Card Nesting Hell*, *Divider Line Clutter*, dan icon bintang Sparkles/Gemini dekoratif).
+  - **Mandat Strict Zero-Tolerance (Veto Keras)**: AI WAJIB menegakkan 23 aturan Haram Mutlak berikut. Jika terdeteksi 1 saja tanda AI Slop di bawah ini pada kode/desain baru, tampilan tersebut dianggap cacat produksi dan AI wajib otomatis membatalkan/merefaktornya sebelum disajikan kepada pengguna:
+    1. *HARAM Gradien Ungu/Cyan pada Dark Mesh*: Wajib palet grounded berkarakter (warm slate, bone ivory `#F9F8F6`, obsidian `#121110`).
+    2. *HARAM Hero Text 6-Baris (The 2-Line Iron Rule)*: Judul maksimal 2-3 baris, wajib container lebar (`max-w-5xl`/`max-w-6xl`) dengan `text-wrap: balance`.
+    3. *HARAM Bentuk Pill di Semua Elemen*: Sudut terkontrol (`rounded-lg`/`rounded-xl`); bentuk pill HANYA untuk floating nav atau status tag tunggal.
+    4. *HARAM Glassmorphism Berlebih & Frosted Mush*: Permukaan grounded solid (opasitas 92-96%), glass maksimal 1 elemen per viewport.
+    5. *HARAM Bento Grid Berlubang & Kartu Pasif Teks*: Wajib `grid-flow-dense` + micro-widget interaktif nyata di setiap sel (Stageshow Protocol).
+    6. *HARAM Badge Meta Hiasan ("FEATURE 01", "SECTION 02")*: Hapus tag dekoratif tanpa fungsi semantik nyata.
+    7. *HARAM Monotoni Font Default Inter + Slate-900*: Wajib font berkarakter (Satoshi, Cabinet Grotesk, Instrument Serif, General Sans, Geist).
+    8. *HARAM Drop Shadow Tebal & Lumpur (Muddy Shadows)*: Wajib bayangan terarah multi-layer atau 1px razor-thin rim border highlight.
+    9. *HARAM Gerakan Kaku Linear / 0ms Abrupt*: Wajib kurva spring WWDC (`cubic-bezier(0.16, 1, 0.3, 1)`) dan staggered entrance 30-50ms.
+    10. *HARAM Kontras Pudar (<4.5:1) & Target Sentuh Mini (<44px)*: Wajib kepatuhan WCAG AAA/AA dan touch target mobile minimal 44x44px.
+    11. *HARAM Trope "3 Kartu Fitur Simetris"*: Wajib Asymmetric Bento Grid dengan 1 Hero Feature dominan yang memuat preview interaktif nyata.
+    12. *HARAM Dual Competing Primary CTAs*: Tepat 1 tombol primer berbobot tinggi + maksimal 1 ghost button/text link.
+    13. *HARAM Copywriting Hype AI ("Supercharge", "Unlock")*: Wajib salinan tenang, manusiawi, percaya diri, dan berorientasi utilitas nyata.
+    14. *HARAM Background Denyut / Blob Berputar Tanpa Henti*: Permukaan tenang; animasi hanya dipicu interaksi pengguna (`:hover`, `:active`).
+    15. *HARAM Card-in-Card Nesting Hell (The Anti-Nesting Law)*: Maksimal 1 tingkat container elevation per section. Elemen internal wajib flat rows/borderless.
+    16. *HARAM Divider Line Clutter (The 80% Border Diet)*: Hapus 80% garis border mati; gunakan ritme spasi vertikal dan kontras tonal halus.
+    17. *HARAM Icon Bintang Dekoratif Sparkles / Gemini (Mandat Anti-Sparkles AI)*: DILARANG KERAS menyematkan icon bintang 4-sudut (`Sparkles`, Gemini stars) sebagai pemanis heading/badge/tombol.
+    18. *HARAM Karakter Emoji Unicode pada UI (Mandat Zero-Emoji Policy)*: HARAM menggunakan segala bentuk karakter emoji Unicode (`✨`, `🚀`, `🎉`, dll.) di seluruh antarmuka. Gunakan ikon vektor resmi (`@phosphor-icons/react` atau `lucide-react`).
+    19. *HARAM Generic AI Placeholders (Craftwork Protocol)*: Dilarang *Lorem Ipsum*, avatar lingkaran abu-abu kosong, dan ikon monoline melayang sendirian tanpa konteks produk nyata. Wajib data domain kredibel.
+    20. *HARAM Layout Thrashing (GSAP & Performance Law)*: Animasi wajib 100% GPU transforms (`x`, `y`, `scale`, `rotation`, `opacity`). Dilarang menganimasikan `top/left/width/height`, dan dilarang teknik "freeze on scroll".
+    21. *HARAM Low-Effort AI Chat Bubbles (BoardUI Cockpit Protocol)*: Antarmuka AI wajib menyertakan reasoning accordion monospaced, visual pipeline tracker multi-step, dan model switcher compact.
+    22. *HARAM Melanggar The Single Peak Budget Rule (Scroll-Craft)*: Tepat 1 visual peak emosional dan tepat 1 signature move per landing page; dilarang competing climaxes berturut-turut.
+    23. *HARAM Navigasi Statis Tanpa Perubahan Bobot (Phosphor Weight Law)*: Navigasi wajib bertransformasi bobot (state inactive `regular`, state active/selected `fill`).
+  - **Prinsip Inti Desain & Eksekusi**:
   - **Mandat Anti-Sparkles AI (No Decorative AI Stars)**: DILARANG KERAS menyematkan icon bintang 4-sudut (`Sparkles`, `Sparkle`, Gemini star) sebagai pemanis/dekorasi heading section, judul modal, badge fitur, atau tombol. Gunakan icon semantik nyata sesuai konteks domain (misal: `Clock` untuk waktu terbaru, `FolderPlus` untuk berkas, `ShieldCheck` untuk kepatuhan sistem/WCAG, `Type` untuk pemformatan teks) atau terapkan *Ruthless Visual Subtraction* (tanpa icon dekoratif).
+  - **Mandat Zero-Emoji Policy (Haram Menggunakan Seluruh Unicode Emoji)**: DILARANG KERAS menggunakan segala bentuk karakter emoji Unicode (seperti `✨`, `🎉`, `🚨`, `⚠️`, `💡`, `🚀`, `🔥`, dll.) di seluruh antarmuka, heading, label tombol, microcopy, toast notification, empty state banner, modal, maupun alert. Seluruh penanda visual wajib menggunakan ikon vektor semantik resmi (`@phosphor-icons/react` atau `lucide-react`) atau tipografi bersih tanpa emoji.
   - **Ruthless Visual Subtraction (oil-ui Protocol)**: Wajib menerapkan *The Subtraction Test* & *Card/Border Diet* — maksimal 1 tingkat elevation card per section, pangkas 80% border pemisah, dan prioritaskan whitespace/ritme tonal.
   - **Awwwards Design DNA & Kinetic Choreography**: Kontras skala tipografi dinamis (*oversized clamp headline* dipadu *micro monospaced data*), *rhythmic color band-mapping*, dan orkestrasi motion 3-tier (*micro-tactile 80-120ms*, *staggered entrance 150-300ms*, dan *spatial kinetic*).
   - **The 9-Pass Unslopping Protocol**: Audit & refactor wajib mengikuti 9 lapis redline (Spacing -> Color -> Icons -> Copy -> Type -> Layout -> Details -> Visuals -> Motion).

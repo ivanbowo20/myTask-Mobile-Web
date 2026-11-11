@@ -13,7 +13,7 @@
 
 ---
 
-## ✨ Fitur Utama
+## Fitur Utama
 - **PWA & Notifikasi Background (Web Push):** Akses instan di mobile/desktop layaknya aplikasi native dengan notifikasi pengingat tenggat waktu secara real-time via Service Worker.
 - **Desain Glassmorphism (Celestial Sky Theme) & Dark Mode:** Tampilan modern berkelas dengan frosted glass (`backdrop-blur-xl`), WebGL cloud shader ambient, dan palet gelap yang nyaman di mata.
 - **Email Notifications (Resend):** Pengiriman notifikasi dan reminder otomatis langsung ke inbox email pengguna.

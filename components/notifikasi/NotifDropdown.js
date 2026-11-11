@@ -148,7 +148,7 @@ export default function NotifDropdown({
 
             {totalNotif === 0 && upcomingTasks.length === 0 && (
               <div className="py-8 text-center space-y-1">
-                <p className="text-xs text-[#FAFAFA] font-medium">Semua tugas beres! ✨</p>
+                <p className="text-xs text-[#FAFAFA] font-medium">Semua tugas beres!</p>
                 <p className="text-[11px] text-[#71717A]">
                   Tidak ada tenggat waktu mendesak saat ini.
                 </p>

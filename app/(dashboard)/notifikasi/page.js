@@ -68,7 +68,7 @@ export default function NotificationsPage() {
 
           {overdueList.length === 0 ? (
             <p className="text-xs text-[var(--text-muted)] py-2">
-              Tidak ada deadline yang terlewat. Kerja bagus! 🎉
+              Tidak ada deadline yang terlewat. Kerja bagus!
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
