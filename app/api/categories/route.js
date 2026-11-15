@@ -15,6 +15,9 @@ function mapRowToCategory(row) {
     nama: row.nama,
     warna: row.warna,
     icon: row.icon,
+    clientUuid: row.client_uuid || null,
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+    deletedAt: row.deleted_at ? new Date(row.deleted_at).toISOString() : null,
   };
 }
 
@@ -29,7 +32,7 @@ export async function GET(request) {
     }
 
     const result = await query(
-      `SELECT * FROM public.categories WHERE user_id = $1 ORDER BY id ASC;`,
+      `SELECT * FROM public.categories WHERE user_id = $1 AND deleted_at IS NULL ORDER BY id ASC;`,
       [session.user.id]
     );
 
@@ -72,7 +75,7 @@ export async function POST(request) {
 
     // Batasi kuota maksimal 50 kategori per akun
     const countRes = await query(
-      `SELECT COUNT(*)::int as count FROM public.categories WHERE user_id = $1;`,
+      `SELECT COUNT(*)::int as count FROM public.categories WHERE user_id = $1 AND deleted_at IS NULL;`,
       [session.user.id]
     );
     if (countRes.rows[0]?.count >= 50) {
@@ -98,7 +101,7 @@ export async function POST(request) {
 
     // Cek duplikasi nama kategori (case-insensitive)
     const duplicateCheck = await query(
-      `SELECT id FROM public.categories WHERE user_id = $1 AND LOWER(nama) = LOWER($2);`,
+      `SELECT id FROM public.categories WHERE user_id = $1 AND LOWER(nama) = LOWER($2) AND deleted_at IS NULL;`,
       [session.user.id, cleanNama]
     );
     if (duplicateCheck.rows.length > 0) {
@@ -169,7 +172,7 @@ export async function PUT(request) {
 
     // Cek duplikasi nama kategori jika diubah (case-insensitive)
     const duplicateCheck = await query(
-      `SELECT id FROM public.categories WHERE user_id = $1 AND LOWER(nama) = LOWER($2) AND id != $3;`,
+      `SELECT id FROM public.categories WHERE user_id = $1 AND LOWER(nama) = LOWER($2) AND id != $3 AND deleted_at IS NULL;`,
       [session.user.id, cleanNama, parsedId]
     );
     if (duplicateCheck.rows.length > 0) {
@@ -185,7 +188,7 @@ export async function PUT(request) {
     const result = await query(
       `UPDATE public.categories
        SET nama = $1, warna = $2, icon = $3
-       WHERE id = $4 AND user_id = $5
+       WHERE id = $4 AND user_id = $5 AND deleted_at IS NULL
        RETURNING *;`,
       [cleanNama, cleanWarna, cleanIcon, parsedId, session.user.id]
     );
@@ -232,12 +235,28 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Category ID valid diperlukan" }, { status: 400 });
     }
 
-    await query(
-      `DELETE FROM public.categories WHERE id = $1 AND user_id = $2;`,
+    // Soft delete kategori
+    const res = await query(
+      `UPDATE public.categories
+       SET deleted_at = timezone('utc', now())
+       WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL
+       RETURNING id;`,
       [parsedId, session.user.id]
     );
 
-    return NextResponse.json({ success: true });
+    if (res.rows.length === 0) {
+      return NextResponse.json({ error: "Kategori tidak ditemukan atau sudah dihapus." }, { status: 404 });
+    }
+
+    // Lepas relasi tugas pada kategori yang dihapus
+    await query(
+      `UPDATE public.tasks
+       SET kategori_id = null
+       WHERE kategori_id = $1 AND user_id = $2 AND deleted_at IS NULL;`,
+      [parsedId, session.user.id]
+    );
+
+    return NextResponse.json({ success: true, deletedId: parsedId });
   } catch (error) {
     console.error("DELETE /api/categories error:", error);
     return NextResponse.json(

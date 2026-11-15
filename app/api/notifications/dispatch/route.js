@@ -145,6 +145,7 @@ export async function handleDispatch(request) {
           END AS notif_type
         FROM public.tasks t
         WHERE t.selesai = false
+          AND t.deleted_at IS NULL
           AND t.deadline IS NOT NULL
           AND t.deadline >= NOW() - INTERVAL '3 days'
           AND (

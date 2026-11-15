@@ -133,6 +133,13 @@ const TaskCard = memo(function TaskCard({
               title={task.judul}
             >
               {task.judul}
+              {Boolean(task.pending) && (
+                <span
+                  className="ml-1.5 inline-block w-2 h-2 rounded-full bg-amber-500/80 shrink-0 align-middle"
+                  title="Perubahan lokal belum tersimpan ke server"
+                  aria-label="Pending sinkronisasi"
+                />
+              )}
             </h3>
 
             <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)] mt-0.5 truncate">
@@ -409,6 +416,13 @@ const TaskCard = memo(function TaskCard({
               title={task.judul}
             >
               {task.judul}
+              {Boolean(task.pending) && (
+                <span
+                  className="ml-1.5 inline-block w-2 h-2 rounded-full bg-amber-500/80 shrink-0 align-middle"
+                  title="Perubahan lokal belum tersimpan ke server"
+                  aria-label="Pending sinkronisasi"
+                />
+              )}
             </h3>
           </div>
 

@@ -16,6 +16,7 @@ import Button from "@/components/ui/Button";
 import SpecularButton from "@/components/ui/SpecularButton";
 import { useSession, signOut } from "@/lib/auth-client";
 import { toast } from "@/lib/use-toast";
+import OfflineStatusBadge from "@/components/pwa/OfflineStatusBadge";
 
 export default function Navbar({
   user: initialUser,
@@ -182,6 +183,9 @@ export default function Navbar({
                 <span>Tambah Tugas</span>
               </SpecularButton>
             </div>
+
+            {/* Offline & Sync Status Badge */}
+            <OfflineStatusBadge userId={currentUser?.id} />
 
             {/* Notifications Dropdown */}
             <NotifDropdown

@@ -23,6 +23,21 @@ const filesToCheck = [
   'app/(dashboard)/tugas/page.js',
   'components/kategori/CategoryCard.js',
   'components/notebook/NotebookCard.js',
+  'lib/sync/contract.js',
+  'lib/sync/subtasks.js',
+  'lib/sync/ordering.js',
+  'lib/modules/sync/sync.repository.js',
+  'lib/modules/sync/sync.service.js',
+  'app/api/sync/route.js',
+  'lib/local/db.js',
+  'lib/local/outbox.js',
+  'lib/local/sync-engine.js',
+  'lib/local/storage.js',
+  'lib/local/feature-flag.js',
+  'lib/local/session-snapshot.js',
+  'lib/use-online-status.js',
+  'components/pwa/OfflineStatusBadge.js',
+  'lib/notebook-context.js',
 ];
 
 const allowedGlobals = new Set([
@@ -55,6 +70,8 @@ const allowedGlobals = new Set([
   'null',
   'NaN',
   'isNaN',
+  'parseInt',
+  'parseFloat',
   'encodeURIComponent',
   'decodeURIComponent',
   'Intl',
@@ -70,6 +87,9 @@ const allowedGlobals = new Set([
   'navigator',
   'location',
   'history',
+  'globalThis',
+  'Symbol',
+  'crypto',
 ]);
 
 let totalErrors = 0;

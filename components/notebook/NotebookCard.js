@@ -171,6 +171,14 @@ function NotebookCard({ notebook }) {
               <span className="truncate">{notebook.kategori}</span>
             </span>
           )}
+
+          {Boolean(notebook.pending) && (
+            <span
+              className="w-2 h-2 rounded-full bg-amber-500/80 shrink-0"
+              title="Perubahan lokal belum tersimpan ke server"
+              aria-label="Pending sinkronisasi"
+            />
+          )}
         </div>
 
         {/* Action icons */}

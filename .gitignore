@@ -42,3 +42,13 @@ next-env.d.ts
 graphify-out/
 .agents/
 skills-lock.json
+
+# media binaries & personal non-code artifacts
+*.mp4
+proposal-kp/
+remotion/
+remotion-arena/
+*.bat
+*PROMPT*.md
+
+

@@ -1,6 +1,6 @@
 'use client';
 
-import dynamic from "next/dynamic";
+import React, { Component, useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import BottomNav from "@/components/layout/BottomNav";
@@ -8,28 +8,40 @@ import AddTaskModal from "@/components/tugas/AddTaskModal";
 import EditTaskModal from "@/components/tugas/EditTaskModal";
 import AddCategoryModal from "@/components/kategori/AddCategoryModal";
 import EditCategoryModal from "@/components/kategori/EditCategoryModal";
+import AddNotebookModal from "@/components/notebook/AddNotebookModal";
+import EditNotebookModal from "@/components/notebook/EditNotebookModal";
+import NotebookPreviewModal from "@/components/notebook/NotebookPreviewModal";
 import TopProgressBar from "@/components/ui/TopProgressBar";
 import PwaInstallPrompt from "@/components/pwa/PwaInstallPrompt";
+import NotebookWhatsNewModal from "@/components/notebook/NotebookWhatsNewModal";
 import { useTasks } from "@/lib/task-context";
 import { useNotebooks } from "@/lib/notebook-context";
 
-// Lazy-load modal notebook & rich-text editor secara on-demand (hemat bundle awal di HP low-end)
-const AddNotebookModal = dynamic(
-  () => import("@/components/notebook/AddNotebookModal"),
-  { ssr: false }
-);
-const EditNotebookModal = dynamic(
-  () => import("@/components/notebook/EditNotebookModal"),
-  { ssr: false }
-);
-const NotebookPreviewModal = dynamic(
-  () => import("@/components/notebook/NotebookPreviewModal"),
-  { ssr: false }
-);
-const NotebookWhatsNewModal = dynamic(
-  () => import("@/components/notebook/NotebookWhatsNewModal"),
-  { ssr: false }
-);
+/**
+ * Error boundary ringan untuk melindungi aplikasi dari kegagalan render modal
+ * saat perangkat berada dalam kondisi offline.
+ */
+class SafeModalBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error) {
+    console.warn("[SafeModalBoundary] Gagal me-render modal saat offline:", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 export default function DashboardShell({ children }) {
   const {
@@ -69,6 +81,18 @@ export default function DashboardShell({ children }) {
   const closePreviewNotebook = notebookContext?.closePreviewNotebook;
   const openEditNotebook = notebookContext?.openEditNotebook;
   const notebookTotal = notebookContext?.stats?.total || 0;
+
+  // Mount pengumuman fitur hanya jika belum pernah dilihat sebelumnya
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const seen = localStorage.getItem("mytask_whatsnew_v1_3_seen");
+      if (seen !== "true") {
+        setShowWhatsNew(true);
+      }
+    } catch (_) {}
+  }, []);
 
   return (
     <div className="min-h-[100dvh] flex flex-col overflow-x-clip">
@@ -142,36 +166,38 @@ export default function DashboardShell({ children }) {
         onUpdate={updateCategory}
       />
 
-      {/* Global Notebook Modals (Mounted only on-demand) */}
-      {Boolean(isAddNotebookOpen) && (
-        <AddNotebookModal
-          isOpen={Boolean(isAddNotebookOpen)}
-          onClose={closeAddNotebook || (() => {})}
-        />
-      )}
+      {/* Global Notebook Modals (Mounted only on-demand with SafeModalBoundary protection) */}
+      <SafeModalBoundary>
+        {Boolean(isAddNotebookOpen) && (
+          <AddNotebookModal
+            isOpen={Boolean(isAddNotebookOpen)}
+            onClose={closeAddNotebook || (() => {})}
+          />
+        )}
 
-      {Boolean(previewNotebook) && (
-        <NotebookPreviewModal
-          isOpen={Boolean(previewNotebook)}
-          onClose={closePreviewNotebook || (() => {})}
-          notebook={previewNotebook}
-          onEdit={(nb) => {
-            if (closePreviewNotebook) closePreviewNotebook();
-            if (openEditNotebook) openEditNotebook(nb);
-          }}
-        />
-      )}
+        {Boolean(previewNotebook) && (
+          <NotebookPreviewModal
+            isOpen={Boolean(previewNotebook)}
+            onClose={closePreviewNotebook || (() => {})}
+            notebook={previewNotebook}
+            onEdit={(nb) => {
+              if (closePreviewNotebook) closePreviewNotebook();
+              if (openEditNotebook) openEditNotebook(nb);
+            }}
+          />
+        )}
 
-      {Boolean(editingNotebook) && (
-        <EditNotebookModal
-          isOpen={Boolean(editingNotebook)}
-          onClose={closeEditNotebook || (() => {})}
-          notebook={editingNotebook}
-        />
-      )}
+        {Boolean(editingNotebook) && (
+          <EditNotebookModal
+            isOpen={Boolean(editingNotebook)}
+            onClose={closeEditNotebook || (() => {})}
+            notebook={editingNotebook}
+          />
+        )}
 
-      {/* One-Time Feature Announcement Modal (v1.3.0 Notebook) */}
-      <NotebookWhatsNewModal />
+        {/* One-Time Feature Announcement Modal (v1.3.0 Notebook) */}
+        {showWhatsNew && <NotebookWhatsNewModal />}
+      </SafeModalBoundary>
 
       {/* Floating In-App PWA Install Prompt (Android & iOS) */}
       <PwaInstallPrompt />

@@ -16,6 +16,9 @@ function mapRowToCategory(row) {
     icon: row.icon || "FolderSimple",
     count: Number(row.count || 0),
     dibuatPada: row.dibuat_pada ? new Date(row.dibuat_pada).toISOString() : new Date().toISOString(),
+    clientUuid: row.client_uuid || null,
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+    deletedAt: row.deleted_at ? new Date(row.deleted_at).toISOString() : null,
   };
 }
 
@@ -37,13 +40,17 @@ export async function GET(request) {
         c.warna,
         c.icon,
         c.dibuat_pada,
+        c.client_uuid,
+        c.updated_at,
+        c.deleted_at,
         COUNT(n.id)::int as count
       FROM public.notebook_categories c
       LEFT JOIN public.notebooks n 
         ON n.user_id = c.user_id 
         AND (n.kategori_id = c.id OR (n.kategori IS NOT NULL AND LOWER(TRIM(n.kategori)) = LOWER(TRIM(c.nama))))
-      WHERE c.user_id = $1
-      GROUP BY c.id, c.user_id, c.nama, c.warna, c.icon, c.dibuat_pada
+        AND n.deleted_at IS NULL
+      WHERE c.user_id = $1 AND c.deleted_at IS NULL
+      GROUP BY c.id, c.user_id, c.nama, c.warna, c.icon, c.dibuat_pada, c.client_uuid, c.updated_at, c.deleted_at
       ORDER BY c.dibuat_pada ASC;
     `;
 
@@ -100,22 +107,49 @@ export async function POST(request) {
     const cleanWarna = typeof warna === "string" ? warna.trim().slice(0, MAX_CAT_WARNA_LENGTH) : "#0284C7";
     const cleanIcon = typeof icon === "string" ? icon.trim().slice(0, MAX_CAT_ICON_LENGTH) : "FolderSimple";
 
-    // 1. Simpan kategori ke database
-    const insertSql = `
-      INSERT INTO public.notebook_categories (
-        user_id,
-        nama,
-        warna,
-        icon,
-        dibuat_pada
-      ) VALUES ($1, $2, $3, $4, timezone('utc'::text, now()))
-      ON CONFLICT (user_id, nama) DO UPDATE 
-        SET warna = EXCLUDED.warna, icon = EXCLUDED.icon
-      RETURNING *;
-    `;
+    // 1. Periksa duplikasi nama kategori materi yang aktif (case-insensitive)
+    const existingCatRes = await query(
+      `SELECT * FROM public.notebook_categories WHERE user_id = $1 AND LOWER(TRIM(nama)) = LOWER(TRIM($2)) AND deleted_at IS NULL LIMIT 1;`,
+      [session.user.id, cleanNama]
+    );
 
-    const catRes = await query(insertSql, [session.user.id, cleanNama, cleanWarna, cleanIcon]);
-    const createdCat = catRes.rows[0];
+    let createdCat;
+    if (existingCatRes.rows.length > 0) {
+      // Jika nama kategori sudah ada dan aktif, update atribut tampilan
+      const updateCatRes = await query(
+        `UPDATE public.notebook_categories
+         SET warna = $1, icon = $2
+         WHERE id = $3 AND user_id = $4 AND deleted_at IS NULL
+         RETURNING *;`,
+        [cleanWarna, cleanIcon, existingCatRes.rows[0].id, session.user.id]
+      );
+      createdCat = updateCatRes.rows[0];
+    } else {
+      // Batasi kuota maksimal 50 kategori materi per akun
+      const countRes = await query(
+        `SELECT COUNT(*)::int as count FROM public.notebook_categories WHERE user_id = $1 AND deleted_at IS NULL;`,
+        [session.user.id]
+      );
+      if ((countRes.rows[0]?.count || 0) >= 50) {
+        return NextResponse.json(
+          { error: "Batas maksimal 50 kategori materi per akun telah tercapai." },
+          { status: 400 }
+        );
+      }
+
+      const insertSql = `
+        INSERT INTO public.notebook_categories (
+          user_id,
+          nama,
+          warna,
+          icon,
+          dibuat_pada
+        ) VALUES ($1, $2, $3, $4, timezone('utc'::text, now()))
+        RETURNING *;
+      `;
+      const catRes = await query(insertSql, [session.user.id, cleanNama, cleanWarna, cleanIcon]);
+      createdCat = catRes.rows[0];
+    }
 
     // 2. Deteksi & update catatan terpilih (atomic batch assignment)
     let assignedCount = 0;
@@ -173,7 +207,7 @@ export async function PUT(request) {
 
     // IDOR Check
     const checkRes = await query(
-      `SELECT * FROM public.notebook_categories WHERE id = $1 AND user_id = $2;`,
+      `SELECT * FROM public.notebook_categories WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL;`,
       [Number(id), session.user.id]
     );
 
@@ -193,7 +227,7 @@ export async function PUT(request) {
       `
       UPDATE public.notebook_categories
       SET nama = $1, warna = $2, icon = $3
-      WHERE id = $4 AND user_id = $5
+      WHERE id = $4 AND user_id = $5 AND deleted_at IS NULL
       RETURNING *;
       `,
       [newNama, newWarna, newIcon, Number(id), session.user.id]
@@ -204,7 +238,7 @@ export async function PUT(request) {
       `
       UPDATE public.notebooks
       SET kategori = $1, diperbarui_pada = timezone('utc'::text, now())
-      WHERE (kategori_id = $2 OR (kategori IS NOT NULL AND LOWER(TRIM(kategori)) = LOWER(TRIM($3)))) AND user_id = $4;
+      WHERE (kategori_id = $2 OR (kategori IS NOT NULL AND LOWER(TRIM(kategori)) = LOWER(TRIM($3)))) AND user_id = $4 AND deleted_at IS NULL;
       `,
       [newNama, Number(id), existing.nama, session.user.id]
     );
@@ -238,12 +272,12 @@ export async function DELETE(request) {
 
     // Ambil data kategori untuk unassign
     const checkRes = await query(
-      `SELECT * FROM public.notebook_categories WHERE id = $1 AND user_id = $2;`,
+      `SELECT * FROM public.notebook_categories WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL;`,
       [Number(id), session.user.id]
     );
 
     if (checkRes.rows.length === 0) {
-      return NextResponse.json({ error: "Kategori tidak ditemukan." }, { status: 404 });
+      return NextResponse.json({ error: "Kategori tidak ditemukan atau sudah dihapus." }, { status: 404 });
     }
 
     const cat = checkRes.rows[0];
@@ -253,14 +287,14 @@ export async function DELETE(request) {
       `
       UPDATE public.notebooks
       SET kategori = '', kategori_id = NULL, diperbarui_pada = timezone('utc'::text, now())
-      WHERE (kategori_id = $1 OR (kategori IS NOT NULL AND LOWER(TRIM(kategori)) = LOWER(TRIM($2)))) AND user_id = $3;
+      WHERE (kategori_id = $1 OR (kategori IS NOT NULL AND LOWER(TRIM(kategori)) = LOWER(TRIM($2)))) AND user_id = $3 AND deleted_at IS NULL;
       `,
       [Number(id), cat.nama, session.user.id]
     );
 
-    // Hapus kategori
+    // Soft delete kategori
     await query(
-      `DELETE FROM public.notebook_categories WHERE id = $1 AND user_id = $2;`,
+      `UPDATE public.notebook_categories SET deleted_at = timezone('utc'::text, now()) WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL;`,
       [Number(id), session.user.id]
     );
 
@@ -306,7 +340,7 @@ export async function PATCH(request) {
     let targetCatId = null;
     if (cleanCategory) {
       const catSearch = await query(
-        `SELECT id FROM public.notebook_categories WHERE user_id = $1 AND LOWER(TRIM(nama)) = LOWER(TRIM($2)) LIMIT 1;`,
+        `SELECT id FROM public.notebook_categories WHERE user_id = $1 AND LOWER(TRIM(nama)) = LOWER(TRIM($2)) AND deleted_at IS NULL LIMIT 1;`,
         [session.user.id, cleanCategory]
       );
       if (catSearch.rows.length > 0) {
@@ -320,7 +354,7 @@ export async function PATCH(request) {
         kategori = $1,
         kategori_id = $2,
         diperbarui_pada = timezone('utc'::text, now())
-      WHERE id = ANY($3::bigint[]) AND user_id = $4
+      WHERE id = ANY($3::bigint[]) AND user_id = $4 AND deleted_at IS NULL
       RETURNING id, kategori, kategori_id;
     `;
 

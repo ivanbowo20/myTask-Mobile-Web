@@ -25,6 +25,9 @@ function mapRowToNotebook(row) {
     kategori: row.kategori || "",
     dibuatPada: parseDbDate(row.dibuat_pada) || new Date().toISOString(),
     diperbaruiPada: parseDbDate(row.diperbarui_pada) || new Date().toISOString(),
+    clientUuid: row.client_uuid || null,
+    updatedAt: parseDbDate(row.updated_at),
+    deletedAt: parseDbDate(row.deleted_at),
   };
 }
 
@@ -44,7 +47,7 @@ export async function GET(request) {
 
     let sql = `
       SELECT * FROM public.notebooks
-      WHERE user_id = $1
+      WHERE user_id = $1 AND deleted_at IS NULL
     `;
     const params = [session.user.id];
 
@@ -101,7 +104,7 @@ export async function POST(request) {
 
     // Quota guard: max 300 notebooks per user
     const countRes = await query(
-      `SELECT COUNT(*)::int as count FROM public.notebooks WHERE user_id = $1;`,
+      `SELECT COUNT(*)::int as count FROM public.notebooks WHERE user_id = $1 AND deleted_at IS NULL;`,
       [session.user.id]
     );
     if ((countRes.rows[0]?.count || 0) >= 300) {
@@ -209,7 +212,7 @@ export async function PUT(request) {
 
     // IDOR Check: Ensure notebook belongs to logged in user
     const checkRes = await query(
-      `SELECT * FROM public.notebooks WHERE id = $1 AND user_id = $2;`,
+      `SELECT * FROM public.notebooks WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL;`,
       [Number(id), session.user.id]
     );
 
@@ -265,7 +268,7 @@ export async function PUT(request) {
         warna = $4,
         kategori = $5,
         diperbarui_pada = timezone('utc'::text, now())
-      WHERE id = $6 AND user_id = $7
+      WHERE id = $6 AND user_id = $7 AND deleted_at IS NULL
       RETURNING *;
       `,
       [newJudul, newKonten, newPenting, newWarna, newKategori, Number(id), session.user.id]
@@ -317,9 +320,9 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "ID notebook tidak valid." }, { status: 400 });
     }
 
-    // IDOR Protected Delete
+    // IDOR Protected Delete (soft delete)
     const deleteRes = await query(
-      `DELETE FROM public.notebooks WHERE id = $1 AND user_id = $2 RETURNING id;`,
+      `UPDATE public.notebooks SET deleted_at = timezone('utc'::text, now()) WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL RETURNING id;`,
       [Number(id), session.user.id]
     );
 
