@@ -1,7 +1,7 @@
 // Service Worker untuk PWA, Offline App Shell & Web Push Notification TaskFlow v2
-// Versi: v2.5-offline-zerodino (Triple Navigation Guard, Zero-Fail App Shell Fallback & Instant SW Update)
+// Versi: v2.6-offline-cleanresponse (Sanitized 200 OK Response, Root Mapping & Zero-Fail App Shell)
 
-const CACHE_VERSION = "v2.5-offline-zerodino";
+const CACHE_VERSION = "v2.6-offline-cleanresponse";
 const SHELL_CACHE = `taskflow-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `taskflow-static-${CACHE_VERSION}`;
 const FALLBACK_CSS_KEY = "/taskflow-fallback.css";
@@ -266,6 +266,9 @@ self.addEventListener("fetch", function (event) {
     acceptHeader.includes("text/html");
 
   if (isHtmlNavigation) {
+    // Pemetaan rute root (/) ke /dashboard untuk App Shell offline
+    const route = url.pathname === "/" ? "/dashboard" : request;
+
     event.respondWith(
       (async function () {
         try {
@@ -303,31 +306,67 @@ self.addEventListener("fetch", function (event) {
         } catch (err) {
           const shellCache = await caches.open(SHELL_CACHE);
 
-          // 1. Coba ambil dari cache request persis (dengan atau tanpa query params)
+          // Sanitasi respon: Dekonstruksi respon redirect (307/308/redirected) menjadi 200 OK murni
+          async function sanitizeResponse(res) {
+            if (!res) return null;
+            if (res.redirected || res.status === 307 || res.status === 308 || res.status === 301 || res.status === 302) {
+              try {
+                const blob = await res.blob();
+                return new Response(blob, {
+                  status: 200,
+                  statusText: "OK",
+                  headers: { "Content-Type": "text/html; charset=utf-8" },
+                });
+              } catch (_) {
+                return res;
+              }
+            }
+            return res;
+          }
+
+          // 1. Coba ambil dari cache rute terpetakan (route = /dashboard jika root /)
+          const matchedRoute =
+            (await caches.match(route)) ||
+            (await caches.match(route, { ignoreSearch: true })) ||
+            (await shellCache.match(route));
+          if (matchedRoute) {
+            return await sanitizeResponse(matchedRoute);
+          }
+
+          // 2. Coba ambil dari cache request asli (dengan atau tanpa query params)
           const cached =
             (await caches.match(request)) ||
             (await caches.match(request, { ignoreSearch: true }));
-          if (cached) return cached;
+          if (cached) {
+            return await sanitizeResponse(cached);
+          }
 
-          // 2. Coba cocokkan berdasarkan url.pathname murni
+          // 3. Coba cocokkan berdasarkan url.pathname murni
           const pathnameMatch = await shellCache.match(url.pathname);
-          if (pathnameMatch) return pathnameMatch;
+          if (pathnameMatch) {
+            return await sanitizeResponse(pathnameMatch);
+          }
 
-          // 3. Fallback Utama Offline-First: Selalu sajikan App Shell /dashboard
-          // agar Next.js SPA aktif dan memuat tugas dari IndexedDB lokal secara otomatis
+          // 4. Fallback Utama Offline-First: Selalu sajikan App Shell /dashboard
           const dashboardShell =
             (await shellCache.match("/dashboard")) ||
             (await caches.match("/dashboard"));
-          if (dashboardShell) return dashboardShell;
+          if (dashboardShell) {
+            return await sanitizeResponse(dashboardShell);
+          }
 
-          // 4. Jika /dashboard belum ada, periksa halaman root atau login
+          // 5. Jika /dashboard belum ada, periksa rute root atau login
           const rootMatch = await shellCache.match("/");
-          if (rootMatch) return rootMatch;
+          if (rootMatch) {
+            return await sanitizeResponse(rootMatch);
+          }
 
           const loginShell = await shellCache.match("/login");
-          if (loginShell) return loginShell;
+          if (loginShell) {
+            return await sanitizeResponse(loginShell);
+          }
 
-          // 5. Cek apakah ada halaman shell mana pun yang tersimpan di SHELL_CACHE
+          // 6. Cek apakah ada halaman shell mana pun yang tersimpan di SHELL_CACHE
           const shellKeys = await shellCache.keys();
           for (const key of shellKeys) {
             if (
@@ -337,16 +376,19 @@ self.addEventListener("fetch", function (event) {
               key.url.includes("/notebook")
             ) {
               const matched = await shellCache.match(key);
-              if (matched) return matched;
+              if (matched) {
+                return await sanitizeResponse(matched);
+              }
             }
           }
 
-          // 6. Opsi darurat jika cache shell kosong
+          // 7. Opsi darurat jika cache shell kosong
           const offlinePage = await caches.match("/offline.html");
-          if (offlinePage) return offlinePage;
+          if (offlinePage) {
+            return await sanitizeResponse(offlinePage);
+          }
 
-          // 7. Zero-Dino Fail-Safe: Kembalikan App Shell mandiri yang me-redirect ke /dashboard
-          // DILARANG melempar error agar Google Chrome TIDAK PERNAH menampilkan game dinosaurus!
+          // 8. Zero-Dino Fail-Safe: Kembalikan App Shell mandiri yang me-redirect ke /dashboard
           return new Response(
             "<!DOCTYPE html><html lang='id' class='dark'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'><title>MyTask — Mode Offline</title><script>try{window.location.replace('/dashboard');}catch(_){}</script><style>body{background:#0C0A09;color:#FAFAFA;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;font-family:sans-serif;}</style></head><body><p>Membuka MyTask...</p></body></html>",
             {
