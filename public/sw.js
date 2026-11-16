@@ -1,7 +1,7 @@
 // Service Worker untuk PWA, Offline App Shell & Web Push Notification TaskFlow v2
-// Versi: v2.4-offline-appshell (Robust App Shell Fallback, Instant Registration & No-Offline-Page)
+// Versi: v2.5-offline-zerodino (Triple Navigation Guard, Zero-Fail App Shell Fallback & Instant SW Update)
 
-const CACHE_VERSION = "v2.4-offline-appshell";
+const CACHE_VERSION = "v2.5-offline-zerodino";
 const SHELL_CACHE = `taskflow-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `taskflow-static-${CACHE_VERSION}`;
 const FALLBACK_CSS_KEY = "/taskflow-fallback.css";
@@ -125,6 +125,10 @@ self.addEventListener("install", function (event) {
             const res = await fetch(route);
             if (res && res.status === 200) {
               await shellCache.put(route, res.clone());
+              if (route === "/dashboard" || route === "/") {
+                await shellCache.put("/dashboard", res.clone());
+                await shellCache.put("/", res.clone());
+              }
               const htmlText = await res.text();
               await harvestAssetsFromHtml(htmlText, staticCache, shellCache, route);
             }
@@ -254,8 +258,14 @@ self.addEventListener("fetch", function (event) {
     return;
   }
 
-  // B. Khusus Permintaan Navigasi Dokumen HTML (Full Page Reload / Direct URL)
-  if (request.mode === "navigate") {
+  // B. Khusus Permintaan Navigasi Dokumen HTML (Full Page Reload / Direct URL / Android WebAPK Intent)
+  const acceptHeader = request.headers.get("accept") || "";
+  const isHtmlNavigation =
+    request.mode === "navigate" ||
+    request.destination === "document" ||
+    acceptHeader.includes("text/html");
+
+  if (isHtmlNavigation) {
     event.respondWith(
       (async function () {
         try {
@@ -331,12 +341,14 @@ self.addEventListener("fetch", function (event) {
             }
           }
 
-          // 6. Opsi darurat terakhir jika perangkat benar-benar belum pernah login/buka app
+          // 6. Opsi darurat jika cache shell kosong
           const offlinePage = await caches.match("/offline.html");
           if (offlinePage) return offlinePage;
 
+          // 7. Zero-Dino Fail-Safe: Kembalikan App Shell mandiri yang me-redirect ke /dashboard
+          // DILARANG melempar error agar Google Chrome TIDAK PERNAH menampilkan game dinosaurus!
           return new Response(
-            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Mode Offline</title></head><body><h1>Aplikasi sedang offline</h1><p>Buka saat terhubung internet minimal 1 kali agar data tersimpan.</p></body></html>",
+            "<!DOCTYPE html><html lang='id' class='dark'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'><title>MyTask — Mode Offline</title><script>try{window.location.replace('/dashboard');}catch(_){}</script><style>body{background:#0C0A09;color:#FAFAFA;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;font-family:sans-serif;}</style></head><body><p>Membuka MyTask...</p></body></html>",
             {
               status: 200,
               headers: { "Content-Type": "text/html; charset=utf-8" },

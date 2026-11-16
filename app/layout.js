@@ -90,7 +90,11 @@ export default function RootLayout({ children }) {
                   }
                 });
                 function registerSW() {
-                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    if (reg) {
+                      reg.update().catch(function() {});
+                    }
+                  }).catch(function() {});
                 }
                 if (document.readyState === 'complete' || document.readyState === 'interactive') {
                   registerSW();
