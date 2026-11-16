@@ -84,14 +84,19 @@ export default function RootLayout({ children }) {
               if ('serviceWorker' in navigator) {
                 var refreshing = false;
                 navigator.serviceWorker.addEventListener('controllerchange', function() {
-                  if (!refreshing) {
+                  if (!refreshing && navigator.onLine) {
                     refreshing = true;
                     window.location.reload();
                   }
                 });
-                window.addEventListener('load', function() {
+                function registerSW() {
                   navigator.serviceWorker.register('/sw.js').catch(function() {});
-                });
+                }
+                if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                  registerSW();
+                } else {
+                  window.addEventListener('load', registerSW);
+                }
               }
             `,
           }}

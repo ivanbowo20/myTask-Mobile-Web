@@ -1,7 +1,7 @@
 // Service Worker untuk PWA, Offline App Shell & Web Push Notification TaskFlow v2
-// Versi: v2.3-offline-fix (Precache Icons, Clean CSS/JS Fallback & Controller Sync)
+// Versi: v2.4-offline-appshell (Robust App Shell Fallback, Instant Registration & No-Offline-Page)
 
-const CACHE_VERSION = "v2.3-offline-fix";
+const CACHE_VERSION = "v2.4-offline-appshell";
 const SHELL_CACHE = `taskflow-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `taskflow-static-${CACHE_VERSION}`;
 const FALLBACK_CSS_KEY = "/taskflow-fallback.css";
@@ -26,6 +26,7 @@ const OPTIONAL_APP_ROUTES = [
   "/kategori",
   "/notebook",
   "/pengaturan",
+  "/login",
 ];
 
 // Helper untuk memberitahu tab aktif agar menjalankan sinkronisasi
@@ -266,6 +267,18 @@ self.addEventListener("fetch", function (event) {
               caches.open(STATIC_CACHE),
             ]);
             await shellCache.put(request, clone);
+            await shellCache.put(url.pathname, clone.clone());
+
+            // Jika rute adalah dashboard atau bagian dari modul aplikasi, simpan sebagai canonical App Shell
+            if (
+              url.pathname === "/dashboard" ||
+              url.pathname.startsWith("/tugas") ||
+              url.pathname.startsWith("/kategori") ||
+              url.pathname.startsWith("/notebook")
+            ) {
+              await shellCache.put("/dashboard", clone.clone());
+              await shellCache.put("/", clone.clone());
+            }
 
             // Harvest aset secara background saat online
             networkResponse
@@ -278,23 +291,57 @@ self.addEventListener("fetch", function (event) {
           }
           return networkResponse;
         } catch (err) {
-          // Saat offline: coba ambil dari cache halaman yang cocok
-          const cached = await caches.match(request);
+          const shellCache = await caches.open(SHELL_CACHE);
+
+          // 1. Coba ambil dari cache request persis (dengan atau tanpa query params)
+          const cached =
+            (await caches.match(request)) ||
+            (await caches.match(request, { ignoreSearch: true }));
           if (cached) return cached;
 
-          // Coba cocokkan berdasarkan url.pathname murni (abaikan query parameters)
-          const shellCache = await caches.open(SHELL_CACHE);
+          // 2. Coba cocokkan berdasarkan url.pathname murni
           const pathnameMatch = await shellCache.match(url.pathname);
           if (pathnameMatch) return pathnameMatch;
 
-          // Jika belum pernah dikunjungi, gunakan halaman fallback offline.html
+          // 3. Fallback Utama Offline-First: Selalu sajikan App Shell /dashboard
+          // agar Next.js SPA aktif dan memuat tugas dari IndexedDB lokal secara otomatis
+          const dashboardShell =
+            (await shellCache.match("/dashboard")) ||
+            (await caches.match("/dashboard"));
+          if (dashboardShell) return dashboardShell;
+
+          // 4. Jika /dashboard belum ada, periksa halaman root atau login
+          const rootMatch = await shellCache.match("/");
+          if (rootMatch) return rootMatch;
+
+          const loginShell = await shellCache.match("/login");
+          if (loginShell) return loginShell;
+
+          // 5. Cek apakah ada halaman shell mana pun yang tersimpan di SHELL_CACHE
+          const shellKeys = await shellCache.keys();
+          for (const key of shellKeys) {
+            if (
+              key.url.includes("/dashboard") ||
+              key.url.includes("/tugas") ||
+              key.url.includes("/kategori") ||
+              key.url.includes("/notebook")
+            ) {
+              const matched = await shellCache.match(key);
+              if (matched) return matched;
+            }
+          }
+
+          // 6. Opsi darurat terakhir jika perangkat benar-benar belum pernah login/buka app
           const offlinePage = await caches.match("/offline.html");
           if (offlinePage) return offlinePage;
 
-          return new Response("Aplikasi sedang offline.", {
-            status: 200,
-            headers: { "Content-Type": "text/html; charset=utf-8" },
-          });
+          return new Response(
+            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Mode Offline</title></head><body><h1>Aplikasi sedang offline</h1><p>Buka saat terhubung internet minimal 1 kali agar data tersimpan.</p></body></html>",
+            {
+              status: 200,
+              headers: { "Content-Type": "text/html; charset=utf-8" },
+            }
+          );
         }
       })()
     );
