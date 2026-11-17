@@ -264,6 +264,114 @@ test("upsertTask: remap kategoriClientUuid menggunakan cache in-memory", async (
   assert.ok(!client.queries.some((q) => q.sql.includes("SELECT id FROM public.categories")));
 });
 
+test("upsertTask: menyimpan deadline dan reminder dengan tepat saat pembuatan tugas baru", async () => {
+  const taskUuid = "12345678-1234-4234-8234-123456789abc";
+  const targetIso = "2026-11-20T14:30:00.000Z";
+
+  let capturedParams = null;
+
+  const client = createMockClient((sql, params) => {
+    if (sql.includes("SELECT * FROM public.tasks")) {
+      return { rows: [] }; // tugas baru
+    }
+    if (sql.includes("INSERT INTO public.tasks")) {
+      capturedParams = params;
+      return { rows: [{ id: "301", updated_at: new Date() }] };
+    }
+    return { rows: [] };
+  });
+
+  const res = await upsertTask(client, "user_1", {
+    clientUuid: taskUuid,
+    judul: "Tugas Berjadwal",
+    deadline: targetIso,
+    reminder: "30m",
+  });
+
+  assert.equal(res.status, ITEM_STATUS.CREATED);
+  assert.ok(capturedParams);
+  // param ke-5 adalah cleanDeadline, param ke-6 adalah cleanReminder
+  assert.equal(capturedParams[4], targetIso);
+  assert.equal(capturedParams[5], "30m");
+});
+
+test("upsertTask: mendukung alias fallback tenggatWaktu jika antrian lawas dikirim", async () => {
+  const taskUuid = "23456789-2345-4345-8345-23456789abcd";
+  const targetIso = "2026-11-25T09:00:00.000Z";
+
+  let capturedParams = null;
+
+  const client = createMockClient((sql, params) => {
+    if (sql.includes("SELECT * FROM public.tasks")) {
+      return { rows: [] }; // tugas baru
+    }
+    if (sql.includes("INSERT INTO public.tasks")) {
+      capturedParams = params;
+      return { rows: [{ id: "302", updated_at: new Date() }] };
+    }
+    return { rows: [] };
+  });
+
+  const res = await upsertTask(client, "user_1", {
+    clientUuid: taskUuid,
+    judul: "Tugas Antrian Lawas",
+    tenggatWaktu: targetIso,
+  });
+
+  assert.equal(res.status, ITEM_STATUS.CREATED);
+  assert.ok(capturedParams);
+  assert.equal(capturedParams[4], targetIso);
+});
+
+test("upsertTask: mengizinkan pengosongan deadline (null) saat tugas yang ada diperbarui", async () => {
+  const taskUuid = "34567890-3456-4456-8456-34567890abcd";
+  const now = new Date();
+
+  let capturedParams = null;
+
+  const client = createMockClient((sql, params) => {
+    if (sql.includes("SELECT * FROM public.tasks")) {
+      return {
+        rows: [
+          {
+            id: "501",
+            user_id: "user_1",
+            judul: "Tugas dengan Deadline Lama",
+            deskripsi: "",
+            deadline: "2026-11-18T10:00:00.000Z",
+            reminder: "1h",
+            prioritas: false,
+            selesai: false,
+            subtasks: [],
+            client_uuid: taskUuid,
+            updated_at: now,
+            deleted_at: null,
+          },
+        ],
+      };
+    }
+    if (sql.includes("UPDATE public.tasks")) {
+      capturedParams = params;
+      return { rows: [{ id: "501", updated_at: new Date() }] };
+    }
+    return { rows: [] };
+  });
+
+  const res = await upsertTask(client, "user_1", {
+    clientUuid: taskUuid,
+    judul: "Tugas Dihapus Deadlinenya",
+    deadline: null,
+    reminder: null,
+    updatedAt: new Date(now.getTime() + 1000).toISOString(),
+  });
+
+  assert.equal(res.status, ITEM_STATUS.UPDATED);
+  assert.ok(capturedParams);
+  // param ke-3 pada UPDATE public.tasks adalah deadline, param ke-4 adalah reminder
+  assert.equal(capturedParams[2], null);
+  assert.equal(capturedParams[3], null);
+});
+
 test("upsertNotebook: menolak konten melebihi batas 100.000 karakter", async () => {
   const notebookUuid = "88888888-8888-4888-8888-888888888888";
   const client = createMockClient(() => ({ rows: [] }));
