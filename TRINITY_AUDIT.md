@@ -1,134 +1,121 @@
-# TRINITY CODE AUDIT REPORT (TASK DEADLINE PERSISTENCE & NOTIFICATION DISPATCH)
+# TRINITY CODE AUDIT REPORT — MODUL NOTEBOOK (COPY & EDIT UX)
 
-**Target:** `lib/task-context.js`, `lib/modules/sync/sync.repository.js`, `lib/modules/sync/sync.service.js`, `app/api/notifications/dispatch/route.js`  
-**Kasus:** Tenggat waktu (deadline tanggal & jam) tidak tersimpan saat membuat/mengubah tugas, data hilang setelah sinkronisasi/refresh, dan notifikasi pengingat pra-tenggat tidak muncul saat mendekati jadwal.  
-**Mesin Audit:** Trinity Code (Macro Architecture x Micro AST x Reality Checker) x Disiplin AI.  
-**Mode:** READ-ONLY Deep Architectural Audit (Fase 1).
+**Target:** `components/notebook/NotebookPreviewModal.js`, `components/notebook/NotebookCard.js`, `components/notebook/EditNotebookModal.js`, `components/ui/Modal.js`, `lib/notebook-context.js`, `lib/utils.js`  
+**Arsitektur & Ruang Lingkup:** Modul Catatan Materi (Notebook) pada Next.js 15 App Router + React 19 dengan pola offline-first (Dexie + sync engine) dan modal responsif (fullscreen native di mobile `< lg`, centered dialog di desktop `lg+`).  
+**Indeks yang Digunakan:** CodeGraph: Ya (`.codegraph/`) | Graphify: Tidak relevan (indeks lama Laravel) | Native AST / File Inspection: Ya  
+**Mode:** READ-ONLY Deep Macro-to-Micro Audit (Fase 1).
 
 ---
 
-## 1. MUST FIX (Akar Masalah Fatal)
+## 1. MUST FIX (Bug, Logika Rusak, UX Menghambat)
 
-### [1] Contract Discrepancy: Property Typo 'tenggatWaktu' vs 'deadline' pada Outbox Payload di TaskContext
-- **Lokasi Berkas:** [task-context.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/task-context.js#L265-L274) dan [task-context.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/task-context.js#L349-L358)
-- **Fungsi Kode:** Mengemas mutasi pembuatan tugas baru (`addTask`) dan pembaruan tugas (`updateTask`) ke dalam antrian `outbox` IndexedDB lokal untuk sinkronisasi offline-first.
+### [1] Judul Catatan Ikut Tersalin pada Seluruh 3 Titik Aksi Salin (`handleCopy`)
+- **Lokasi Berkas:**
+  - [NotebookPreviewModal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/NotebookPreviewModal.js#L76-L87)
+  - [NotebookCard.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/NotebookCard.js#L83-L95)
+  - [EditNotebookModal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/EditNotebookModal.js#L155-L164)
+- **Fungsi Kode:** Menyalin teks catatan ke clipboard dengan format ramah chat/WhatsApp menggunakan `htmlToChatFormattedText`.
 - **Akar Masalah (Bug/Logic):**
-  1. Komponen formulir UI ([AddTaskModal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/tugas/AddTaskModal.js#L87-L96) dan [EditTaskModal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/tugas/EditTaskModal.js#L112-L122)) mengemas objek tugas dengan properti `deadline` (ISO string) dan `reminder` (misal `"1h"`).
-  2. Di dalam [task-context.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/task-context.js#L269), fungsi `addTask` mengoper payload outbox dengan menulis:
+  1. Ketiga komponen secara eksplisit menggabungkan judul di depan isi catatan sebelum menulis ke clipboard:
      ```javascript
-     tenggatWaktu: newTask.tenggatWaktu || null,
+     const fullText = `${notebook.judul}\n\n${formattedText}`.trim();
+     await navigator.clipboard.writeText(fullText);
      ```
-     Variabel `newTask.tenggatWaktu` bernilai `undefined` karena input UI mengirimkan `newTask.deadline`. Akibatnya, payload outbox menyimpan `tenggatWaktu: null` dan properti `deadline` serta `reminder` sama sekali tidak disertakan ke dalam mutasi outbox!
-  3. Hal serupa terjadi pada [task-context.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/task-context.js#L353) di fungsi `updateTask`: properti `deadline` dan `reminder` tidak dimasukkan ke dalam payload outbox, melainkan digantikan `tenggatWaktu`.
-- **Reality Check & Bukti Pemicu (Data Flow Tracing):**
-  - Langkah 1: Pengguna mengisi judul dan memilih tanggal 17 November 2026 jam 20:00 di UI.
-  - Langkah 2: State lokal sementara menerima `deadline`, namun `enqueueWithRow` merekam outbox tanpa properti `deadline`.
-  - Langkah 3: Saat background sync (`syncAll`) memicu `flushOutbox`, objek yang dikirim ke endpoint `/api/sync` hanya memiliki field `tenggatWaktu: null`.
-  - Langkah 4: Fungsi `upsertTask` di server ([sync.repository.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/modules/sync/sync.repository.js#L509)) membaca `item.deadline`. Karena `item.deadline` tidak ada (`undefined`), server memasukkan `deadline = NULL` ke database PostgreSQL.
-  - Langkah 5: Respon sinkronisasi (`pull`) mengirimkan data terbaru dari server dengan `deadline: null`.
-  - Langkah 6: Client menjalankan `applyPullDelta` dan memancarkan event `mytask:synced`. Dexie lokal diperbarui dengan baris server (`deadline: null`), menimpa data memori client.
-  - Langkah 7: Pengguna menutup aplikasi atau me-refresh tab; fungsi `loadData` mengambil data dari Dexie dan `/api/tasks`, keduanya mengembalikan `deadline: null`. Tugas tampil tanpa tenggat waktu.
+  2. Ketika isi catatan (`konten`) kosong, `formattedText` bernilai `""`. Jika judul dihapus tanpa guard kosong, `navigator.clipboard.writeText("")` akan tetap dijalankan dan menampilkan toast sukses palsu.
+  3. Di `NotebookCard.js:L90` dan `NotebookPreviewModal.js:L83`, `setTimeout(() => setIsCopied(false), 2000)` tidak dibersihkan pada unmount maupun di-reset saat tombol ditekan berulang.
+- **Reality Check & Bukti Pemicu:**
+  - Terverifikasi langsung di 3 jalur klik: ikon salin di kartu catatan (`NotebookCard`), ikon salin di header preview (`NotebookPreviewModal`), dan tombol "Salin Teks Bersih" di editor (`EditNotebookModal`). Semuanya pasti menyertakan judul + dua baris kosong di awal hasil paste.
 - **Blast Radius & Caller:**
-  - `useTasks().addTask`
-  - `useTasks().updateTask`
-  - Seluruh pengguna yang membuat atau mengubah tugas dalam kondisi offline maupun online.
+  - `NotebookCard` -> `handleCopy`
+  - `NotebookPreviewModal` -> `handleCopy`
+  - `EditNotebookModal` -> `handleCopy`
 - **Saran Perbaikan Minimal (Ponytail Fix):**
-  Sertakan properti `deadline` dan `reminder` ke dalam payload outbox `enqueueWithRow` di `addTask` dan `updateTask`, serta petakan `kategoriClientUuid`:
+  Salin hanya `formattedText.trim()` dan tambahkan guard isi kosong (serta satu helper bersama agar DRY jika disetujui):
   ```javascript
-  await enqueueWithRow(localDb, activeUserId, "tasks", taskRow, {
-    judul: newTask.judul,
-    deskripsi: newTask.deskripsi || "",
-    prioritas: newTask.prioritas || false,
-    deadline: newTask.deadline || null,
-    reminder: newTask.reminder || "1h",
-    selesai: false,
-    kategoriId: newTask.kategoriId || null,
-    kategoriClientUuid: cat?.clientUuid || newTask.kategoriClientUuid || null,
-    subtasks: newTask.subtasks || [],
-    updatedAt: nowIso,
-  });
+  const contentOnly = formattedText.trim();
+  if (!contentOnly) {
+    toast.info('Isi catatan masih kosong.');
+    return;
+  }
+  await navigator.clipboard.writeText(contentOnly);
   ```
-- **Dampak jika Diabaikan:** Seluruh tugas baru dan pembaruan tugas kehilangan tanggal tenggat waktu dan pengaturan pengingat secara permanen setelah sinkronisasi pertama.
+- **Dampak jika Diabaikan:** Pengguna harus selalu menghapus judul secara manual setiap kali menempelkan (paste) isi catatan ke aplikasi lain.
 
 ---
 
-### [2] Kegagalan Eksekusi Notifikasi di Background Dispatcher
-- **Lokasi Berkas:** [route.js](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/notifications/dispatch/route.js#L149) dan [sync.service.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/modules/sync/sync.service.js#L164-L171)
-- **Fungsi Kode:** Menjalankan pengecekan cron periodik dan instant push notification untuk tugas yang mendekati deadline.
-- **Akar Masalah (Bug/Logic):**
-  1. Kueri reservasi notifikasi di [route.js](file:///c:/MY%20project%20Website/todowebb%20V2/app/api/notifications/dispatch/route.js#L149) memfilter:
-     ```sql
-     WHERE t.selesai = false
-       AND t.deleted_at IS NULL
-       AND t.deadline IS NOT NULL
-     ```
-     Karena bug [1] menyebabkan `t.deadline` di database selalu bernilai `NULL`, kueri reservasi mengabaikan seluruh tugas pengguna. Akibatnya, notifikasi pengingat pra-tenggat maupun deadline habis tidak pernah terkirim.
-  2. Selain itu, pada [sync.service.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/modules/sync/sync.service.js#L164), kondisi instant trigger `hasTaskDispatchCandidate` memeriksa `taskItem.deadline`. Karena item yang di-push tidak memiliki properti `deadline`, instant dispatch setelah sync juga dilewati.
+### [2] Tombol "Edit Catatan" di `NotebookPreviewModal` Terdorong ke Bawah Viewport & Terpotong Scroll (Double-Header + Nested Scroll Trap)
+- **Lokasi Berkas:**
+  - [NotebookPreviewModal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/NotebookPreviewModal.js#L123-L308)
+  - [Modal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/ui/Modal.js#L168-L202)
+- **Fungsi Kode:** Menampilkan pratinjau penuh catatan materi serta kontrol aksi cepat (Edit, Salin, Sematkan, Hapus, Tutup).
+- **Akar Masalah (Bug/Logic & Layout):**
+  1. `NotebookPreviewModal` hanya menempatkan tombol **Salin** dan **Sematkan (Star)** di header atas (`L196-L232`), meskipun komentar kode di `L195` sebenarnya sudah bertuliskan `Header Action Buttons (Quick Edit, Pin, Copy)`. Tombol **Edit Catatan** justru diletakkan di footer paling bawah (`L290-L304`).
+  2. Pembungkus `children` pada [Modal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/ui/Modal.js#L200) adalah container scroll biasa (`overflow-y-auto flex-1 min-h-0`) — bukan `overflow-hidden flex flex-col`.
+  3. Di dalam `NotebookPreviewModal`, `Modal.js` tetap merender bar header kosong (karena `title=""`) setinggi ~56px hanya untuk tombol `X`, lalu di bawahnya ada custom header preview (~110-140px), ditambah area baca dengan `max-h-[calc(100dvh-180px)]`. Akumulasi tinggi elemen melebihi `100dvh` sehingga **footer berisi tombol Edit terdorong keluar layar** dan memaksa pengguna menggulir sampai bawah untuk menekan Edit.
 - **Reality Check & Bukti Pemicu:**
-  - Pengguna membuat tugas dengan tenggat 1 jam lagi.
-  - Karena database menyimpan `deadline: NULL`, cron job GitHub Actions (setiap 10 menit) dan Supabase pg_cron tidak menemukan baris yang memenuhi syarat, sehingga push notification tidak pernah terkirim ke Service Worker browser.
+  - Buka catatan materi apa pun yang berisi lebih dari 1 layar teks di HP ($\le 640\text{px}$) maupun layar laptop dengan viewport pendek: bar atas hanya menampilkan tombol `X`, lalu di bawahnya ikon Salin & Bintang; tombol Edit tidak terlihat sebelum menggulir container modal ke paling bawah.
 - **Blast Radius & Caller:**
-  - `GET /api/notifications/dispatch`
-  - Instant dispatch pada `runSync`
-- **Saran Perbaikan Minimal:**
-  Memperbaiki bug [1] secara otomatis memulihkan nilai `deadline` di PostgreSQL, sehingga kueri reservasi notifikasi langsung mengenali tugas yang mendekati tenggat. Tambahkan penanganan fallback atribut `tenggatWaktu` pada `upsertTask` di `sync.repository.js` sebagai jaring pengaman backward-compatibility.
-- **Dampak jika Diabaikan:** Pengguna tidak menerima pemberitahuan apa pun saat tenggat waktu mendekat ketika aplikasi ditutup.
+  - `DashboardShell.js:L179` -> `<NotebookPreviewModal />`
+  - Jika `Modal.js` ikut diubah, berdampak ke semua modal aplikasi (`AddTaskModal`, `EditTaskModal`, `AddCategoryModal`, `AddNotebookModal`, `EditNotebookModal`, dll.) — wajib opt-in prop atau ditangani aman agar tidak memicu regresi modal lain.
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  Pindahkan tombol **Edit** ke header atas `NotebookPreviewModal` (sejajar & mudah dijangkau langsung tanpa scroll), rapikan struktur scroll/header agar tidak ada double-scroll atau footer terdorong keluar layar, dan pastikan touch target $\ge 44\times44\text{px}$ di mobile.
+- **Dampak jika Diabaikan:** Alur baca -> edit catatan panjang sangat melelahkan terutama di perangkat mobile.
 
 ---
 
-## 2. SHOULD FIX (Risiko Skala, Blast Radius & Robustness)
-
-### [3] Logika Null-Safety Penonaktifan Tenggat Waktu pada upsertTask di Sync Repository
-- **Lokasi Berkas:** [sync.repository.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/modules/sync/sync.repository.js#L509-L510)
-- **Fungsi Kode:** Rekonsiliasi mutasi tugas di sisi server database PostgreSQL.
+### [3] `NotebookCard` Memo Comparator Mengabaikan Perubahan `kategori` dan `pending`
+- **Lokasi Berkas:** [NotebookCard.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/NotebookCard.js#L371-L380)
+- **Fungsi Kode:** Mencegah re-render kartu catatan yang tidak berubah saat kartu lain diperbarui.
 - **Akar Masalah (Bug/Logic):**
-  Kode saat ini menulis:
-  ```javascript
-  const cleanDeadline = item.deadline ? toIsoStringSafe(item.deadline) : (existing ? toIsoStringSafe(existing.deadline) : null);
-  const cleanReminder = item.reminder ? String(item.reminder).trim().slice(0, 100) : (existing ? existing.reminder : null);
-  ```
-  Jika pengguna sengaja menghapus tenggat waktu dari tugas yang sudah ada (mengubah `deadline` menjadi `null`), evaluasi ternary `item.deadline ? ...` bernilai falsy. Akibatnya, kode jatuh ke cabang `(existing ? toIsoStringSafe(existing.deadline) : null)`, yang mengembalikan nilai deadline lama! Pengguna menjadi tidak bisa menghapus deadline setelah disetel.
+  Custom comparator `React.memo` hanya memeriksa `id`, `judul`, `konten`, `penting`, `warna`, dan `diperbaruiPada`, tetapi **tidak memeriksa `kategori` maupun `pending`**.
 - **Reality Check & Bukti Pemicu:**
-  - Tugas A memiliki deadline 2026-11-20.
-  - Pengguna mengedit tugas A dan mengosongkan tanggal tenggat (mengirim `deadline: null`).
-  - Server tetap mempertahankan nilai 2026-11-20 karena ternary menganggap `null` falsy dan mengambil `existing.deadline`.
-- **Saran Perbaikan Minimal:**
-  Gunakan pengecekan eksplisit `item.deadline !== undefined`:
-  ```javascript
-  const cleanDeadline = item.deadline !== undefined
-    ? (item.deadline ? toIsoStringSafe(item.deadline) : null)
-    : (item.tenggatWaktu !== undefined
-        ? (item.tenggatWaktu ? toIsoStringSafe(item.tenggatWaktu) : null)
-        : (existing ? toIsoStringSafe(existing.deadline) : null));
-
-  const cleanReminder = item.reminder !== undefined
-    ? (item.reminder ? String(item.reminder).trim().slice(0, 100) : null)
-    : (existing ? existing.reminder : null);
-  ```
-- **Dampak jika Diabaikan:** Pengguna tidak dapat membatalkan atau menghapus tenggat waktu tugas yang sudah terlanjur memiliki deadline.
+  - Pada [notebook-context.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/notebook-context.js#L365-L371) dan [notebook-context.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/notebook-context.js#L401-L409), fungsi `deleteCustomCategory` mengosongkan `n.kategori = ""` tanpa mengubah `diperbaruiPada`.
+  - Saat kategori dihapus atau status `pending` selesai sinkronisasi (`1 -> 0`), kartu catatan tetap menampilkan badge kategori lama / titik kuning pending hingga reload.
+- **Blast Radius & Caller:** `app/(dashboard)/notebook/page.js` yang merender daftar `NotebookCard`.
+- **Saran Perbaikan Minimal (Ponytail Fix):**
+  Tambahkan `prevProps.notebook.kategori === nextProps.notebook.kategori && prevProps.notebook.pending === nextProps.notebook.pending` pada comparator `memo`.
+- **Dampak jika Diabaikan:** UI kartu menampilkan kategori usang atau indikator sync palsu setelah hapus kategori / selesai sync.
 
 ---
 
-### [4] Sinkronisasi kategoriClientUuid pada Outbox Task
-- **Lokasi Berkas:** [task-context.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/task-context.js#L265) dan [task-context.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/task-context.js#L349)
-- **Fungsi Kode:** Menyimpan relasi kategori tugas ke Dexie lokal dan server.
+## 2. SHOULD FIX (Ergonomi Mobile, Robustness, & Arsitektur)
+
+### [4] Target Sentuh Mini (`< 44x44px`) pada Tombol Aksi Mobile di `NotebookPreviewModal` & `NotebookCard`
+- **Lokasi Berkas:**
+  - [NotebookPreviewModal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/NotebookPreviewModal.js#L198-L231) (`p-2` + `w-4 h-4` = 32×32px)
+  - [NotebookCard.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/NotebookCard.js#L187-L232) (`p-1.5` + `w-3.5 h-3.5` = 26×26px)
+- **Akar Masalah:** Melanggar standar touch target mobile minimum 44×44px; pada kartu catatan di HP, pengguna mudah salah tekan dan malah memicu `openPreviewNotebook`.
+- **Saran Perbaikan Minimal:** Naikkan area sentuh tombol aksi header preview minimal `min-h-[44px] min-w-[44px]` di mobile (atau tombol aksi kompak berlabel jelas) dan perbesar hit-area ikon kartu.
+
+### [5] Potensi Kehilangan Perubahan Terakhir & Race Condition Auto-Save di `EditNotebookModal`
+- **Lokasi Berkas:** [EditNotebookModal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/EditNotebookModal.js#L96-L152)
 - **Akar Masalah:**
-  Spesifikasi kontrak sinkronisasi ([contract.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/sync/contract.js#L103)) mewajibkan baris tasks menyertakan `kategoriClientUuid`. Di `task-context.js`, `taskRow` dan outbox payload hanya menyertakan `kategoriId`, tanpa meresolusi `kategoriClientUuid` dari state kategori.
-- **Saran Perbaikan Minimal:**
-  Petakan `cat = categories.find(c => String(c.id) === String(kategoriId))` dan sertakan `kategoriClientUuid: cat?.clientUuid || null` pada baris Dexie dan payload outbox.
+  1. Saat user mengetik lalu langsung menekan "Selesai Edit" dalam waktu `< 1.5 detik`, `handleSubmit` tidak membatalkan `autoSaveTimerRef.current` terlebih dahulu, sehingga dua mutasi `updateNotebook` berpotensi berjalan berdekatan.
+  2. Jika user menekan "Tutup" sebelum debounce 1.5 detik selesai, cleanup effect menghapus timer sehingga perubahan terakhir batal tersimpan tanpa peringatan.
+- **Saran Perbaikan Minimal:** Batalkan `autoSaveTimerRef.current` di awal `handleSubmit`.
+
+### [6] `htmlToChatFormattedText` Mengubah Ordered List (`<ol>`) Menjadi Bullet (`•`)
+- **Lokasi Berkas:** [utils.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/utils.js#L247)
+- **Akar Masalah:** Regex `<li\b[^>]*>...</li>` mengonversi seluruh item list baik `<ul>` maupun `<ol>` menjadi `\n• $1`, sehingga daftar bernomor (1, 2, 3) kehilangan penomoran saat disalin.
+- **Saran Perbaikan Minimal:** Tangani blok `<ol>...</ol>` terlebih dahulu sebelum fallback `<li>` menjadi bullet.
 
 ---
 
-## 3. NICE TO HAVE (Lean & Test Coverage)
+## 3. NICE TO HAVE (Lean, DRY & SRP)
 
-### [5] Penambahan Unit Test untuk Deadline & Reminder pada Offline Sync Test Suite
-- **Lokasi Berkas:** [sync-repository.test.mjs](file:///c:/MY%20project%20Website/todowebb%20V2/tests/offline/sync-repository.test.mjs)
-- **Kondisi Saat Ini:** Seluruh skenario pengujian offline saat ini hanya menyertakan payload `deadline: null` dan `reminder: null`.
-- **Saran:** Tambahkan unit test yang menguji penyimpanan tanggal tenggat waktu valid (ISO string) dan opsi reminder kustom (`30m`, `1h`, `1d`) serta skenario pengosongan deadline (`deadline: null`).
+### [7] Duplikasi Logika `handleCopy` di 3 Komponen Notebook
+- **Lokasi Berkas:** `NotebookCard.js`, `NotebookPreviewModal.js`, `EditNotebookModal.js`
+- **Saran Perbaikan:** Ekstrak helper ringan `copyNotebookContentToClipboard(konten)` di `lib/utils.js` (atau helper kecil terfokus) agar format salin, guard isi kosong, dan fallback clipboard konsisten di satu sumber kebenaran.
+
+### [8] Ukuran File `lib/notebook-context.js` (1085 Baris) & Duplikasi Form Add/Edit Modal
+- **Lokasi Berkas:** [notebook-context.js](file:///c:/MY%20project%20Website/todowebb%20V2/lib/notebook-context.js), [AddNotebookModal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/AddNotebookModal.js), [EditNotebookModal.js](file:///c:/MY%20project%20Website/todowebb%20V2/components/notebook/EditNotebookModal.js)
+- **Catatan YAGNI:** Tidak perlu direfaktor besar dalam pembaruan bedah ini kecuali user meminta, agar blast radius tetap minimal.
 
 ---
 
 ## KESIMPULAN AUDIT
-- **Total Temuan:** 5 (Must Fix: 2 | Should Fix: 2 | Nice to Have: 1)
-- **Akar Penyebab Utama Insiden:** Ketidaksinkronan nama properti (`tenggatWaktu` vs `deadline`) dan hilangnya field `reminder` pada outbox payload di `TaskContext`, yang memicu penimpaan data `NULL` dari server kembali ke client saat proses sinkronisasi latar belakang selesai.
-- **Status Kode:** READ-ONLY (Belum ada baris kode produksi yang dimodifikasi sebelum konfirmasi).
+- **Total Temuan:** 8 (Must Fix: 3 | Should Fix: 3 | Nice to Have: 2)
+- **Akar Masalah Permintaan User:**
+  1. Judul ikut tersalin disebabkan string template `` `${judul}\n\n${formattedText}` `` di **3 komponen sekaligus** (`NotebookCard`, `NotebookPreviewModal`, `EditNotebookModal`).
+  2. Tombol Edit di bawah & ribet di-scroll disebabkan tombol Edit hanya ada di footer `NotebookPreviewModal` sementara header `NotebookPreviewModal` + header kosong `Modal.js` + container scroll luar mendorong footer keluar dari layar.
+- **Area yang Tidak Diperiksa:** Skema database Supabase production secara langsung (hanya memeriksa API route & migrasi lokal).

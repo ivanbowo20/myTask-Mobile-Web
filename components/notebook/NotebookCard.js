@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, useRef, useEffect, memo } from 'react';
 import {
   Star,
   MoreVertical,
@@ -15,7 +15,12 @@ import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 import { toast } from '@/lib/use-toast';
 import { useNotebooks } from '@/lib/notebook-context';
-import { cn, formatTanggal, htmlToChatFormattedText } from '@/lib/utils';
+import {
+  cn,
+  formatTanggal,
+  htmlToChatFormattedText,
+  copyNotebookContentToClipboard,
+} from '@/lib/utils';
 import { triggerStarBurst } from '@/lib/dopamine-fx';
 
 function NotebookCard({ notebook }) {
@@ -30,6 +35,15 @@ function NotebookCard({ notebook }) {
   const [isCopied, setIsCopied] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const copyTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+    };
+  }, []);
 
   // Extract clean chat-formatted text (no &nbsp;, bold to *bold*, etc.)
   const formattedText = useMemo(() => {
@@ -79,19 +93,30 @@ function NotebookCard({ notebook }) {
     }
   }, [notebook?.konten]);
 
-  // Copy clean formatted text to clipboard
+  // Copy note content only (without title) to clipboard
   async function handleCopy(e) {
     e.stopPropagation();
-    try {
-      const fullText = `${notebook.judul}\n\n${formattedText}`.trim();
-      await navigator.clipboard.writeText(fullText);
-      setIsCopied(true);
-      toast.success('Catatan berhasil disalin (format teks tebal WhatsApp/chat)!');
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error('Gagal menyalin catatan:', err);
-      toast.error('Gagal menyalin catatan.');
+    const result = await copyNotebookContentToClipboard(notebook.konten || '');
+
+    if (result.status === 'empty') {
+      toast.info('Isi catatan masih kosong.');
+      return;
     }
+
+    if (result.status === 'copied') {
+      setIsCopied(true);
+      toast.success('Isi catatan berhasil disalin!');
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = setTimeout(() => {
+        setIsCopied(false);
+        copyTimerRef.current = null;
+      }, 2000);
+      return;
+    }
+
+    toast.error('Gagal menyalin isi catatan.');
   }
 
   function handleTogglePin(e) {
@@ -181,20 +206,20 @@ function NotebookCard({ notebook }) {
           )}
         </div>
 
-        {/* Action icons */}
-        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+        {/* Action icons (Mobile-first >= 44x44px hit area) */}
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 -mr-1.5 sm:mr-0" onClick={(e) => e.stopPropagation()}>
           {/* Quick Copy Clean Text Button */}
           <button
             type="button"
             onClick={handleCopy}
-            title="Salin sebagai teks bersih"
-            aria-label="Salin isi catatan sebagai teks bersih"
-            className="p-1.5 rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-200/60 active:scale-90 transition-all cursor-pointer"
+            title="Salin isi catatan"
+            aria-label="Salin isi catatan"
+            className="min-w-[44px] min-h-[44px] sm:min-w-[34px] sm:min-h-[34px] inline-flex items-center justify-center rounded-xl sm:rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-200/60 active:scale-90 transition-all cursor-pointer"
           >
             {isCopied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <Check className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-400 [html[data-theme='celestial-sky']_&]:text-emerald-600" />
             ) : (
-              <Copy className="w-3.5 h-3.5" />
+              <Copy className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
             )}
           </button>
 
@@ -205,7 +230,7 @@ function NotebookCard({ notebook }) {
             title={notebook.penting ? 'Lepas sematan' : 'Sematkan ke atas'}
             aria-label={notebook.penting ? 'Lepas sematan' : 'Sematkan ke atas'}
             className={cn(
-              'p-1.5 rounded-lg active:scale-90 transition-all cursor-pointer',
+              'min-w-[44px] min-h-[44px] sm:min-w-[34px] sm:min-h-[34px] inline-flex items-center justify-center rounded-xl sm:rounded-lg active:scale-90 transition-all cursor-pointer',
               notebook.penting
                 ? 'text-[var(--theme-accent,#0284C7)] bg-[var(--theme-accent,#0284C7)]/15'
                 : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-[var(--theme-accent,#0284C7)] hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-200/60'
@@ -213,7 +238,7 @@ function NotebookCard({ notebook }) {
           >
             <Star
               className={cn(
-                'w-3.5 h-3.5 transition-transform duration-200',
+                'w-4 h-4 sm:w-3.5 sm:h-3.5 transition-transform duration-200',
                 notebook.penting && 'fill-[var(--theme-accent,#0284C7)] stroke-[var(--theme-accent,#0284C7)] scale-105'
               )}
             />
@@ -226,9 +251,9 @@ function NotebookCard({ notebook }) {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               title="Opsi lainnya"
               aria-label="Opsi lainnya"
-              className="p-1.5 rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-200/60 active:scale-90 transition-all cursor-pointer"
+              className="min-w-[44px] min-h-[44px] sm:min-w-[34px] sm:min-h-[34px] inline-flex items-center justify-center rounded-xl sm:rounded-lg text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-200/60 active:scale-90 transition-all cursor-pointer"
             >
-              <MoreVertical className="w-3.5 h-3.5" />
+              <MoreVertical className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
             </button>
 
             {isMenuOpen && (
@@ -240,7 +265,7 @@ function NotebookCard({ notebook }) {
                     setShowCategoryPicker(false);
                   }}
                 />
-                <div className="absolute right-0 top-8 z-30 min-w-[170px] rounded-xl bg-[var(--theme-nav-bg,#1A130E)] border border-white/10 [html[data-theme='celestial-sky']_&]:bg-white/95 [html[data-theme='celestial-sky']_&]:border-slate-200 shadow-2xl p-1.5 space-y-0.5 animate-in fade-in duration-100">
+                <div className="absolute right-0 top-12 sm:top-9 z-30 min-w-[170px] rounded-xl bg-[var(--theme-nav-bg,#1A130E)] border border-white/10 [html[data-theme='celestial-sky']_&]:bg-white/95 [html[data-theme='celestial-sky']_&]:border-slate-200 shadow-2xl p-1.5 space-y-0.5 animate-in fade-in duration-100">
                   {showCategoryPicker ? (
                     <div className="space-y-1">
                       <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-500 border-b border-white/[0.06] mb-1 flex items-center justify-between">
@@ -375,6 +400,8 @@ export default memo(NotebookCard, (prevProps, nextProps) => {
     prevProps.notebook.konten === nextProps.notebook.konten &&
     prevProps.notebook.penting === nextProps.notebook.penting &&
     prevProps.notebook.warna === nextProps.notebook.warna &&
+    prevProps.notebook.kategori === nextProps.notebook.kategori &&
+    prevProps.notebook.pending === nextProps.notebook.pending &&
     prevProps.notebook.diperbaruiPada === nextProps.notebook.diperbaruiPada
   );
 });

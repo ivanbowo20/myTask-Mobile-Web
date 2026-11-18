@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/lib/use-toast';
 import { useNotebooks } from '@/lib/notebook-context';
-import { cn, htmlToChatFormattedText } from '@/lib/utils';
+import { cn, copyNotebookContentToClipboard } from '@/lib/utils';
 
 const COLOR_OPTIONS = [
   { label: 'Amber', value: '#D97706', ring: 'ring-amber-500' },
@@ -128,6 +128,12 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
       return;
     }
 
+    // Cancel pending debounced auto-save to prevent duplicate concurrent mutations
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+
     setIsSubmitting(true);
     setErrorJudul('');
 
@@ -151,16 +157,21 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
     }
   }, [judul, konten, penting, warna, kategori, notebook?.id, updateNotebook, onClose]);
 
-  // Handle Copy Clean Text to Clipboard (WhatsApp/Chat friendly)
+  // Handle Copy Note Content Only (without title) to Clipboard
   async function handleCopy() {
-    try {
-      const formattedText = htmlToChatFormattedText(konten || '');
-      const fullText = `${judul}\n\n${formattedText}`.trim();
-      await navigator.clipboard.writeText(fullText);
-      toast.success('Catatan berhasil disalin (format teks tebal WhatsApp/chat)!');
-    } catch {
-      toast.error('Gagal menyalin catatan.');
+    const result = await copyNotebookContentToClipboard(konten || '');
+
+    if (result.status === 'empty') {
+      toast.info('Isi catatan masih kosong.');
+      return;
     }
+
+    if (result.status === 'copied') {
+      toast.success('Isi catatan berhasil disalin!');
+      return;
+    }
+
+    toast.error('Gagal menyalin isi catatan.');
   }
 
   // Keyboard shortcut Ctrl+S / Cmd+S inside modal
@@ -443,18 +454,18 @@ export default function EditNotebookModal({ isOpen, onClose, notebook }) {
         {/* Visual WYSIWYG Editor */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-zinc-300">
+            <label className="text-xs font-semibold text-zinc-300 [html[data-theme='celestial-sky']_&]:text-slate-800">
               Isi Materi Catatan
             </label>
 
             <button
               type="button"
               onClick={handleCopy}
-              className="flex items-center gap-1 text-[11px] text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 transition-colors cursor-pointer"
-              title="Salin sebagai teks bersih"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.06] [html[data-theme='celestial-sky']_&]:hover:bg-slate-100 active:scale-95 transition-all cursor-pointer"
+              title="Salin isi catatan (tanpa judul)"
             >
-              <Copy className="w-3 h-3" />
-              <span>Salin Teks Bersih</span>
+              <Copy className="w-3.5 h-3.5" />
+              <span>Salin Isi</span>
             </button>
           </div>
 

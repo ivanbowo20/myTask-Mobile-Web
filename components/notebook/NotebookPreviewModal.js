@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Modal from '@/components/ui/Modal';
-import Button from '@/components/ui/Button';
 import {
   Star,
   Edit3,
@@ -10,13 +9,19 @@ import {
   Check,
   Clock,
   Trash2,
+  X,
 } from 'lucide-react';
 import { PushPin, FolderSimple } from '@phosphor-icons/react';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
 import { toast } from '@/lib/use-toast';
 import { useNotebooks } from '@/lib/notebook-context';
-import { cn, formatTanggal, htmlToChatFormattedText } from '@/lib/utils';
+import {
+  cn,
+  formatTanggal,
+  htmlToChatFormattedText,
+  copyNotebookContentToClipboard,
+} from '@/lib/utils';
 
 export default function NotebookPreviewModal({
   isOpen,
@@ -26,8 +31,26 @@ export default function NotebookPreviewModal({
 }) {
   const { toggleImportant, openDeleteConfirm } = useNotebooks();
   const [isCopied, setIsCopied] = useState(false);
+  const copyTimerRef = useRef(null);
 
-  // Extract clean chat-formatted text for clipboard
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Reset copied visual state when switching note or closing modal
+  useEffect(() => {
+    setIsCopied(false);
+    if (copyTimerRef.current) {
+      clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = null;
+    }
+  }, [notebook?.id, isOpen]);
+
+  // Extract clean chat-formatted text for word count & reading time
   const formattedText = useMemo(() => {
     return htmlToChatFormattedText(notebook?.konten || '');
   }, [notebook?.konten]);
@@ -72,19 +95,31 @@ export default function NotebookPreviewModal({
     }
   }, [notebook?.konten]);
 
-  // Copy clean text to clipboard
+  // Copy note content only (without title) to clipboard
   const handleCopy = useCallback(async () => {
     if (!notebook) return;
-    try {
-      const fullText = `${notebook.judul}\n\n${formattedText}`.trim();
-      await navigator.clipboard.writeText(fullText);
-      setIsCopied(true);
-      toast.success('Catatan berhasil disalin (format teks tebal WhatsApp/chat)!');
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch {
-      toast.error('Gagal menyalin catatan.');
+    const result = await copyNotebookContentToClipboard(notebook.konten || '');
+
+    if (result.status === 'empty') {
+      toast.info('Isi catatan masih kosong.');
+      return;
     }
-  }, [notebook, formattedText]);
+
+    if (result.status === 'copied') {
+      setIsCopied(true);
+      toast.success('Isi catatan berhasil disalin!');
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = setTimeout(() => {
+        setIsCopied(false);
+        copyTimerRef.current = null;
+      }, 2000);
+      return;
+    }
+
+    toast.error('Gagal menyalin isi catatan.');
+  }, [notebook]);
 
   // Handle Switch to Edit Mode
   const handleEditClick = useCallback(() => {
@@ -125,116 +160,167 @@ export default function NotebookPreviewModal({
       onClose={onClose}
       title=""
       maxWidth="max-w-3xl"
-      className="p-0"
+      hideHeader
+      noPadding
     >
-      <div className="flex flex-col h-full min-h-0">
-        {/* Custom Header: Title, Metadata & Action Icons */}
-        <div className="shrink-0 p-4 sm:p-6 pb-3 border-b border-white/[0.08] [html[data-theme='celestial-sky']_&]:border-sky-100 bg-white/[0.02] [html[data-theme='celestial-sky']_&]:bg-sky-50/50">
-          <div className="flex items-start justify-between gap-3">
-            {/* Title & Metadata Badges */}
-            <div className="space-y-2 min-w-0 flex-1">
-              {/* Category, Date & Word Count Badges */}
-              <div className="flex items-center gap-2 flex-wrap text-xs">
-                {/* Accent Tag */}
-                <div
-                  className={cn(
-                    'flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border shadow-sm font-semibold transition-colors',
-                    notebook.penting
-                      ? 'text-[var(--theme-accent,#0284C7)] bg-[var(--theme-accent,#0284C7)]/10 border-[var(--theme-accent,#0284C7)]/25 [html[data-theme="celestial-sky"]_&]:bg-sky-50 [html[data-theme="celestial-sky"]_&]:border-sky-300 [html[data-theme="celestial-sky"]_&]:text-sky-800'
-                      : 'text-zinc-300 bg-white/[0.06] border-white/[0.08] [html[data-theme="celestial-sky"]_&]:bg-white [html[data-theme="celestial-sky"]_&]:border-sky-200/80 [html[data-theme="celestial-sky"]_&]:text-slate-700'
-                  )}
-                >
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: accentColor }}
-                    aria-hidden="true"
-                  />
-                  <span className="text-[11px] inline-flex items-center gap-1">
-                    {notebook.penting ? (
-                      <>
-                        <PushPin weight="fill" className="w-3 h-3 shrink-0 text-[var(--theme-accent,#0284C7)] [html[data-theme='celestial-sky']_&]:text-sky-700" />
-                        <span>Penting</span>
-                      </>
-                    ) : (
-                      <span>Materi</span>
-                    )}
-                  </span>
-                </div>
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Single Fixed Top Action Bar (Safe-area aware di HP, langsung terjangkau tanpa scroll) */}
+        <div
+          className={cn(
+            'shrink-0 flex items-center justify-between gap-2 px-3 sm:px-6 py-2.5 sm:py-3.5',
+            'pt-[calc(0.65rem+env(safe-area-inset-top,0px))] lg:pt-3.5',
+            'border-b border-white/[0.08] [html[data-theme="celestial-sky"]_&]:border-sky-200/80',
+            'bg-[var(--theme-nav-bg,#0C0A09)]/95 lg:bg-white/[0.02] [html[data-theme="celestial-sky"]_&]:bg-white/95'
+          )}
+        >
+          {/* Primary Action: Edit Catatan (selalu jelas di atas untuk HP & desktop) */}
+          <button
+            type="button"
+            onClick={handleEditClick}
+            title="Edit catatan (Ctrl+E)"
+            aria-label="Edit catatan"
+            className={cn(
+              'min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 active:scale-[0.97] shadow-sm cursor-pointer select-none shrink-0',
+              'bg-[var(--theme-accent,#0284C7)] hover:opacity-90 text-white',
+              "[html[data-theme='celestial-sky']_&]:text-white",
+              "[html[data-theme='abyssal-teal']_&]:text-slate-950",
+              "[html[data-theme='soft-aurora']_&]:text-slate-950",
+              "[html[data-theme='dark-chocolate']_&]:text-slate-950"
+            )}
+          >
+            <Edit3 className="w-4 h-4 stroke-[2.5] shrink-0" />
+            <span>Edit</span>
+          </button>
 
-                {/* Timestamp */}
-                <div className="flex items-center gap-1 text-[11px] text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600">
-                  <Clock className="w-3 h-3 text-zinc-500 [html[data-theme='celestial-sky']_&]:text-slate-500 shrink-0" />
-                  <span>{formatTanggal(notebook.diperbaruiPada || notebook.dibuatPada)}</span>
-                </div>
+          {/* Secondary Action Icons: Salin Isi, Pin, Hapus, Tutup */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={handleCopy}
+              title="Salin isi catatan (format teks chat)"
+              aria-label="Salin isi catatan"
+              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-xl text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-100 active:scale-95 transition-all cursor-pointer"
+            >
+              {isCopied ? (
+                <Check className="w-4 h-4 text-emerald-400 [html[data-theme='celestial-sky']_&]:text-emerald-600" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+            </button>
 
-                <span className="text-zinc-600 [html[data-theme='celestial-sky']_&]:text-slate-400">•</span>
-
-                {/* Word & Reading time estimate */}
-                <span className="text-[11px] text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600">
-                  {wordCount} kata (~{readTimeMinutes} mnt baca)
-                </span>
-
-                {/* Category Badge if assigned */}
-                {notebook.kategori && (
-                  <>
-                    <span className="text-zinc-600 [html[data-theme='celestial-sky']_&]:text-slate-400">•</span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/[0.08] text-zinc-200 border border-white/10 [html[data-theme='celestial-sky']_&]:bg-sky-100 [html[data-theme='celestial-sky']_&]:text-sky-900 [html[data-theme='celestial-sky']_&]:border-sky-300">
-                      <FolderSimple weight="fill" className="w-3 h-3 text-[var(--theme-accent,#0284C7)]" />
-                      <span>{notebook.kategori}</span>
-                    </span>
-                  </>
-                )}
-              </div>
-
-              {/* Note Title */}
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A] leading-tight break-words">
-                {notebook.judul}
-              </h2>
-            </div>
-
-            {/* Header Action Buttons (Quick Edit, Pin, Copy) */}
-            <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-              {/* Copy Clean Text */}
-              <button
-                type="button"
-                onClick={handleCopy}
-                title="Salin sebagai teks bersih (WhatsApp/Chat)"
-                aria-label="Salin teks bersih"
-                className="p-2 rounded-xl text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-200/60 active:scale-95 transition-all cursor-pointer"
-              >
-                {isCopied ? (
-                  <Check className="w-4 h-4 text-emerald-400" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-              </button>
-
-              {/* Pin / Star Toggle */}
-              <button
-                type="button"
-                onClick={() => toggleImportant(notebook.id)}
-                title={notebook.penting ? 'Lepas sematan' : 'Sematkan ke atas'}
-                aria-label={notebook.penting ? 'Lepas sematan' : 'Sematkan ke atas'}
+            <button
+              type="button"
+              onClick={() => toggleImportant(notebook.id)}
+              title={notebook.penting ? 'Lepas sematan' : 'Sematkan ke atas'}
+              aria-label={notebook.penting ? 'Lepas sematan' : 'Sematkan ke atas'}
+              className={cn(
+                'min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-xl active:scale-95 transition-all cursor-pointer',
+                notebook.penting
+                  ? 'text-[var(--theme-accent,#0284C7)] bg-[var(--theme-accent,#0284C7)]/15'
+                  : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-[var(--theme-accent,#0284C7)] hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-100'
+              )}
+            >
+              <Star
                 className={cn(
-                  'p-2 rounded-xl active:scale-95 transition-all cursor-pointer',
-                  notebook.penting
-                    ? 'text-[var(--theme-accent)] bg-[var(--theme-accent)]/15'
-                    : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-[var(--theme-accent)] hover:bg-white/[0.08] [html[data-theme="celestial-sky"]_&]:hover:bg-slate-200/60'
+                  'w-4 h-4 transition-transform duration-200',
+                  notebook.penting && 'fill-[var(--theme-accent,#0284C7)] stroke-[var(--theme-accent,#0284C7)] scale-105'
                 )}
-              >
-                <Star
-                  className={cn(
-                    'w-4 h-4 transition-transform duration-200',
-                    notebook.penting && 'fill-[var(--theme-accent)] stroke-[var(--theme-accent)] scale-105'
-                  )}
-                />
-              </button>
-            </div>
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              title="Hapus catatan"
+              aria-label="Hapus catatan"
+              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-xl text-rose-400 [html[data-theme='celestial-sky']_&]:text-rose-600 hover:bg-rose-500/10 [html[data-theme='celestial-sky']_&]:hover:bg-rose-50 active:scale-95 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+
+            <span
+              className="w-px h-5 mx-0.5 bg-white/[0.1] [html[data-theme='celestial-sky']_&]:bg-slate-200 shrink-0"
+              aria-hidden="true"
+            />
+
+            <button
+              type="button"
+              onClick={onClose}
+              title="Tutup pratinjau (Esc)"
+              aria-label="Tutup jendela pratinjau"
+              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-xl text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600 hover:text-white [html[data-theme='celestial-sky']_&]:hover:text-slate-900 hover:bg-white/[0.08] [html[data-theme='celestial-sky']_&]:hover:bg-slate-100 active:scale-95 transition-all cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* Scrollable Reading Content Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 sm:py-5 min-h-[240px] max-h-[calc(100dvh-180px)] lg:max-h-[60vh] select-text">
+        {/* Full-Height Scrollable Reading Surface (Title + Metadata + Content) */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pt-4 sm:pt-5 pb-[calc(1.75rem+env(safe-area-inset-bottom,0px))] lg:pb-6 select-text">
+          {/* Note Metadata & Title */}
+          <div className="space-y-2.5 pb-4 mb-4 border-b border-white/[0.08] [html[data-theme='celestial-sky']_&]:border-sky-100">
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              {/* Accent Tag */}
+              <div
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border shadow-sm font-semibold transition-colors',
+                  notebook.penting
+                    ? 'text-[var(--theme-accent,#0284C7)] bg-[var(--theme-accent,#0284C7)]/10 border-[var(--theme-accent,#0284C7)]/25 [html[data-theme="celestial-sky"]_&]:bg-sky-50 [html[data-theme="celestial-sky"]_&]:border-sky-300 [html[data-theme="celestial-sky"]_&]:text-sky-800'
+                    : 'text-zinc-300 bg-white/[0.06] border-white/[0.08] [html[data-theme="celestial-sky"]_&]:bg-white [html[data-theme="celestial-sky"]_&]:border-sky-200/80 [html[data-theme="celestial-sky"]_&]:text-slate-700'
+                )}
+              >
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: accentColor }}
+                  aria-hidden="true"
+                />
+                <span className="text-[11px] inline-flex items-center gap-1">
+                  {notebook.penting ? (
+                    <>
+                      <PushPin weight="fill" className="w-3 h-3 shrink-0 text-[var(--theme-accent,#0284C7)] [html[data-theme='celestial-sky']_&]:text-sky-700" />
+                      <span>Penting</span>
+                    </>
+                  ) : (
+                    <span>Materi</span>
+                  )}
+                </span>
+              </div>
+
+              {/* Timestamp */}
+              <div className="flex items-center gap-1 text-[11px] text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600">
+                <Clock className="w-3 h-3 text-zinc-500 [html[data-theme='celestial-sky']_&]:text-slate-500 shrink-0" />
+                <span>{formatTanggal(notebook.diperbaruiPada || notebook.dibuatPada)}</span>
+              </div>
+
+              <span className="text-zinc-600 [html[data-theme='celestial-sky']_&]:text-slate-400">•</span>
+
+              {/* Word & Reading time estimate */}
+              <span className="text-[11px] text-zinc-400 [html[data-theme='celestial-sky']_&]:text-slate-600">
+                {wordCount} kata (~{readTimeMinutes} mnt baca)
+              </span>
+
+              {/* Category Badge if assigned */}
+              {notebook.kategori && (
+                <>
+                  <span className="text-zinc-600 [html[data-theme='celestial-sky']_&]:text-slate-400">•</span>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/[0.08] text-zinc-200 border border-white/10 [html[data-theme='celestial-sky']_&]:bg-sky-100 [html[data-theme='celestial-sky']_&]:text-sky-900 [html[data-theme='celestial-sky']_&]:border-sky-300">
+                    <FolderSimple weight="fill" className="w-3 h-3 text-[var(--theme-accent,#0284C7)]" />
+                    <span>{notebook.kategori}</span>
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Note Title */}
+            <h2
+              id="modal-title"
+              className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 [html[data-theme='celestial-sky']_&]:text-[#0F172A] leading-tight break-words"
+            >
+              {notebook.judul}
+            </h2>
+          </div>
+
+          {/* Reading Content Body */}
           <div
             className={cn(
               'text-sm sm:text-base leading-relaxed text-[#F4F4F5] [html[data-theme="celestial-sky"]_&]:text-[#0F172A]',
@@ -261,48 +347,6 @@ export default function NotebookPreviewModal({
             )}
             dangerouslySetInnerHTML={{ __html: cleanHtml }}
           />
-        </div>
-
-        {/* Sticky Footer Actions (Always reachable by thumb on mobile & desktop) */}
-        <div className="shrink-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-white/10 [html[data-theme='celestial-sky']_&]:border-sky-100 bg-[var(--theme-nav-bg,#0C0A09)]/95 lg:bg-white/[0.02] [html[data-theme='celestial-sky']_&]:bg-white/95 backdrop-blur-md flex items-center justify-between gap-3">
-          {/* Delete action button */}
-          <button
-            type="button"
-            onClick={handleDeleteClick}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 active:scale-95 transition-all cursor-pointer"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Hapus Catatan</span>
-            <span className="sm:hidden">Hapus</span>
-          </button>
-
-          {/* Close & Edit Buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              className="text-xs sm:text-sm"
-            >
-              Tutup
-            </Button>
-
-            <button
-              type="button"
-              onClick={handleEditClick}
-              className={cn(
-                "min-h-[42px] inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 active:scale-[0.97] shadow-md cursor-pointer select-none",
-                "bg-[var(--theme-accent,#0284C7)] hover:opacity-90 text-white",
-                "[html[data-theme='celestial-sky']_&]:text-white",
-                "[html[data-theme='abyssal-teal']_&]:text-slate-950",
-                "[html[data-theme='soft-aurora']_&]:text-slate-950",
-                "[html[data-theme='dark-chocolate']_&]:text-slate-950"
-              )}
-            >
-              <Edit3 className="w-4 h-4 stroke-[2.5]" />
-              <span>Edit Catatan</span>
-            </button>
-          </div>
         </div>
       </div>
     </Modal>
