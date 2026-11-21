@@ -2,6 +2,7 @@
 const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig = {
+  output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
@@ -17,10 +18,6 @@ const nextConfig = {
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
           },
           {
             key: "Referrer-Policy",

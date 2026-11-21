@@ -56,10 +56,19 @@ export default function DashboardPage() {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [isClearCompletedOpen, setIsClearCompletedOpen] = useState(false);
   const [seed, setSeed] = useState(0);
+  const [activeTimeZone, setActiveTimeZone] = useState("Asia/Jakarta");
 
-  // Variasi sapaan baru yang tenang setiap refresh / sesi dibuka
+  // Variasi sapaan baru yang tenang setiap refresh / sesi dibuka & sinkron zona waktu lokal setelah mount
   useEffect(() => {
     setSeed(Math.floor(Math.random() * 10));
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) {
+        setActiveTimeZone(tz);
+      }
+    } catch {
+      // Fallback tetap Asia/Jakarta
+    }
   }, []);
 
   // Passive dispatch trigger: periksa notifikasi tertunda secara tenang setelah halaman selesai dimuat (idle 4 detik)
@@ -140,8 +149,9 @@ export default function DashboardPage() {
       stats,
       referenceDate: new Date(),
       seed,
+      timeZone: activeTimeZone,
     });
-  }, [currentUser?.name, stats, seed]);
+  }, [currentUser?.name, stats, seed, activeTimeZone]);
 
   // 5 upcoming closest deadlines (pending with due date)
   const upcomingDeadlines = useMemo(() => {
@@ -234,7 +244,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight text-balance"
               >
-                <BlurText text={greeting.headline} delay={0.06} />
+                <BlurText text={greeting.headline} delay={0.06} suppressHydrationWarning={true} />
               </motion.h1>
               <motion.p
                 suppressHydrationWarning={true}
@@ -253,7 +263,7 @@ export default function DashboardPage() {
             >
               <Calendar className="w-4 h-4 text-[var(--theme-accent,#D97706)]" />
               <span suppressHydrationWarning={true}>
-                {formatTanggalSederhana(new Date().toISOString())}
+                {formatTanggalSederhana(new Date().toISOString(), activeTimeZone)}
               </span>
             </div>
           </div>
@@ -279,14 +289,16 @@ export default function DashboardPage() {
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                     className="font-heading text-xl lg:text-2xl font-bold text-[var(--text-primary)] tracking-tight whitespace-nowrap"
                   >
-                    <BlurText text={greeting.headline} delay={0.04} />
+                    <BlurText text={greeting.headline} delay={0.04} suppressHydrationWarning={true} />
                   </motion.h1>
                   <div
                     suppressHydrationWarning={true}
                     className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] bg-[var(--glass-bg)] border border-[var(--glass-border)] px-2.5 py-1 rounded-lg shrink-0"
                   >
                     <Calendar className="w-3.5 h-3.5 text-[var(--theme-accent,#D97706)]" />
-                    <span>{formatTanggalSederhana(new Date().toISOString())}</span>
+                    <span suppressHydrationWarning={true}>
+                      {formatTanggalSederhana(new Date().toISOString(), activeTimeZone)}
+                    </span>
                   </div>
                 </div>
                 <motion.p
@@ -563,6 +575,7 @@ export default function DashboardPage() {
                           </span>
                         )}
                         <span
+                          suppressHydrationWarning={true}
                           className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                             isOverdue
                               ? "text-[#E88B8B]"
@@ -577,8 +590,8 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-[var(--glass-border)] relative z-10">
-                      <span className="text-[10px] text-[var(--text-muted)]">
-                        {formatTanggal(task.deadline).split(",")[1] || ""}
+                      <span suppressHydrationWarning={true} className="text-[10px] text-[var(--text-muted)]">
+                        {formatTanggal(task.deadline, activeTimeZone).split(",")[1] || ""}
                       </span>
                       <button
                         type="button"

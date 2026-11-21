@@ -4,7 +4,8 @@ import ToastProvider from "@/components/ui/ToastProvider";
 import { ThemeProvider } from "@/lib/theme-context";
 import ThemeBackground from "@/components/theme/ThemeBackground";
 import ThemeModal from "@/components/theme/ThemeModal";
-import { Analytics } from "@vercel/analytics/next";
+
+const Analytics = () => null;
 
 /*
 const arvo = Arvo({

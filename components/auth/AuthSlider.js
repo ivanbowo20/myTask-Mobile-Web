@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
   AtSign,
@@ -120,6 +120,13 @@ export default function AuthSlider({ initialMode = "login" }) {
 
   // Shared social auth state
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleFallbackUrl, setGoogleFallbackUrl] = useState("");
+  const popupRef = useRef(null);
+  const popupPollRef = useRef(null);
+  const pollAbortRef = useRef(null);
+  const pollInFlightRef = useRef(false);
+  const activeFlowIdRef = useRef(null);
+  const oauthHandledRef = useRef(false);
 
   // Switch mode with shallow URL and document title synchronization
   const switchMode = useCallback(
@@ -191,27 +198,295 @@ export default function AuthSlider({ initialMode = "login" }) {
     }
   }, []);
 
-  // Google Social Sign-in
+  const clearPopupMonitor = useCallback(() => {
+    if (popupPollRef.current) {
+      clearInterval(popupPollRef.current);
+      popupPollRef.current = null;
+    }
+    if (pollAbortRef.current) {
+      pollAbortRef.current.abort();
+      pollAbortRef.current = null;
+    }
+    pollInFlightRef.current = false;
+  }, []);
+
+  const checkPopupFlowStatus = useCallback(
+    async (targetFlowId) => {
+      const flowId = targetFlowId || activeFlowIdRef.current;
+      if (!flowId || oauthHandledRef.current || pollInFlightRef.current) return;
+
+      pollInFlightRef.current = true;
+      const controller = new AbortController();
+      pollAbortRef.current = controller;
+
+      try {
+        const res = await fetch("/api/auth/popup-session", {
+          method: "POST",
+          credentials: "include",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: JSON.stringify({ flowId }),
+        });
+
+        let data = null;
+        try {
+          data = await res.json();
+        } catch {
+          data = null;
+        }
+
+        if (res.ok && data?.status === "completed") {
+          oauthHandledRef.current = true;
+          activeFlowIdRef.current = null;
+          clearPopupMonitor();
+          setGoogleFallbackUrl("");
+
+          try {
+            if (popupRef.current && !popupRef.current.closed) {
+              popupRef.current.close();
+            }
+          } catch {
+            // Ignore cross-origin window close restriction
+          }
+          popupRef.current = null;
+
+          toast.success("Berhasil masuk dengan Google! Selamat datang.");
+          if (typeof window !== "undefined") {
+            window.location.assign("/dashboard");
+          } else {
+            router.push("/dashboard");
+            router.refresh();
+          }
+          return;
+        }
+
+        if (data?.status === "error") {
+          activeFlowIdRef.current = null;
+          clearPopupMonitor();
+          setGoogleFallbackUrl("");
+          setIsGoogleLoading(false);
+          const msg = "Proses masuk dengan Google dibatalkan atau gagal. Silakan coba kembali.";
+          setLoginError(msg);
+          setRegisterError(msg);
+          return;
+        }
+
+        if (res.status === 410 || data?.status === "expired") {
+          activeFlowIdRef.current = null;
+          clearPopupMonitor();
+          setGoogleFallbackUrl("");
+          setIsGoogleLoading(false);
+          const msg = "Waktu tunggu login Google habis. Silakan klik tombol Google kembali.";
+          setLoginError(msg);
+          setRegisterError(msg);
+        }
+      } catch (err) {
+        if (err?.name !== "AbortError") {
+          // Transient network hiccup during polling; next tick retries safely
+        }
+      } finally {
+        if (pollAbortRef.current === controller) {
+          pollAbortRef.current = null;
+        }
+        pollInFlightRef.current = false;
+      }
+    },
+    [clearPopupMonitor, router]
+  );
+
+  const startPopupPolling = useCallback(
+    (flowId) => {
+      clearPopupMonitor();
+      activeFlowIdRef.current = flowId;
+      // Do NOT terminate polling on popup.closed because accounts.google.com sends COOP: same-origin,
+      // which makes popup.closed === true immediately while the user is still signing in.
+      popupPollRef.current = setInterval(() => {
+        checkPopupFlowStatus(flowId);
+      }, 1200);
+    },
+    [checkPopupFlowStatus, clearPopupMonitor]
+  );
+
+  const handleCancelGoogleSignIn = useCallback(() => {
+    activeFlowIdRef.current = null;
+    oauthHandledRef.current = false;
+    clearPopupMonitor();
+    setGoogleFallbackUrl("");
+    setIsGoogleLoading(false);
+    try {
+      if (popupRef.current && !popupRef.current.closed) {
+        popupRef.current.close();
+      }
+    } catch {
+      // Ignore cross-origin close restriction
+    }
+    popupRef.current = null;
+  }, [clearPopupMonitor]);
+
+  // Fast-path listeners (postMessage, BroadcastChannel, window focus) that immediately trigger
+  // the server-side flowId claim when available, while server polling guarantees delivery across
+  // Chrome COOP and third-party Storage Partitioning.
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const handleOAuthPayload = (data) => {
+      if (!data || typeof data !== "object") return;
+
+      if (data.type === "OAUTH_AUTH_SUCCESS") {
+        checkPopupFlowStatus(data.flowId || activeFlowIdRef.current);
+        return;
+      }
+
+      if (data.type === "OAUTH_AUTH_ERROR") {
+        activeFlowIdRef.current = null;
+        clearPopupMonitor();
+        setGoogleFallbackUrl("");
+        setIsGoogleLoading(false);
+        const msg = "Proses masuk dengan Google dibatalkan atau gagal. Silakan coba kembali.";
+        setLoginError(msg);
+        setRegisterError(msg);
+      }
+    };
+
+    const handleWindowMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      handleOAuthPayload(event.data);
+    };
+
+    const handleFocusCheck = () => {
+      if (activeFlowIdRef.current && !oauthHandledRef.current) {
+        checkPopupFlowStatus(activeFlowIdRef.current);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && activeFlowIdRef.current && !oauthHandledRef.current) {
+        checkPopupFlowStatus(activeFlowIdRef.current);
+      }
+    };
+
+    window.addEventListener("message", handleWindowMessage);
+    window.addEventListener("focus", handleFocusCheck);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    let channel = null;
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        channel = new BroadcastChannel("mytask-oauth-channel");
+        channel.onmessage = (event) => {
+          handleOAuthPayload(event.data);
+        };
+      } catch {
+        channel = null;
+      }
+    }
+
+    return () => {
+      window.removeEventListener("message", handleWindowMessage);
+      window.removeEventListener("focus", handleFocusCheck);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (channel) {
+        try {
+          channel.close();
+        } catch {
+          // Ignore close error
+        }
+      }
+      clearPopupMonitor();
+    };
+  }, [checkPopupFlowStatus, clearPopupMonitor]);
+
+  // Google Social Sign-in (server-tracked popup flow in iframe preview to avoid Google 403 X-Frame block,
+  // Chrome COOP window.opener severing, and Storage Partitioning isolation)
   async function handleGoogleSignIn() {
     setLoginError("");
     setRegisterError("");
+    setGoogleFallbackUrl("");
     setIsGoogleLoading(true);
+    oauthHandledRef.current = false;
+    activeFlowIdRef.current = null;
+    clearPopupMonitor();
 
-    // 15-second safety watchdog to prevent infinite loading state
+    const inIframe = typeof window !== "undefined" && window.self !== window.top;
+
+    // Open blank popup synchronously inside click handler when embedded in iframe so browsers allow it
+    let popup = null;
+    if (inIframe && typeof window !== "undefined") {
+      const width = 520;
+      const height = 660;
+      const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
+      const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
+      popup = window.open(
+        "about:blank",
+        "mytask_google_oauth",
+        `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,status=no`
+      );
+      popupRef.current = popup;
+    }
+
+    // 15-second safety watchdog for initial OAuth URL generation
     const timeoutId = setTimeout(() => {
+      if (popup && !popup.closed) {
+        try {
+          popup.close();
+        } catch {
+          // Ignore
+        }
+      }
+      activeFlowIdRef.current = null;
+      clearPopupMonitor();
       setIsGoogleLoading(false);
       setLoginError("Koneksi ke Google membutuhkan waktu terlalu lama. Silakan periksa jaringan dan coba lagi.");
     }, 15000);
 
     try {
+      let flowId = null;
+      if (inIframe) {
+        const flowRes = await fetch("/api/auth/popup-flow", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        });
+        if (!flowRes.ok) {
+          throw new Error("Gagal menginisialisasi sesi pop-up Google. Silakan coba lagi.");
+        }
+        const flowData = await flowRes.json();
+        flowId = flowData?.flowId;
+        if (!flowId) {
+          throw new Error("Token sesi pop-up Google tidak tersedia. Silakan coba lagi.");
+        }
+      }
+
+      const popupCallbackUrl = flowId
+        ? `/api/auth/popup-callback?flow=${encodeURIComponent(flowId)}`
+        : "/api/auth/popup-callback";
+      const popupErrorUrl = flowId
+        ? `/api/auth/popup-callback?flow=${encodeURIComponent(flowId)}&error=auth_callback_failed`
+        : "/api/auth/popup-callback?error=auth_callback_failed";
+
       const res = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: inIframe ? popupCallbackUrl : "/dashboard",
+        newUserURL: inIframe ? popupCallbackUrl : "/dashboard",
+        errorCallbackURL: inIframe ? popupErrorUrl : "/login?error=auth_callback_failed",
+        disableRedirect: inIframe,
       });
 
       clearTimeout(timeoutId);
 
       if (res?.error) {
+        if (popup && !popup.closed) {
+          try {
+            popup.close();
+          } catch {
+            // Ignore
+          }
+        }
         const msg = res.error.message || "Gagal menghubungkan ke Google. Silakan coba lagi.";
         setLoginError(msg);
         setRegisterError(msg);
@@ -219,11 +494,54 @@ export default function AuthSlider({ initialMode = "login" }) {
         return;
       }
 
-      if (res?.data?.url) {
-        window.location.href = res.data.url;
+      const authUrl = res?.data?.url;
+      if (!authUrl) {
+        if (popup && !popup.closed) {
+          try {
+            popup.close();
+          } catch {
+            // Ignore
+          }
+        }
+        const msg = "URL autentikasi Google tidak tersedia. Pastikan kredensial Google OAuth sudah terpasang.";
+        setLoginError(msg);
+        setRegisterError(msg);
+        setIsGoogleLoading(false);
+        return;
       }
+
+      if (inIframe) {
+        if (flowId) {
+          startPopupPolling(flowId);
+        }
+
+        if (popup && !popup.closed) {
+          // Navigate popup directly to Google's OAuth authorization URL
+          popup.location.href = authUrl;
+          popup.focus();
+        } else {
+          // Popup blocked by browser: expose safe external link while keeping server polling active
+          setGoogleFallbackUrl(authUrl);
+          const msg = "Browser memblokir jendela pop-up Google. Klik tautan di bawah untuk melanjutkan login Google di tab baru.";
+          setLoginError(msg);
+          setRegisterError(msg);
+          setIsGoogleLoading(false);
+        }
+        return;
+      }
+
+      window.location.href = authUrl;
     } catch (err) {
       clearTimeout(timeoutId);
+      if (popup && !popup.closed) {
+        try {
+          popup.close();
+        } catch {
+          // Ignore
+        }
+      }
+      activeFlowIdRef.current = null;
+      clearPopupMonitor();
       const msg = err?.message || "Gagal menghubungkan ke Google. Silakan coba lagi.";
       setLoginError(msg);
       setRegisterError(msg);
@@ -459,9 +777,28 @@ export default function AuthSlider({ initialMode = "login" }) {
                     <GoogleIcon className="w-4 h-4 shrink-0" />
                   )}
                   <span>
-                    {isGoogleLoading ? "Menghubungkan ke Google..." : "Lanjutkan dengan Google"}
+                    {isGoogleLoading ? "Menunggu verifikasi Google..." : "Lanjutkan dengan Google"}
                   </span>
                 </button>
+                {isGoogleLoading && (
+                  <button
+                    type="button"
+                    onClick={handleCancelGoogleSignIn}
+                    className="w-full min-h-[44px] px-4 py-2 rounded-xl bg-transparent hover:bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                  >
+                    Batalkan proses masuk Google
+                  </button>
+                )}
+                {googleFallbackUrl && (
+                  <a
+                    href={googleFallbackUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/35 text-xs font-semibold text-amber-200 flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <span>Buka Login Google di Tab Baru</span>
+                  </a>
+                )}
               </div>
 
               {/* Divider */}
@@ -654,9 +991,28 @@ export default function AuthSlider({ initialMode = "login" }) {
                     <GoogleIcon className="w-4 h-4 shrink-0" />
                   )}
                   <span>
-                    {isGoogleLoading ? "Menghubungkan ke Google..." : "Daftar dengan Google"}
+                    {isGoogleLoading ? "Menunggu verifikasi Google..." : "Daftar dengan Google"}
                   </span>
                 </button>
+                {isGoogleLoading && (
+                  <button
+                    type="button"
+                    onClick={handleCancelGoogleSignIn}
+                    className="w-full min-h-[44px] px-4 py-2 rounded-xl bg-transparent hover:bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                  >
+                    Batalkan proses daftar Google
+                  </button>
+                )}
+                {googleFallbackUrl && (
+                  <a
+                    href={googleFallbackUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full min-h-[44px] px-4 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/35 text-xs font-semibold text-amber-200 flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <span>Buka Login Google di Tab Baru</span>
+                  </a>
+                )}
               </div>
 
               {/* Divider */}

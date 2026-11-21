@@ -3,14 +3,14 @@
   "version": "2.0.0",
   "private": true,
   "engines": {
-    "node": ">=24.22.1"
+    "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "next dev",
-    "dev:clean": "node -e \"try{fs.rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next dev",
+    "dev": "next dev -p 3000 -H 0.0.0.0",
+    "dev:clean": "node -e \"try{fs.rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next dev -p 3000 -H 0.0.0.0",
     "build": "next build",
     "build:safe": "node -e \"try{fs.rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next build",
-    "start": "next start",
+    "start": "next start -p 3000 -H 0.0.0.0",
     "lint": "node scripts/verify-ast-scope.js && node scripts/verify-imports.js",
     "test": "node scripts/verify-task-4c.js",
     "ping:supabase": "node scripts/ping-supabase.js",
@@ -24,7 +24,6 @@
     "@phosphor-icons/react": "^2.1.10",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
-    "@vercel/analytics": "^2.0.1",
     "better-auth": "^1.7.10",
     "clsx": "^2.1.1",
     "dexie": "^4.4.7",

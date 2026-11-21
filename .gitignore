@@ -51,4 +51,5 @@ remotion-arena/
 *.bat
 *PROMPT*.md
 
-
+# AI Studio chat attachments
+/public/assets/aistudio/

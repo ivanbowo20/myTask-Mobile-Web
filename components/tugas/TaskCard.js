@@ -162,11 +162,11 @@ const TaskCard = memo(function TaskCard({
 
               {/* Deadline / Status inline */}
               {!task.selesai && status === "terlewat" ? (
-                <span className="text-[#E88B8B] font-semibold shrink-0">
+                <span suppressHydrationWarning={true} className="text-[#E88B8B] font-semibold shrink-0">
                   Terlewat ({sisaWaktu})
                 </span>
               ) : !task.selesai && status === "hari-ini" ? (
-                <span className="text-[var(--theme-accent,#D97706)] font-semibold shrink-0">
+                <span suppressHydrationWarning={true} className="text-[var(--theme-accent,#D97706)] font-semibold shrink-0">
                   Hari Ini ({sisaWaktu})
                 </span>
               ) : task.selesai ? (
@@ -174,7 +174,7 @@ const TaskCard = memo(function TaskCard({
                   <span>Selesai</span>
                 </span>
               ) : task.deadline ? (
-                <span className="text-[var(--text-secondary)] truncate">
+                <span suppressHydrationWarning={true} className="text-[var(--text-secondary)] truncate">
                   {formatTanggal(task.deadline).split(",")[1] || formatTanggal(task.deadline)}
                 </span>
               ) : (
@@ -264,7 +264,7 @@ const TaskCard = memo(function TaskCard({
                   {task.deadline ? (
                     <>
                       <span className="text-[var(--text-muted)]">Tenggat: </span>
-                      <span className="font-medium text-[var(--text-primary)]">
+                      <span suppressHydrationWarning={true} className="font-medium text-[var(--text-primary)]">
                         {formatTanggal(task.deadline)}
                       </span>
                     </>
@@ -569,14 +569,14 @@ const TaskCard = memo(function TaskCard({
 
             {/* Status Pills: Terlewat / Hari Ini / Selesai */}
             {!task.selesai && status === "terlewat" && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E88B8B]/15 text-[#E88B8B] border border-[#E88B8B]/30 whitespace-nowrap">
+              <span suppressHydrationWarning={true} className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#E88B8B]/15 text-[#E88B8B] border border-[#E88B8B]/30 whitespace-nowrap">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#E88B8B] animate-pulse" />
                 Terlewat ({sisaWaktu})
               </span>
             )}
 
             {!task.selesai && status === "hari-ini" && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)]/15 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/30 whitespace-nowrap">
+              <span suppressHydrationWarning={true} className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--theme-accent,#D97706)]/15 text-[var(--theme-accent,#D97706)] border border-[var(--theme-accent,#D97706)]/30 whitespace-nowrap">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--theme-accent,#D97706)] animate-pulse" />
                 Hari Ini ({sisaWaktu})
               </span>
@@ -615,6 +615,7 @@ const TaskCard = memo(function TaskCard({
             <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-[11px] pl-1">
               {task.deadline ? (
                 <span
+                  suppressHydrationWarning={true}
                   className={cn(
                     "inline-flex items-center gap-1",
                     status === "terlewat" && "text-[#E88B8B] font-medium",

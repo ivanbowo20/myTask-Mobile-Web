@@ -198,6 +198,16 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Rate limiting: 60 req / min
+    const rl = checkRateLimit(`nb_cat_put_${session.user.id}`, 60, 60000);
+    if (!rl.allowed) {
+      const retryAfterSec = Math.max(1, Math.ceil((rl.resetTime - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan tunggu beberapa saat." },
+        { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+      );
+    }
+
     const body = await request.json();
     const { id, nama, warna, icon } = body || {};
 
@@ -263,6 +273,16 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Rate limiting: 60 req / min
+    const rl = checkRateLimit(`nb_cat_del_${session.user.id}`, 60, 60000);
+    if (!rl.allowed) {
+      const retryAfterSec = Math.max(1, Math.ceil((rl.resetTime - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan tunggu beberapa saat." },
+        { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -317,6 +337,16 @@ export async function PATCH(request) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting: 60 req / min
+    const rl = checkRateLimit(`nb_cat_patch_${session.user.id}`, 60, 60000);
+    if (!rl.allowed) {
+      const retryAfterSec = Math.max(1, Math.ceil((rl.resetTime - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan. Silakan tunggu beberapa saat." },
+        { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+      );
     }
 
     const body = await request.json();

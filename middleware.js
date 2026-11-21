@@ -13,6 +13,7 @@ export function middleware(request) {
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/tugas") ||
     pathname.startsWith("/kategori") ||
+    pathname.startsWith("/notebook") ||
     pathname.startsWith("/notifikasi") ||
     pathname.startsWith("/pengaturan");
 
@@ -42,6 +43,7 @@ export const config = {
     "/dashboard/:path*",
     "/tugas/:path*",
     "/kategori/:path*",
+    "/notebook/:path*",
     "/notifikasi/:path*",
     "/pengaturan/:path*",
     "/login",

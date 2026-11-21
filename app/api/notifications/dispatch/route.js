@@ -4,6 +4,7 @@ import webpush from "web-push";
 import { query } from "@/lib/db";
 import { formatTanggal } from "@/lib/utils";
 import { auth } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   isReengagementScheduleWindow,
   getReengagementMessage,
@@ -102,12 +103,14 @@ async function dispatchReengagementNotifications({ force = false } = {}) {
   };
 }
 
-export async function handleDispatch(request) {
+export async function handleDispatch(request, options = {}) {
+  const { scopedUserId = null, allowReengagement = true } = options || {};
+
   try {
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
 
-    if (!publicKey || !privateKey) {
+    if (!publicKey || !privateKey || publicKey.startsWith("YOUR_") || privateKey.startsWith("YOUR_")) {
       return NextResponse.json(
         { error: "Kunci VAPID belum dikonfigurasi di server." },
         { status: 500 }
@@ -117,9 +120,9 @@ export async function handleDispatch(request) {
     const subject = "mailto:admin@mytask.local";
     webpush.setVapidDetails(subject, publicKey, privateKey);
 
-    // Parse parameter query jika ada
+    // Parse parameter query hanya jika pemanggil berhak menjalankan re-engagement (cron)
     let forceReengage = false;
-    if (request?.url) {
+    if (allowReengagement && request?.url) {
       try {
         const parsedUrl = new URL(request.url);
         forceReengage = parsedUrl.searchParams.get("force_reengage") === "true";
@@ -127,6 +130,9 @@ export async function handleDispatch(request) {
         // Abaikan jika URL tidak valid
       }
     }
+
+    const userFilterClause = scopedUserId ? "AND t.user_id = $1" : "";
+    const queryParams = scopedUserId ? [scopedUserId] : [];
 
     // 1. Kunci dan tandai tugas secara atomik (Two-Phase Notification: Reminder & Deadline Habis)
     const reserveTasksSql = `
@@ -146,6 +152,7 @@ export async function handleDispatch(request) {
         FROM public.tasks t
         WHERE t.selesai = false
           AND t.deleted_at IS NULL
+          ${userFilterClause}
           AND t.deadline IS NOT NULL
           AND t.deadline >= NOW() - INTERVAL '3 days'
           AND (
@@ -189,7 +196,7 @@ export async function handleDispatch(request) {
       RETURNING t.id, t.user_id, t.judul, t.deskripsi, t.deadline, t.reminder, et.notif_type;
     `;
 
-    const tasksResult = await query(reserveTasksSql);
+    const tasksResult = await query(reserveTasksSql, queryParams);
     const tasks = tasksResult.rows;
 
     let totalSent = 0;
@@ -279,12 +286,14 @@ export async function handleDispatch(request) {
       })
     );
 
-    // Jalankan sub-rutin notifikasi ajakan berkala (Senin/Kamis 08:00 WIB)
+    // Jalankan sub-rutin notifikasi ajakan berkala hanya untuk pemanggilan cron/internal (bukan sesi user tunggal)
     let reengageResult = { triggered: false, sent: 0 };
-    try {
-      reengageResult = await dispatchReengagementNotifications({ force: forceReengage });
-    } catch (reengageErr) {
-      console.error("[DISPATCH] Gagal memproses re-engagement notifications:", reengageErr);
+    if (allowReengagement && !scopedUserId) {
+      try {
+        reengageResult = await dispatchReengagementNotifications({ force: forceReengage });
+      } catch (reengageErr) {
+        console.error("[DISPATCH] Gagal memproses re-engagement notifications:", reengageErr);
+      }
     }
 
     return NextResponse.json({
@@ -304,70 +313,96 @@ export async function handleDispatch(request) {
 
 function validateCronAuth(request) {
   try {
-    if (!process.env.CRON_SECRET) {
+    const rawSecret = process.env.CRON_SECRET;
+    if (typeof rawSecret !== "string") {
       return false;
     }
 
-    // 1. Cek Header Authorization: Bearer <CRON_SECRET>
+    const cronSecret = rawSecret.trim();
+    if (!cronSecret || /^YOUR_[A-Z0-9_]+_HERE$/i.test(cronSecret)) {
+      return false;
+    }
+
+    // Fail-closed: hanya izinkan header Authorization: Bearer <CRON_SECRET>
     const authHeader = request.headers.get("authorization") || "";
-    if (authHeader.startsWith("Bearer ")) {
-      const expectedSecret = `Bearer ${process.env.CRON_SECRET}`;
-      const providedSecret = authHeader;
-      const isLengthMatch = expectedSecret.length === providedSecret.length;
+    if (!authHeader.startsWith("Bearer ")) {
+      return false;
+    }
 
-      if (
-        isLengthMatch &&
-        crypto.timingSafeEqual(
-          Buffer.from(expectedSecret),
-          Buffer.from(providedSecret)
-        )
-      ) {
-        return true;
+    const expectedBuf = Buffer.from(`Bearer ${cronSecret}`);
+    const providedBuf = Buffer.from(authHeader);
+    if (expectedBuf.length !== providedBuf.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(expectedBuf, providedBuf);
+  } catch {
+    return false;
+  }
+}
+
+async function authorizeAndDispatch(request) {
+  try {
+    if (validateCronAuth(request)) {
+      return handleDispatch(request, {
+        scopedUserId: null,
+        allowReengagement: true,
+      });
+    }
+
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Tolak parameter force_reengage untuk pemanggil non-cron guna mencegah broadcast lintas-akun
+    if (request?.url) {
+      try {
+        const parsedUrl = new URL(request.url);
+        if (parsedUrl.searchParams.has("force_reengage")) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+      } catch {
+        return NextResponse.json({ error: "Bad Request" }, { status: 400 });
       }
     }
 
-    // 2. Fallback: Dukung query string ?key=<CRON_SECRET> atau ?secret=<CRON_SECRET> untuk scheduler fleksibel (cron-job.org / curl)
-    const url = new URL(request.url);
-    const queryKey = url.searchParams.get("key") || url.searchParams.get("secret") || "";
-    if (queryKey && queryKey.length === process.env.CRON_SECRET.length) {
-      if (
-        crypto.timingSafeEqual(
-          Buffer.from(process.env.CRON_SECRET),
-          Buffer.from(queryKey)
-        )
-      ) {
-        return true;
-      }
+    // Rate limiting per akun untuk passive dispatch dari klien
+    const rl = checkRateLimit(`notif_dispatch_${session.user.id}`, 12, 60000);
+    if (!rl.allowed) {
+      const retryAfterSec = Math.max(1, Math.ceil((rl.resetTime - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan pemeriksaan notifikasi. Silakan tunggu beberapa saat." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(retryAfterSec),
+          },
+        }
+      );
     }
 
-    return false;
-  } catch (err) {
-    return false;
+    // Kunci ketat hanya untuk tugas milik user aktif & nonaktifkan broadcast re-engagement
+    return handleDispatch(request, {
+      scopedUserId: session.user.id,
+      allowReengagement: false,
+    });
+  } catch (error) {
+    console.error("[DISPATCH] Gagal memverifikasi akses dispatch:", error);
+    return NextResponse.json(
+      { error: "Gagal memproses dispatch notifikasi." },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request) {
-  const isCron = validateCronAuth(request);
-  if (!isCron) {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-    if (!session?.user) {
-      return new Response("Unauthorized", { status: 401 });
-    }
-  }
-  return handleDispatch(request);
+  return authorizeAndDispatch(request);
 }
 
 export async function GET(request) {
-  const isCron = validateCronAuth(request);
-  if (!isCron) {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-    if (!session?.user) {
-      return new Response("Unauthorized", { status: 401 });
-    }
-  }
-  return handleDispatch(request);
+  return authorizeAndDispatch(request);
 }

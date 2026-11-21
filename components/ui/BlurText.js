@@ -21,6 +21,7 @@ export default function BlurText({
   delay = 0.06,
   direction = 'bottom',
   className = '',
+  suppressHydrationWarning = false,
 }) {
   const shouldReduceMotion = useReducedMotion();
   const isDesktop = useDesktopMotion();
@@ -31,7 +32,11 @@ export default function BlurText({
 
   // Mobile / Reduced Motion: render standard clean text without overhead
   if (shouldReduceMotion || !isDesktop) {
-    return <span className={className}>{text}</span>;
+    return (
+      <span className={className} suppressHydrationWarning={suppressHydrationWarning}>
+        {text}
+      </span>
+    );
   }
 
   const initialY = direction === 'top' ? -12 : 12;
@@ -41,6 +46,7 @@ export default function BlurText({
       {words.map((word, index) => (
         <motion.span
           key={`${word}-${index}`}
+          suppressHydrationWarning={suppressHydrationWarning}
           initial={{
             opacity: 0,
             y: initialY,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { auth } from "@/lib/auth";
 import { query } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request) {
   try {
@@ -9,14 +10,24 @@ export async function POST(request) {
       headers: request.headers,
     });
 
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting: maksimal 5 tes notifikasi per menit per user
+    const rl = checkRateLimit(`notif_test_${session.user.id}`, 5, 60000);
+    if (!rl.allowed) {
+      const retryAfterSec = Math.max(1, Math.ceil((rl.resetTime - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan tes notifikasi. Silakan tunggu beberapa saat." },
+        { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+      );
     }
 
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const privateKey = process.env.VAPID_PRIVATE_KEY;
 
-    if (!publicKey || !privateKey) {
+    if (!publicKey || !privateKey || publicKey.startsWith("YOUR_") || privateKey.startsWith("YOUR_")) {
       return NextResponse.json(
         { error: "Kunci VAPID belum dikonfigurasi di server." },
         { status: 500 }
