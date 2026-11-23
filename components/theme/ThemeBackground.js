@@ -10,54 +10,55 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 export default function ThemeBackground() {
   const { theme, isMounted } = useTheme();
-
-  // Hold canvas mounting until mounted to prevent initial flash & unnecessary canvas creation
-  if (!isMounted) {
-    return (
-      <div
-        className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='winter-frost']_&]:bg-[#121E36] [html[data-theme='abyssal-teal']_&]:bg-[#0B120E] [html[data-theme='soft-aurora']_&]:bg-[#060810]"
-        aria-hidden="true"
-      />
-    );
-  }
-
   const activeThemeId = theme || 'dark-chocolate';
+  const usesAdaptiveScrim =
+    activeThemeId !== 'celestial-sky' &&
+    activeThemeId !== 'winter-frost' &&
+    activeThemeId !== 'abyssal-teal';
 
   return (
     <div
-      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg,#0C0A09)] [html[data-theme='celestial-sky']_&]:bg-[#3172B8] [html[data-theme='winter-frost']_&]:bg-[#121E36] [html[data-theme='abyssal-teal']_&]:bg-[#0B120E] isolate [transform:translate3d(0,0,0)]"
+      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[var(--theme-base-bg)] isolate [transform:translate3d(0,0,0)]"
       aria-hidden="true"
     >
-      {/* Dynamic Background Switcher with Fluid Simultaneous Cross-fade (initial={false} untuk 0ms first paint) */}
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={activeThemeId}
-          initial={false}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute inset-0"
-        >
-          {activeThemeId === 'winter-frost' && <WinterFrostBackground />}
-          {activeThemeId === 'celestial-sky' && <CelestialSkyBackground />}
-          {activeThemeId === 'soft-aurora' && <SoftAuroraBackground />}
-          {activeThemeId === 'abyssal-teal' && <AbyssalTealBackground />}
-          {activeThemeId === 'dark-chocolate' && <DarkChocolateBackground />}
-        </motion.div>
-      </AnimatePresence>
+      {/* 0ms Instant CSS Poster/Gradient Backdrop (aktif sejak byte HTML pertama sebelum Canvas/WebGL jalan) */}
+      <div
+        className="theme-instant-backdrop absolute inset-0 pointer-events-none"
+        aria-hidden="true"
+      />
+
+      {/* Dynamic Live Background Switcher (Canvas/WebGL/SVG aktif setelah client hydration) */}
+      {isMounted && (
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={activeThemeId}
+            initial={false}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0"
+          >
+            {activeThemeId === 'winter-frost' && <WinterFrostBackground />}
+            {activeThemeId === 'celestial-sky' && <CelestialSkyBackground />}
+            {activeThemeId === 'soft-aurora' && <SoftAuroraBackground />}
+            {activeThemeId === 'abyssal-teal' && <AbyssalTealBackground />}
+            {activeThemeId === 'dark-chocolate' && <DarkChocolateBackground />}
+          </motion.div>
+        </AnimatePresence>
+      )}
 
       {/* Adaptive scrim mask: Dinonaktifkan pada celestial-sky, winter-frost & abyssal-teal agar visual alami & kontras teks terjaga */}
       <div
         className={`absolute inset-0 pointer-events-none transition-all duration-500 ${
-          activeThemeId === 'celestial-sky' || activeThemeId === 'winter-frost' || activeThemeId === 'abyssal-teal'
-            ? 'bg-transparent backdrop-blur-none'
-            : 'bg-black/65 backdrop-blur-none sm:backdrop-blur-[2px]'
+          usesAdaptiveScrim
+            ? 'bg-black/65 backdrop-blur-none sm:backdrop-blur-[2px]'
+            : 'bg-transparent backdrop-blur-none'
         }`}
         aria-hidden="true"
       />
 
       {/* Subtle noise texture for frosted crystal refraction (Desktop only, hemat GPU HP) */}
-      {activeThemeId !== 'celestial-sky' && activeThemeId !== 'winter-frost' && activeThemeId !== 'abyssal-teal' && (
+      {isMounted && usesAdaptiveScrim && (
         <div
           className="hidden sm:block absolute inset-0 opacity-[0.025] mix-blend-overlay pointer-events-none"
           style={{

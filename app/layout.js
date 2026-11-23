@@ -1,11 +1,31 @@
 // import { Arvo, Plus_Jakarta_Sans } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
 import ToastProvider from "@/components/ui/ToastProvider";
 import { ThemeProvider } from "@/lib/theme-context";
 import ThemeBackground from "@/components/theme/ThemeBackground";
 import ThemeModal from "@/components/theme/ThemeModal";
+import {
+  DEFAULT_THEME_ID,
+  THEME_COOKIE_NAME,
+  resolveThemeId,
+  getThemeById,
+  getThemeCssVars,
+  buildThemeInitScript,
+} from "@/lib/themes";
 
 const Analytics = () => null;
+const THEME_INIT_SCRIPT = buildThemeInitScript();
+
+async function getServerTheme() {
+  try {
+    const cookieStore = await cookies();
+    const rawTheme = cookieStore.get(THEME_COOKIE_NAME)?.value;
+    return getThemeById(resolveThemeId(rawTheme));
+  } catch {
+    return getThemeById(DEFAULT_THEME_ID);
+  }
+}
 
 /*
 const arvo = Arvo({
@@ -44,27 +64,40 @@ export const metadata = {
   },
 };
 
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
-  themeColor: "#0A0A0C",
-  interactiveWidget: "resizes-content",
-};
+export async function generateViewport() {
+  const initialThemeObj = await getServerTheme();
+  return {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+    themeColor: initialThemeObj.themeColor,
+    interactiveWidget: "resizes-content",
+  };
+}
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const initialThemeObj = await getServerTheme();
+  const colorScheme = initialThemeObj.isLight ? "light" : "dark";
+  const initialThemeVars = getThemeCssVars(initialThemeObj);
+
   return (
-    <html lang="id" className="dark font-sans" suppressHydrationWarning>
+    <html
+      lang="id"
+      data-theme={initialThemeObj.id}
+      data-color-scheme={colorScheme}
+      className={`${colorScheme} font-sans`}
+      style={initialThemeVars}
+      suppressHydrationWarning
+    >
       <head>
-        <link rel="manifest" href="/manifest.json?v=2" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{if(typeof window !== 'undefined'){var t=localStorage.getItem('taskflow_theme');if(t==='gradient-ascii'){t='abyssal-teal';localStorage.setItem('taskflow_theme','abyssal-teal');}if(t){var c={'dark-chocolate':['#D97706','#B45309','rgba(217,119,6,0.4)','rgba(217,119,6,0.15)','rgba(22,17,14,0.55)','rgba(28,22,18,0.68)','rgba(255,255,255,0.08)','rgba(255,255,255,0.16)','rgba(16,12,10,0.75)','#0C0A09'],'soft-aurora':['#06B6D4','#0891B2','rgba(6,182,212,0.45)','rgba(6,182,212,0.15)','rgba(10,16,30,0.55)','rgba(16,24,42,0.68)','rgba(6,182,212,0.14)','rgba(6,182,212,0.28)','rgba(9,13,24,0.78)','#060810'],'abyssal-teal':['#2DB15C','#259A4E','rgba(45,177,92,0.45)','rgba(45,177,92,0.15)','rgba(13,20,16,0.65)','rgba(18,28,22,0.78)','rgba(121,206,103,0.20)','rgba(121,206,103,0.40)','rgba(10,16,13,0.85)','#0B120E'],'celestial-sky':['#0284C7','#0369A1','rgba(2,132,199,0.40)','rgba(2,132,199,0.15)','rgba(255,255,255,0.75)','rgba(255,255,255,0.90)','rgba(186,230,253,0.55)','rgba(14,165,233,0.50)','rgba(240,249,255,0.88)','#3172B8'],'winter-frost':['#1E40AF','#1D4ED8','rgba(37,99,235,0.45)','rgba(30,64,175,0.20)','rgba(16,26,46,0.86)','rgba(22,34,58,0.92)','rgba(186,230,253,0.22)','rgba(56,189,248,0.45)','rgba(14,24,44,0.90)','#121E36']}[t];if(c){var r=document.documentElement;var isL=(t==='celestial-sky');r.setAttribute('data-theme',t);r.setAttribute('data-color-scheme',isL?'light':'dark');if(isL){r.classList.remove('dark');r.classList.add('light');r.style.setProperty('--text-primary','#0F172A');r.style.setProperty('--text-secondary','#334155');r.style.setProperty('--text-muted','#64748B');}else{r.classList.remove('light');r.classList.add('dark');r.style.setProperty('--text-primary','#FAFAFA');r.style.setProperty('--text-secondary','#A1A1AA');r.style.setProperty('--text-muted','#71717A');}r.style.setProperty('--theme-accent',c[0]);r.style.setProperty('--theme-accent-hover',c[1]);r.style.setProperty('--theme-glow',c[2]);r.style.setProperty('--theme-glow-subtle',c[3]);r.style.setProperty('--glass-bg',c[4]);r.style.setProperty('--glass-bg-hover',c[5]);r.style.setProperty('--glass-border',c[6]);r.style.setProperty('--glass-border-hover',c[7]);r.style.setProperty('--theme-nav-bg',c[8]);r.style.setProperty('--theme-base-bg',c[9]);}}}}catch(e){}})()`,
+            __html: THEME_INIT_SCRIPT,
           }}
         />
       </head>
-      <body className="min-h-[100dvh] text-[#FAFAFA] font-sans antialiased relative bg-[var(--theme-base-bg,#0C0A09)]">
-        <ThemeProvider>
+      <body className="min-h-[100dvh] text-[var(--text-primary)] font-sans antialiased relative bg-[var(--theme-base-bg)]">
+        <ThemeProvider initialTheme={initialThemeObj.id}>
           {/* Dynamic Theme Background Canvas with WCAG AA Scrim Mask */}
           <ThemeBackground />
 

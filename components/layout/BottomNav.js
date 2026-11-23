@@ -128,7 +128,7 @@ export default function BottomNav({ onOpenAddTask }) {
             onClick={handleCenterAction}
             aria-label={isNotebookTab ? 'Tambah catatan materi baru' : 'Tambah tugas baru'}
             title={isNotebookTab ? 'Tambah catatan materi baru' : 'Tambah tugas baru'}
-            className="relative -top-3.5 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-[var(--theme-accent,#D97706)] to-[#F59E0B] text-[#0A0A0A] flex items-center justify-center shadow-[0_4px_16px_var(--theme-glow,rgba(217,119,6,0.45))] border-2 border-[var(--theme-nav-bg,#100C0A)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all cursor-pointer shrink-0 active:scale-90 active:duration-100"
+            className="relative -top-3.5 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-[var(--theme-accent,#D97706)] to-[var(--theme-accent-end,var(--theme-accent,#F59E0B))] text-[var(--theme-fab-text,#0A0A0A)] flex items-center justify-center shadow-[0_4px_16px_var(--theme-glow,rgba(217,119,6,0.45))] border-2 border-[var(--theme-nav-bg,#100C0A)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all cursor-pointer shrink-0 active:scale-90 active:duration-100"
           >
             <Plus className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.75]" />
           </button>
