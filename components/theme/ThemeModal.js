@@ -230,11 +230,48 @@ export default function ThemeModal() {
                         </div>
                       )}
 
-                      {t.id === 'soft-aurora' && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#060810] via-[#091122] to-[#0D162B]">
-                          <div className="absolute top-1/4 -left-2 w-32 h-12 rounded-full bg-[#06B6D4]/45 filter blur-[14px] -rotate-12" />
-                          <div className="absolute top-1/2 -right-2 w-32 h-12 rounded-full bg-[#E879F9]/40 filter blur-[16px] rotate-12" />
-                          <div className="absolute bottom-1 left-1/4 w-28 h-10 rounded-full bg-[#6366F1]/35 filter blur-[12px]" />
+                      {t.id === 'cosmic-galaxy' && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#071336] via-[#070811] to-[#130D09] overflow-hidden">
+                          {/* Multi-color starfield + galactic micro-stars */}
+                          <div className="absolute top-2 left-4 w-1 h-1 rounded-full bg-[#BFDBFE] opacity-90 animate-pulse" />
+                          <div className="absolute top-5 left-9 w-0.5 h-0.5 rounded-full bg-white opacity-85" />
+                          <div className="absolute bottom-4 left-6 w-1 h-1 rounded-full bg-[#FDE68A] opacity-80" />
+                          <div className="absolute top-3 left-[46%] w-0.5 h-0.5 rounded-full bg-[#E0E7FF] opacity-90" />
+                          <div className="absolute top-7 left-[38%] w-0.5 h-0.5 rounded-full bg-[#FDE68A] opacity-85" />
+                          <div className="absolute bottom-7 left-[44%] w-0.5 h-0.5 rounded-full bg-white opacity-80" />
+                          <div className="absolute top-2.5 right-7 w-0.5 h-0.5 rounded-full bg-[#BFDBFE] opacity-75" />
+
+                          {/* Starry Tilted Spiral Galaxy & Steady Warm Golden Core */}
+                          <div
+                            className="absolute top-[42%] left-[42%] -translate-x-1/2 -translate-y-1/2 w-24 h-14 rounded-full opacity-55 filter blur-[6px] -rotate-12"
+                            style={{
+                              background:
+                                'radial-gradient(ellipse, rgba(244,204,142,0.85) 0%, rgba(164,118,74,0.42) 44%, rgba(102,130,204,0.24) 74%, transparent 100%)',
+                            }}
+                          />
+                          <div className="absolute top-[42%] left-[42%] -translate-x-1/2 -translate-y-1/2 w-6 h-8 rounded-full bg-[#F9DFB4]/90 filter blur-[2.5px] -rotate-12" />
+
+                          {/* Subtle Dimmed Right Ochre Dust Stream */}
+                          <div className="absolute -right-2 top-0 h-14 w-6 bg-gradient-to-l from-[#A86E38]/30 via-[#6B401B]/15 to-transparent filter blur-[4px] -skew-x-12" />
+
+                          {/* Colossal Silhouette Ringed Gas Giant (Lower-Right Moon's-Eye View) */}
+                          <div className="absolute -bottom-7 -right-6 w-16 h-16 flex items-center justify-center">
+                            {/* Sweeping Semi-Transparent Cassini Ring tilted toward upper-left */}
+                            <div
+                              className="absolute w-28 h-6 rounded-full border-2 border-[#D9C2A3]/60 -rotate-[28deg]"
+                              style={{
+                                boxShadow: 'inset 0 0 0 1px rgba(10,10,16,0.65), 0 0 3px rgba(217,194,163,0.22)',
+                              }}
+                            />
+                            {/* Pitch-Dark Silhouette Planet Body + Thin Warm Golden Crescent Rim */}
+                            <div
+                              className="relative w-14 h-14 rounded-full bg-[#06070D]"
+                              style={{
+                                boxShadow:
+                                  'inset 2px 2px 3px rgba(246,198,132,0.78), -2px -2px 6px rgba(214,145,74,0.32)',
+                              }}
+                            />
+                          </div>
                         </div>
                       )}
 

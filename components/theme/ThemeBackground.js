@@ -2,7 +2,7 @@
 
 import { useTheme } from '@/lib/theme-context';
 import DarkChocolateBackground from './backgrounds/DarkChocolateBackground';
-import SoftAuroraBackground from './backgrounds/SoftAuroraBackground';
+import CosmicGalaxyBackground from './backgrounds/CosmicGalaxyBackground';
 import AbyssalTealBackground from './backgrounds/AbyssalTealBackground';
 import CelestialSkyBackground from './backgrounds/CelestialSkyBackground';
 import WinterFrostBackground from './backgrounds/WinterFrostBackground';
@@ -14,7 +14,8 @@ export default function ThemeBackground() {
   const usesAdaptiveScrim =
     activeThemeId !== 'celestial-sky' &&
     activeThemeId !== 'winter-frost' &&
-    activeThemeId !== 'abyssal-teal';
+    activeThemeId !== 'abyssal-teal' &&
+    activeThemeId !== 'cosmic-galaxy';
 
   return (
     <div
@@ -40,14 +41,14 @@ export default function ThemeBackground() {
           >
             {activeThemeId === 'winter-frost' && <WinterFrostBackground />}
             {activeThemeId === 'celestial-sky' && <CelestialSkyBackground />}
-            {activeThemeId === 'soft-aurora' && <SoftAuroraBackground />}
+            {activeThemeId === 'cosmic-galaxy' && <CosmicGalaxyBackground />}
             {activeThemeId === 'abyssal-teal' && <AbyssalTealBackground />}
             {activeThemeId === 'dark-chocolate' && <DarkChocolateBackground />}
           </motion.div>
         </AnimatePresence>
       )}
 
-      {/* Adaptive scrim mask: Dinonaktifkan pada celestial-sky, winter-frost & abyssal-teal agar visual alami & kontras teks terjaga */}
+      {/* Adaptive scrim mask: Dinonaktifkan pada celestial-sky, winter-frost, abyssal-teal & cosmic-galaxy agar visual alami & kontras teks terjaga */}
       <div
         className={`absolute inset-0 pointer-events-none transition-all duration-500 ${
           usesAdaptiveScrim

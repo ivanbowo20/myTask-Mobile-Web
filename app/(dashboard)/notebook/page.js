@@ -187,7 +187,7 @@ export default function NotebookPage() {
                         className={cn(
                           'relative px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer active:scale-[0.97] select-none',
                           isSelected
-                            ? 'text-white [html[data-theme="abyssal-teal"]_&]:text-slate-950 [html[data-theme="soft-aurora"]_&]:text-slate-950 [html[data-theme="dark-chocolate"]_&]:text-slate-950 font-semibold shadow-sm'
+                            ? 'text-white [html[data-theme="abyssal-teal"]_&]:text-slate-950 [html[data-theme="cosmic-galaxy"]_&]:text-slate-950 [html[data-theme="dark-chocolate"]_&]:text-slate-950 font-semibold shadow-sm'
                             : 'text-zinc-400 [html[data-theme="celestial-sky"]_&]:text-slate-600 hover:text-zinc-200 [html[data-theme="celestial-sky"]_&]:hover:text-slate-900'
                         )}
                       >

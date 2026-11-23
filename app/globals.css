@@ -101,31 +101,32 @@ html[data-theme="dark-chocolate"] .theme-instant-backdrop {
     linear-gradient(135deg, #0C0A09 0%, #140E0B 50%, #1C130D 100%);
 }
 
-html[data-theme="soft-aurora"] {
+html[data-theme="cosmic-galaxy"] {
   color-scheme: dark;
-  --text-primary: #FAFAFA;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
-  --theme-accent: #06B6D4;
-  --theme-accent-hover: #0891B2;
-  --theme-accent-end: #22D3EE;
-  --theme-fab-text: #0A0A0A;
-  --theme-glow: rgba(6, 182, 212, 0.45);
-  --theme-glow-subtle: rgba(6, 182, 212, 0.15);
-  --glass-bg: rgba(10, 16, 30, 0.55);
-  --glass-bg-hover: rgba(16, 24, 42, 0.68);
-  --glass-border: rgba(6, 182, 212, 0.14);
-  --glass-border-hover: rgba(6, 182, 212, 0.28);
-  --theme-nav-bg: rgba(9, 13, 24, 0.78);
-  --theme-base-bg: #060810;
+  --text-primary: #F5F3F7;
+  --text-secondary: #B3AEBC;
+  --text-muted: #7C7787;
+  --theme-accent: #E2DCE8;
+  --theme-accent-hover: #CEC6D8;
+  --theme-accent-end: #C5BBD4;
+  --theme-fab-text: #0B0A10;
+  --theme-glow: rgba(138, 117, 158, 0.20);
+  --theme-glow-subtle: rgba(138, 117, 158, 0.10);
+  --glass-bg: rgba(13, 12, 18, 0.62);
+  --glass-bg-hover: rgba(19, 17, 26, 0.74);
+  --glass-border: rgba(156, 138, 178, 0.16);
+  --glass-border-hover: rgba(226, 220, 232, 0.30);
+  --theme-nav-bg: rgba(10, 9, 15, 0.86);
+  --theme-base-bg: #070810;
 }
 
-html[data-theme="soft-aurora"] .theme-instant-backdrop {
-  background:
-    radial-gradient(ellipse at 25% 22%, rgba(6, 182, 212, 0.26) 0%, transparent 55%),
-    radial-gradient(ellipse at 75% 36%, rgba(99, 102, 241, 0.22) 0%, transparent 55%),
-    radial-gradient(ellipse at 55% 58%, rgba(232, 121, 249, 0.18) 0%, transparent 58%),
-    linear-gradient(135deg, #060810 0%, #091122 50%, #0D162B 100%);
+html[data-theme="cosmic-galaxy"] .theme-instant-backdrop {
+  background-color: #070810;
+  background-image:
+    radial-gradient(ellipse at 54% 49%, rgba(242, 198, 134, 0.24) 0%, rgba(138, 117, 158, 0.10) 28%, transparent 56%),
+    radial-gradient(ellipse at 8% 72%, rgba(28, 72, 210, 0.28) 0%, transparent 52%),
+    radial-gradient(ellipse at 92% 45%, rgba(168, 108, 48, 0.20) 0%, transparent 45%),
+    linear-gradient(135deg, #060C22 0%, #070810 52%, #110B0A 100%);
 }
 
 html[data-theme="abyssal-teal"] {
@@ -481,6 +482,56 @@ html[data-theme="abyssal-teal"] .glass-panel {
 
 html[data-theme="abyssal-teal"] .glass-card:hover {
   box-shadow: inset 0 1px 0 0 rgba(121, 206, 103, 0.45), 0 16px 40px -8px rgba(0, 0, 0, 0.65), 0 0 24px -4px rgba(45, 177, 92, 0.22);
+}
+
+/* Cosmic Galaxy (Interstellar Starlight Monochrome & Whisper Plum) — Anti-AI-Slop Obsidian Glass & Matte Controls */
+html[data-theme="cosmic-galaxy"] ::selection,
+html[data-theme="cosmic-galaxy"] ::-moz-selection,
+html[data-theme="cosmic-galaxy"] .glass-modal [contenteditable="true"]::selection,
+html[data-theme="cosmic-galaxy"] .glass-modal [contenteditable="true"] *::selection {
+  background: rgba(138, 117, 158, 0.45) !important;
+  color: #F5F3F7 !important;
+}
+
+html[data-theme="cosmic-galaxy"] .glass-card,
+html[data-theme="cosmic-galaxy"] .glass-panel {
+  border-top: 1px solid rgba(226, 220, 232, 0.14);
+  border-left: 1px solid rgba(156, 138, 178, 0.15);
+  border-right: 1px solid rgba(156, 138, 178, 0.15);
+  border-bottom: 1px solid rgba(156, 138, 178, 0.08);
+  box-shadow: inset 0 1px 0 0 rgba(226, 220, 232, 0.10), 0 10px 32px -6px rgba(0, 0, 0, 0.58);
+}
+
+html[data-theme="cosmic-galaxy"] .glass-card:hover {
+  border-top-color: rgba(226, 220, 232, 0.30);
+  border-left-color: rgba(156, 138, 178, 0.26);
+  border-right-color: rgba(156, 138, 178, 0.26);
+  box-shadow: inset 0 1px 0 0 rgba(226, 220, 232, 0.24), 0 16px 40px -8px rgba(0, 0, 0, 0.70);
+}
+
+/* Matte Solid Starlight Accent Buttons (Zero Neon Glow + WCAG AAA Dark Ink Contrast) */
+html[data-theme="cosmic-galaxy"] .btn-theme-primary {
+  background-color: #E2DCE8;
+  color: #0B0A10 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme="cosmic-galaxy"] .btn-theme-primary:hover {
+  background-color: #CEC6D8;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
+}
+
+html[data-theme="cosmic-galaxy"] .bg-\[var\(--theme-accent\,\#0284C7\)\].text-white,
+html[data-theme="cosmic-galaxy"] .bg-\[var\(--theme-accent\,\#D97706\)\].text-white,
+html[data-theme="cosmic-galaxy"] .theme-active-badge,
+html[data-theme="cosmic-galaxy"] .theme-active-badge * {
+  color: #0B0A10 !important;
+}
+
+html[data-theme="cosmic-galaxy"] nav[aria-label="Navigasi bawah mobile"] button.rounded-full {
+  background: #E2DCE8 !important;
+  color: #0B0A10 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.50) !important;
 }
 
 /* ============================================================ */
@@ -1260,12 +1311,12 @@ html[data-theme="dark-chocolate"] .glass-modal {
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 24px 64px -12px rgba(0, 0, 0, 0.85);
 }
 
-html[data-theme="soft-aurora"] .glass-modal {
-  background: rgba(10, 14, 26, 0.97) !important;
-  backdrop-filter: blur(24px) saturate(130%);
-  -webkit-backdrop-filter: blur(24px) saturate(130%);
-  border: 1px solid rgba(6, 182, 212, 0.20);
-  box-shadow: inset 0 1px 0 0 rgba(6, 182, 212, 0.15), 0 24px 64px -12px rgba(0, 0, 0, 0.85);
+html[data-theme="cosmic-galaxy"] .glass-modal {
+  background: rgba(11, 10, 16, 0.97) !important;
+  backdrop-filter: blur(24px) saturate(125%);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+  border: 1px solid rgba(156, 138, 178, 0.22);
+  box-shadow: inset 0 1px 0 0 rgba(226, 220, 232, 0.14), 0 24px 64px -12px rgba(0, 0, 0, 0.88);
 }
 
 html[data-theme="abyssal-teal"] .glass-modal {
@@ -1447,10 +1498,29 @@ html[data-theme="abyssal-teal"] .glass-modal {
     -webkit-backdrop-filter: none !important;
   }
 
-  html[data-theme="soft-aurora"] .glass-modal {
-    background: rgba(8, 11, 20, 0.99) !important;
+  /* Cosmic Galaxy Mobile Glass Optimization (< 768px):
+     Nonaktifkan backdrop-filter multi-pass di HP low-end agar scrolling 60 FPS tanpa lag */
+  html[data-theme="cosmic-galaxy"] .glass-card,
+  html[data-theme="cosmic-galaxy"] article.glass-card {
+    background: rgba(12, 11, 17, 0.93) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    border-color: rgba(156, 138, 178, 0.18) !important;
+    box-shadow: 0 8px 24px -2px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(226, 220, 232, 0.10) !important;
+  }
+
+  html[data-theme="cosmic-galaxy"] .glass-panel {
+    background: rgba(12, 11, 17, 0.93) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: rgba(156, 138, 178, 0.16) !important;
+  }
+
+  html[data-theme="cosmic-galaxy"] .glass-modal {
+    background: rgba(10, 9, 15, 0.99) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: rgba(156, 138, 178, 0.22) !important;
   }
 
   html[data-theme="abyssal-teal"] .glass-modal {

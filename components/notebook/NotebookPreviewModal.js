@@ -184,7 +184,7 @@ export default function NotebookPreviewModal({
               'bg-[var(--theme-accent,#0284C7)] hover:opacity-90 text-white',
               "[html[data-theme='celestial-sky']_&]:text-white",
               "[html[data-theme='abyssal-teal']_&]:text-slate-950",
-              "[html[data-theme='soft-aurora']_&]:text-slate-950",
+              "[html[data-theme='cosmic-galaxy']_&]:text-slate-950",
               "[html[data-theme='dark-chocolate']_&]:text-slate-950"
             )}
           >
