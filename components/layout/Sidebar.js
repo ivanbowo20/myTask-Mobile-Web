@@ -66,8 +66,12 @@ export default function Sidebar({
       <div key={href} title={!isAsideHovered ? label : undefined}>
         <Link
           href={href}
-          prefetch={true}
+          prefetch={false}
           onMouseEnter={() => setHoveredHref(href)}
+          onClick={() => {
+            setIsAsideHovered(false);
+            setHoveredHref(null);
+          }}
           className={cn(
             "relative flex items-center min-h-[42px] py-2 rounded-2xl text-sm font-medium transition-all duration-200 group cursor-pointer active:scale-[0.97] select-none",
             isAsideHovered ? "px-3.5 justify-between" : "px-0 justify-center",

@@ -154,9 +154,9 @@ function NotebookCard({ notebook }) {
       }}
       aria-label={`Buka preview catatan ${notebook.judul}`}
       className={cn(
-        'group relative flex flex-col justify-between rounded-2xl p-5 cursor-pointer glass-card',
+        'group relative flex flex-col justify-between h-full rounded-2xl p-5 cursor-pointer glass-card',
         'shadow-[0_4px_24px_rgba(0,0,0,0.30)] [html[data-theme="celestial-sky"]_&]:shadow-[0_8px_24px_rgba(2,132,199,0.12)]',
-        'transition-all duration-200 active:scale-[0.985] lg:hover:-translate-y-1 lg:hover:shadow-xl will-change-transform select-none',
+        'transition-colors duration-200 active:scale-[0.985] select-none',
         notebook.penting && 'ring-1 ring-[var(--theme-accent,#0284C7)]/30 border-[var(--theme-accent,#0284C7)]/35'
       )}
     >

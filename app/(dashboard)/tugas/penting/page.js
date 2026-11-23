@@ -6,6 +6,7 @@ import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import MotionContainer from "@/components/ui/MotionContainer";
+import { DesktopStaggerGroup } from "@/components/ui/DesktopCardMotion";
 import { useTasks } from "@/lib/task-context";
 import { getKategoriById } from "@/lib/utils";
 
@@ -62,21 +63,23 @@ export default function ImportantTasksPage() {
           />
         </MotionContainer>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <DesktopStaggerGroup
+          replayKey={`penting-${importantTasks.length}`}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           {importantTasks.map((task, index) => (
-            <div key={task.id} className="h-full w-full">
-              <TaskCard
-                index={index}
-                task={task}
-                kategori={getKategoriById(categories, task.kategoriId)}
-                onToggleSelesai={toggleComplete}
-                onTogglePrioritas={toggleImportant}
-                onEdit={openEditTask}
-                onDelete={(t) => setTaskToDelete(t)}
-              />
-            </div>
+            <TaskCard
+              key={task.id}
+              index={index}
+              task={task}
+              kategori={getKategoriById(categories, task.kategoriId)}
+              onToggleSelesai={toggleComplete}
+              onTogglePrioritas={toggleImportant}
+              onEdit={openEditTask}
+              onDelete={(t) => setTaskToDelete(t)}
+            />
           ))}
-        </div>
+        </DesktopStaggerGroup>
       )}
 
       {/* Delete Confirmation Dialog */}

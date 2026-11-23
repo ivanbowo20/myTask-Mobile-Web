@@ -12,10 +12,9 @@ export default function DashboardTemplate({ children }) {
 
   return (
     <motion.div
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: -20, opacity: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      initial={{ opacity: 0.92 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       className="w-full"
     >
       {children}

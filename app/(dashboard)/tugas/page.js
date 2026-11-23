@@ -15,6 +15,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import MotionContainer from "@/components/ui/MotionContainer";
+import { DesktopStaggerGroup } from "@/components/ui/DesktopCardMotion";
 import { useDesktopMotion } from "@/lib/use-desktop-motion";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { useTasks } from "@/lib/task-context";
@@ -264,21 +265,23 @@ function AllTasksContent() {
         </MotionContainer>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <DesktopStaggerGroup
+            replayKey={`${selectedStatus}|${selectedCategory}|${search}|${currentPage}`}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
             {paginatedTasks.map((task, index) => (
-              <div key={task.id} className="h-full w-full">
-                <TaskCard
-                  index={index}
-                  task={task}
-                  kategori={getKategoriById(categories, task.kategoriId)}
-                  onToggleSelesai={toggleComplete}
-                  onTogglePrioritas={toggleImportant}
-                  onEdit={openEditTask}
-                  onDelete={(t) => setTaskToDelete(t)}
-                />
-              </div>
+              <TaskCard
+                key={task.id}
+                index={index}
+                task={task}
+                kategori={getKategoriById(categories, task.kategoriId)}
+                onToggleSelesai={toggleComplete}
+                onTogglePrioritas={toggleImportant}
+                onEdit={openEditTask}
+                onDelete={(t) => setTaskToDelete(t)}
+              />
             ))}
-          </div>
+          </DesktopStaggerGroup>
 
           {/* Pagination Controls */}
           {totalPages > 1 && (

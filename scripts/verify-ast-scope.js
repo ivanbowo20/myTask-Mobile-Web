@@ -38,6 +38,13 @@ const filesToCheck = [
   'lib/use-online-status.js',
   'components/pwa/OfflineStatusBadge.js',
   'lib/notebook-context.js',
+  'components/ui/DesktopCardMotion.js',
+  'components/ui/MotionContainer.js',
+  'app/(dashboard)/tugas/hari-ini/page.js',
+  'app/(dashboard)/tugas/penting/page.js',
+  'app/(dashboard)/tugas/selesai/page.js',
+  'app/(dashboard)/notifikasi/page.js',
+  'app/(dashboard)/pengaturan/page.js',
 ];
 
 const allowedGlobals = new Set([
@@ -90,6 +97,7 @@ const allowedGlobals = new Set([
   'globalThis',
   'Symbol',
   'crypto',
+  'AbortController',
 ]);
 
 let totalErrors = 0;

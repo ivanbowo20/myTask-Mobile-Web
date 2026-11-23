@@ -10,9 +10,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { formatTanggal, hitungSisaWaktu, hitungStatusDeadline, cn } from "@/lib/utils";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { triggerConfettiBurst, triggerStarBurst } from "@/lib/dopamine-fx";
 import { useDesktopMotion } from "@/lib/use-desktop-motion";
+import { DesktopCardHover } from "@/components/ui/DesktopCardMotion";
 import { useTasks } from "@/lib/task-context";
 
 const TaskCard = memo(function TaskCard({
@@ -28,7 +29,6 @@ const TaskCard = memo(function TaskCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
   const isDesktop = useDesktopMotion();
-  const shouldReduceMotion = useReducedMotion();
   const tasksCtx = useTasks();
   const handleToggleSubtask = onToggleSubtask || tasksCtx?.toggleSubtask;
 
@@ -37,21 +37,6 @@ const TaskCard = memo(function TaskCard({
   const completedSubtasks = subtasks.filter((st) => st.selesai).length;
   const hasSubtasks = totalSubtasks > 0;
   const subtaskPercent = hasSubtasks ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
-  const CardContainer = motion.div;
-
-  const containerMotionProps = shouldReduceMotion
-    ? { initial: false, animate: { y: 0 } }
-    : {
-        initial: { y: 28 },
-        animate: { y: 0 },
-        exit: { opacity: 0, scale: 0.96 },
-        transition: {
-          type: "spring",
-          stiffness: 300,
-          damping: 30,
-          delay: Math.min(0.05 + (index || 0) * 0.12, 0.9),
-        },
-      };
 
   const status = hitungStatusDeadline(task);
   const sisaWaktu = hitungSisaWaktu(task.deadline);
@@ -67,13 +52,13 @@ const TaskCard = memo(function TaskCard({
   }
 
   return (
-    <CardContainer
-      {...containerMotionProps}
-      className={cn(
-        "group relative rounded-xl glass-card transition-all duration-200 lg:hover:-translate-y-0.5 lg:hover:shadow-md overflow-hidden",
-        containerStyles
-      )}
-    >
+    <DesktopCardHover roundedClass="rounded-xl">
+      <div
+        className={cn(
+          "group relative h-full rounded-xl glass-card transition-colors duration-200 overflow-hidden",
+          containerStyles
+        )}
+      >
       {/* Subtle Ambient Accent Gradient (Desktop only, SielloMita Standard) */}
       {isDesktop && (
         <div
@@ -632,7 +617,8 @@ const TaskCard = memo(function TaskCard({
           </div>
         </div>
       </div>
-    </CardContainer>
+      </div>
+    </DesktopCardHover>
   );
 });
 

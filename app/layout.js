@@ -16,6 +16,7 @@ import {
 
 const Analytics = () => null;
 const THEME_INIT_SCRIPT = buildThemeInitScript();
+const IS_PROD = process.env.NODE_ENV === "production";
 
 async function getServerTheme() {
   try {
@@ -111,32 +112,54 @@ export default async function RootLayout({ children }) {
           <ThemeModal />
         </ThemeProvider>
 
-        {/* Service Worker PWA Background Registration (Native Script) */}
+        {/* Service Worker PWA Background Registration (Production Only; Auto-Unregister in Dev/Preview) */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                var refreshing = false;
-                navigator.serviceWorker.addEventListener('controllerchange', function() {
-                  if (!refreshing && navigator.onLine) {
-                    refreshing = true;
-                    window.location.reload();
+            __html: IS_PROD
+              ? `
+                if ('serviceWorker' in navigator) {
+                  if (!window.__mytaskSwControllerBound) {
+                    window.__mytaskSwControllerBound = true;
+                    var refreshing = false;
+                    navigator.serviceWorker.addEventListener('controllerchange', function() {
+                      if (!refreshing && navigator.onLine) {
+                        refreshing = true;
+                        window.location.reload();
+                      }
+                    });
                   }
-                });
-                function registerSW() {
-                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                    if (reg) {
-                      reg.update().catch(function() {});
-                    }
+                  function registerSW() {
+                    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                      if (reg) {
+                        reg.update().catch(function() {});
+                      }
+                    }).catch(function() {});
+                  }
+                  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                    registerSW();
+                  } else {
+                    window.addEventListener('load', registerSW);
+                  }
+                }
+              `
+              : `
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    regs.forEach(function(reg) {
+                      reg.unregister().catch(function() {});
+                    });
                   }).catch(function() {});
+                  if ('caches' in window) {
+                    caches.keys().then(function(keys) {
+                      keys.forEach(function(key) {
+                        if (key.indexOf('taskflow-') === 0) {
+                          caches.delete(key).catch(function() {});
+                        }
+                      });
+                    }).catch(function() {});
+                  }
                 }
-                if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                  registerSW();
-                } else {
-                  window.addEventListener('load', registerSW);
-                }
-              }
-            `,
+              `,
           }}
         />
         {/* Vercel Web Analytics */}

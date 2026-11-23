@@ -21,8 +21,8 @@ import NotebookCategorySidebar from '@/components/notebook/NotebookCategorySideb
 import NotebookCategoryPills from '@/components/notebook/NotebookCategoryPills';
 import AssignNotesModal from '@/components/notebook/AssignNotesModal';
 import MotionContainer from '@/components/ui/MotionContainer';
+import { DesktopStaggerGroup, DesktopCardHover } from '@/components/ui/DesktopCardMotion';
 import { useNotebooks } from '@/lib/notebook-context';
-import { useDesktopMotion } from '@/lib/use-desktop-motion';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -32,29 +32,6 @@ const DATE_FILTER_OPTIONS = [
   { label: 'Minggu Ini', value: 'week' },
   { label: 'Bulan Ini', value: 'month' },
 ];
-
-const cascadeContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.02,
-    },
-  },
-};
-
-const cascadeItemVariants = {
-  hidden: { opacity: 0, y: 14 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.38,
-      ease: [0.16, 1, 0.3, 1],
-    },
-  },
-};
 
 export default function NotebookPage() {
   const {
@@ -80,7 +57,6 @@ export default function NotebookPage() {
   } = useNotebooks();
 
   const searchInputRef = useRef(null);
-  const isDesktop = useDesktopMotion();
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
@@ -407,31 +383,16 @@ export default function NotebookPage() {
                     <Star className="w-3.5 h-3.5 fill-[var(--theme-accent,#0284C7)]" />
                     <span>Materi Penting Dipin ({pinnedNotebooks.length})</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {pinnedNotebooks.map((nb, idx) => (
-                      <motion.div
-                        key={nb.id}
-                        initial={{ y: 28 }}
-                        animate={{ y: 0 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 30,
-                          delay: Math.min(0.08 + idx * 0.12, 0.7),
-                        }}
-                        className="h-full relative rounded-2xl overflow-hidden"
-                      >
-                        {/* Subtle Ambient Accent Glow (SielloMita Standard) */}
-                        <div
-                          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent opacity-25 z-0"
-                          aria-hidden="true"
-                        />
-                        <div className="relative z-10 h-full">
-                          <NotebookCard notebook={nb} />
-                        </div>
-                      </motion.div>
+                  <DesktopStaggerGroup
+                    replayKey={`pinned|${selectedCategory}|${dateFilter}|${sortBy}|${searchQuery}`}
+                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                  >
+                    {pinnedNotebooks.map((nb) => (
+                      <DesktopCardHover key={nb.id} roundedClass="rounded-2xl">
+                        <NotebookCard notebook={nb} />
+                      </DesktopCardHover>
                     ))}
-                  </div>
+                  </DesktopStaggerGroup>
                 </section>
               )}
 
@@ -444,31 +405,16 @@ export default function NotebookPage() {
                       <span>Catatan Lainnya ({otherNotebooks.length})</span>
                     </div>
                   )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {otherNotebooks.map((nb, idx) => (
-                      <motion.div
-                        key={nb.id}
-                        initial={{ y: 28 }}
-                        animate={{ y: 0 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 30,
-                          delay: Math.min(0.08 + idx * 0.12, 0.7),
-                        }}
-                        className="h-full relative rounded-2xl overflow-hidden"
-                      >
-                        {/* Subtle Ambient Accent Glow (SielloMita Standard) */}
-                        <div
-                          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent opacity-25 z-0"
-                          aria-hidden="true"
-                        />
-                        <div className="relative z-10 h-full">
-                          <NotebookCard notebook={nb} />
-                        </div>
-                      </motion.div>
+                  <DesktopStaggerGroup
+                    replayKey={`other|${selectedCategory}|${dateFilter}|${sortBy}|${searchQuery}`}
+                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                  >
+                    {otherNotebooks.map((nb) => (
+                      <DesktopCardHover key={nb.id} roundedClass="rounded-2xl">
+                        <NotebookCard notebook={nb} />
+                      </DesktopCardHover>
                     ))}
-                  </div>
+                  </DesktopStaggerGroup>
                 </section>
               )}
             </div>

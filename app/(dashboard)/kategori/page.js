@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { FolderSimple, Plus } from "@phosphor-icons/react";
 import CategoryCard from "@/components/kategori/CategoryCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -9,32 +8,9 @@ import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import MotionContainer from "@/components/ui/MotionContainer";
-import { useDesktopMotion } from "@/lib/use-desktop-motion";
+import { DesktopStaggerGroup } from "@/components/ui/DesktopCardMotion";
 import { useTasks } from "@/lib/task-context";
 import { detectIconByCategoryName } from "@/lib/constants";
-
-const cascadeContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.02,
-    },
-  },
-};
-
-const cascadeItemVariants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.35,
-      ease: [0.16, 1, 0.3, 1],
-    },
-  },
-};
 
 export default function CategoriesPage() {
   const {
@@ -46,7 +22,6 @@ export default function CategoriesPage() {
     openAddCategory,
   } = useTasks();
 
-  const isDesktop = useDesktopMotion();
   const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   // Quick inline add form state
@@ -160,36 +135,20 @@ export default function CategoriesPage() {
           />
         </MotionContainer>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
-          {categories.map((cat, idx) => (
-            <motion.div
+        <DesktopStaggerGroup
+          replayKey={`kategori-${categories.length}`}
+          className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4"
+        >
+          {categories.map((cat) => (
+            <CategoryCard
               key={cat.id}
-              initial={{ y: 28 }}
-              animate={{ y: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                delay: Math.min(0.08 + idx * 0.12, 0.7),
-              }}
-              className="h-full relative rounded-xl sm:rounded-2xl overflow-hidden"
-            >
-              {/* Subtle Ambient Accent Glow (SielloMita Standard) */}
-              <div
-                className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--theme-glow-subtle,transparent)] via-transparent to-transparent opacity-25 z-0"
-                aria-hidden="true"
-              />
-              <div className="relative z-10 h-full">
-                <CategoryCard
-                  kategori={cat}
-                  jumlahTugas={taskCountMap[cat.id] || 0}
-                  onEdit={openEditCategory}
-                  onDelete={(c) => setCategoryToDelete(c)}
-                />
-              </div>
-            </motion.div>
+              kategori={cat}
+              jumlahTugas={taskCountMap[cat.id] || 0}
+              onEdit={openEditCategory}
+              onDelete={(c) => setCategoryToDelete(c)}
+            />
           ))}
-        </div>
+        </DesktopStaggerGroup>
       )}
 
       {/* Delete Confirmation Dialog */}

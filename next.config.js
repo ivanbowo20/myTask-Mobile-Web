@@ -3,6 +3,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig = {
   output: "standalone",
+  distDir: isProd ? ".next" : ".next-dev",
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,

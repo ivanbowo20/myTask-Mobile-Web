@@ -1,7 +1,7 @@
 // Service Worker untuk PWA, Offline App Shell & Web Push Notification TaskFlow v2
-// Versi: v2.6-offline-cleanresponse (Sanitized 200 OK Response, Root Mapping & Zero-Fail App Shell)
+// Versi: v2.7-network-first-nav (Safe Network-First Chunks, Zero Route Hijack, Clean Install)
 
-const CACHE_VERSION = "v2.6-offline-cleanresponse";
+const CACHE_VERSION = "v2.7-network-first-nav";
 const SHELL_CACHE = `taskflow-shell-${CACHE_VERSION}`;
 const STATIC_CACHE = `taskflow-static-${CACHE_VERSION}`;
 const FALLBACK_CSS_KEY = "/taskflow-fallback.css";
@@ -102,41 +102,17 @@ async function harvestAssetsFromHtml(htmlText, staticCache, shellCache, route) {
   }
 }
 
-// 1. Install Lifecycle: Precache App Shell & Harvest CSS/JS Assets
+// 1. Install Lifecycle: Precache hanya aset statis esensial (zero massal route/RSC prefetch)
 self.addEventListener("install", function (event) {
   event.waitUntil(
     (async function () {
-      const [shellCache, staticCache] = await Promise.all([
-        caches.open(SHELL_CACHE),
-        caches.open(STATIC_CACHE),
-      ]);
+      const staticCache = await caches.open(STATIC_CACHE);
 
-      // 1. Precache aset statis esensial terlebih dahulu
       try {
         await staticCache.addAll(ESSENTIAL_STATIC_ASSETS);
       } catch (err) {
         console.warn("[sw] Precache aset statis esensial gagal:", err);
       }
-
-      // 2. Precache rute dinamis secara individual & panen aset CSS/JS-nya
-      await Promise.allSettled(
-        OPTIONAL_APP_ROUTES.map(async function (route) {
-          try {
-            const res = await fetch(route);
-            if (res && res.status === 200) {
-              await shellCache.put(route, res.clone());
-              if (route === "/dashboard" || route === "/") {
-                await shellCache.put("/dashboard", res.clone());
-                await shellCache.put("/", res.clone());
-              }
-              const htmlText = await res.text();
-              await harvestAssetsFromHtml(htmlText, staticCache, shellCache, route);
-            }
-          } catch (err) {
-            console.warn(`[sw] Precache rute ${route} dilewati:`, err);
-          }
-        })
-      );
 
       return self.skipWaiting();
     })()
@@ -212,12 +188,9 @@ self.addEventListener("fetch", function (event) {
       (async function () {
         try {
           const networkResponse = await fetch(request);
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
+          if (networkResponse && networkResponse.status === 200 && !networkResponse.redirected) {
             const shellCache = await caches.open(SHELL_CACHE);
-            // Simpan dengan key asli request
-            await shellCache.put(request, clone);
-            // Simpan juga sebagai canonical RSC untuk pathname ini
+            await shellCache.put(request, networkResponse.clone());
             await shellCache.put(
               new Request(url.pathname + "?_rsc=canonical"),
               networkResponse.clone()
@@ -225,33 +198,14 @@ self.addEventListener("fetch", function (event) {
           }
           return networkResponse;
         } catch (fetchErr) {
-          // Saat offline: Cari fallback RSC dari cache agar SPA transition tidak crash
+          // Hanya gunakan cache RSC saat benar-benar offline; jangan pernah kembalikan 204 palsu
           const exactMatch = await caches.match(request);
           if (exactMatch) return exactMatch;
 
           const canonicalMatch = await caches.match(url.pathname + "?_rsc=canonical");
           if (canonicalMatch) return canonicalMatch;
 
-          const shellCache = await caches.open(SHELL_CACHE);
-          const keys = await shellCache.keys();
-          const matchKey = keys.find(function (k) {
-            try {
-              const kUrl = new URL(k.url);
-              return (
-                kUrl.pathname === url.pathname &&
-                (kUrl.searchParams.has("_rsc") || k.url.includes("_rsc"))
-              );
-            } catch (_) {
-              return false;
-            }
-          });
-          if (matchKey) {
-            const fuzzyMatch = await shellCache.match(matchKey);
-            if (fuzzyMatch) return fuzzyMatch;
-          }
-
-          // Jika tidak ada RSC sama sekali, kembalikan 204 No Content
-          return new Response("", { status: 204, statusText: "No Content" });
+          return Response.error();
         }
       })()
     );
@@ -266,47 +220,20 @@ self.addEventListener("fetch", function (event) {
     acceptHeader.includes("text/html");
 
   if (isHtmlNavigation) {
-    // Pemetaan rute root (/) ke /dashboard untuk App Shell offline
-    const route = url.pathname === "/" ? "/dashboard" : request;
-
     event.respondWith(
       (async function () {
         try {
           const networkResponse = await fetch(request);
-          if (networkResponse && networkResponse.status === 200) {
+          if (networkResponse && networkResponse.status === 200 && !networkResponse.redirected) {
             const clone = networkResponse.clone();
-            const [shellCache, staticCache] = await Promise.all([
-              caches.open(SHELL_CACHE),
-              caches.open(STATIC_CACHE),
-            ]);
+            const shellCache = await caches.open(SHELL_CACHE);
             await shellCache.put(request, clone);
             await shellCache.put(url.pathname, clone.clone());
-
-            // Jika rute adalah dashboard atau bagian dari modul aplikasi, simpan sebagai canonical App Shell
-            if (
-              url.pathname === "/dashboard" ||
-              url.pathname.startsWith("/tugas") ||
-              url.pathname.startsWith("/kategori") ||
-              url.pathname.startsWith("/notebook")
-            ) {
-              await shellCache.put("/dashboard", clone.clone());
-              await shellCache.put("/", clone.clone());
-            }
-
-            // Harvest aset secara background saat online
-            networkResponse
-              .clone()
-              .text()
-              .then(function (htmlText) {
-                harvestAssetsFromHtml(htmlText, staticCache, shellCache, url.pathname);
-              })
-              .catch(function () {});
           }
           return networkResponse;
         } catch (err) {
           const shellCache = await caches.open(SHELL_CACHE);
 
-          // Sanitasi respon: Dekonstruksi respon redirect (307/308/redirected) menjadi 200 OK murni
           async function sanitizeResponse(res) {
             if (!res) return null;
             if (res.redirected || res.status === 307 || res.status === 308 || res.status === 301 || res.status === 302) {
@@ -324,75 +251,33 @@ self.addEventListener("fetch", function (event) {
             return res;
           }
 
-          // 1. Coba ambil dari cache rute terpetakan (route = /dashboard jika root /)
-          const matchedRoute =
-            (await caches.match(route)) ||
-            (await caches.match(route, { ignoreSearch: true })) ||
-            (await shellCache.match(route));
-          if (matchedRoute) {
-            return await sanitizeResponse(matchedRoute);
-          }
-
-          // 2. Coba ambil dari cache request asli (dengan atau tanpa query params)
+          // 1. Cocokkan rute spesifik yang diminta (tanpa membajak ke /dashboard saat rute lain dicari)
           const cached =
+            (await shellCache.match(url.pathname)) ||
             (await caches.match(request)) ||
             (await caches.match(request, { ignoreSearch: true }));
           if (cached) {
             return await sanitizeResponse(cached);
           }
 
-          // 3. Coba cocokkan berdasarkan url.pathname murni
-          const pathnameMatch = await shellCache.match(url.pathname);
-          if (pathnameMatch) {
-            return await sanitizeResponse(pathnameMatch);
-          }
-
-          // 4. Fallback Utama Offline-First: Selalu sajikan App Shell /dashboard
-          const dashboardShell =
-            (await shellCache.match("/dashboard")) ||
-            (await caches.match("/dashboard"));
-          if (dashboardShell) {
-            return await sanitizeResponse(dashboardShell);
-          }
-
-          // 5. Jika /dashboard belum ada, periksa rute root atau login
-          const rootMatch = await shellCache.match("/");
-          if (rootMatch) {
-            return await sanitizeResponse(rootMatch);
-          }
-
-          const loginShell = await shellCache.match("/login");
-          if (loginShell) {
-            return await sanitizeResponse(loginShell);
-          }
-
-          // 6. Cek apakah ada halaman shell mana pun yang tersimpan di SHELL_CACHE
-          const shellKeys = await shellCache.keys();
-          for (const key of shellKeys) {
-            if (
-              key.url.includes("/dashboard") ||
-              key.url.includes("/tugas") ||
-              key.url.includes("/kategori") ||
-              key.url.includes("/notebook")
-            ) {
-              const matched = await shellCache.match(key);
-              if (matched) {
-                return await sanitizeResponse(matched);
-              }
+          // 2. Fallback offline khusus root ("/") ke /dashboard jika tersedia di cache
+          if (url.pathname === "/") {
+            const dashboardShell = await shellCache.match("/dashboard");
+            if (dashboardShell) {
+              return await sanitizeResponse(dashboardShell);
             }
           }
 
-          // 7. Opsi darurat jika cache shell kosong
+          // 3. Opsi darurat offline jika rute belum pernah dicache
           const offlinePage = await caches.match("/offline.html");
           if (offlinePage) {
             return await sanitizeResponse(offlinePage);
           }
 
-          // 8. Zero-Dino Fail-Safe: Kembalikan App Shell mandiri yang me-redirect ke /dashboard
           return new Response(
-            "<!DOCTYPE html><html lang='id' class='dark'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'><title>MyTask — Mode Offline</title><script>try{window.location.replace('/dashboard');}catch(_){}</script><style>body{background:#0C0A09;color:#FAFAFA;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;font-family:sans-serif;}</style></head><body><p>Membuka MyTask...</p></body></html>",
+            "<!DOCTYPE html><html lang='id' class='dark'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'><title>MyTask — Offline</title><style>body{background:#0C0A09;color:#FAFAFA;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;font-family:sans-serif;}</style></head><body><p>Koneksi terputus. Silakan periksa jaringan Anda lalu muat ulang halaman.</p></body></html>",
             {
-              status: 200,
+              status: 503,
               headers: { "Content-Type": "text/html; charset=utf-8" },
             }
           );
@@ -402,7 +287,7 @@ self.addEventListener("fetch", function (event) {
     return;
   }
 
-  // C. Khusus Stylesheet CSS (Tailwind, Tokens, Layout CSS) — Anti-CSS-Loss Shield
+  // C. Khusus Stylesheet CSS (Network-First agar styling selalu sinkron, fallback cache saat offline)
   const isCssRequest =
     request.destination === "style" ||
     url.pathname.endsWith(".css") ||
@@ -411,25 +296,6 @@ self.addEventListener("fetch", function (event) {
   if (isCssRequest) {
     event.respondWith(
       (async function () {
-        const cached =
-          (await caches.match(request)) ||
-          (await caches.match(request, { ignoreSearch: true }));
-
-        if (cached) {
-          // Cache hit: gunakan cache, perbarui di latar belakang jika online
-          fetch(request)
-            .then(async function (networkResponse) {
-              if (networkResponse && networkResponse.status === 200) {
-                const staticCache = await caches.open(STATIC_CACHE);
-                await staticCache.put(request, networkResponse.clone());
-                await staticCache.put(FALLBACK_CSS_KEY, networkResponse.clone());
-              }
-            })
-            .catch(function () {});
-          return cached;
-        }
-
-        // Cache miss: coba ambil dari network
         try {
           const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
@@ -439,27 +305,12 @@ self.addEventListener("fetch", function (event) {
           }
           return networkResponse;
         } catch (fetchErr) {
-          // SAAT OFFLINE & CACHE MISS:
-          // 1. Coba fallback CSS yang dipanen sebelumnya
-          const fallbackCss = await caches.match(FALLBACK_CSS_KEY);
-          if (fallbackCss) return fallbackCss;
+          const cached =
+            (await caches.match(request)) ||
+            (await caches.match(request, { ignoreSearch: true })) ||
+            (await caches.match(FALLBACK_CSS_KEY));
+          if (cached) return cached;
 
-          // 2. Jika FALLBACK_CSS_KEY belum siap, cari stylesheet .css apa pun yang ada di STATIC_CACHE
-          const staticCache = await caches.open(STATIC_CACHE);
-          const keys = await staticCache.keys();
-          const anyCssKey = keys.find(function (k) {
-            return k.url.includes(".css") || k.url.includes("/_next/static/css/");
-          });
-          if (anyCssKey) {
-            const anyCss = await staticCache.match(anyCssKey);
-            if (anyCss) return anyCss;
-          }
-
-          // 3. Coba cari dengan ignoreSearch pada cache
-          const fallbackSearch = await caches.match(request, { ignoreSearch: true });
-          if (fallbackSearch) return fallbackSearch;
-
-          // Kembalikan Response.error() daripada string dummy kosong yang merusak styling
           return Response.error();
         }
       })()
@@ -467,7 +318,7 @@ self.addEventListener("fetch", function (event) {
     return;
   }
 
-  // D. Khusus JavaScript Chunks (Webpack / Turbopack Chunks)
+  // D. Khusus JavaScript Chunks (Network-First agar chunk Next.js tidak pernah usang/korup)
   const isJsChunk =
     url.pathname.startsWith("/_next/static/chunks/") ||
     (url.pathname.startsWith("/_next/static/") && url.pathname.endsWith(".js"));
@@ -475,22 +326,6 @@ self.addEventListener("fetch", function (event) {
   if (isJsChunk) {
     event.respondWith(
       (async function () {
-        const cached =
-          (await caches.match(request)) ||
-          (await caches.match(request, { ignoreSearch: true }));
-
-        if (cached) {
-          fetch(request)
-            .then(async function (networkResponse) {
-              if (networkResponse && networkResponse.status === 200) {
-                const staticCache = await caches.open(STATIC_CACHE);
-                await staticCache.put(request, networkResponse);
-              }
-            })
-            .catch(function () {});
-          return cached;
-        }
-
         try {
           const networkResponse = await fetch(request);
           if (networkResponse && networkResponse.status === 200) {
@@ -499,8 +334,10 @@ self.addEventListener("fetch", function (event) {
           }
           return networkResponse;
         } catch (fetchErr) {
-          const fallbackSearch = await caches.match(request, { ignoreSearch: true });
-          if (fallbackSearch) return fallbackSearch;
+          const cached =
+            (await caches.match(request)) ||
+            (await caches.match(request, { ignoreSearch: true }));
+          if (cached) return cached;
 
           return Response.error();
         }

@@ -5,6 +5,7 @@ import { Bell, AlertTriangle, Calendar, Clock } from "lucide-react";
 import TaskCard from "@/components/tugas/TaskCard";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import MotionContainer from "@/components/ui/MotionContainer";
+import { DesktopStaggerGroup } from "@/components/ui/DesktopCardMotion";
 import NotificationBanner from "@/components/notifikasi/NotificationBanner";
 import { useTasks } from "@/lib/task-context";
 import { getKategoriById } from "@/lib/utils";
@@ -51,7 +52,7 @@ export default function NotificationsPage() {
       </MotionContainer>
 
       {/* Section 1: Tenggat Terlewat */}
-      <MotionContainer delay={2} className="rounded-2xl">
+      <MotionContainer delay={2} overflowVisible animateEntrance={false} className="rounded-2xl">
         <section className="p-5 sm:p-6 rounded-2xl glass-panel shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -71,7 +72,10 @@ export default function NotificationsPage() {
               Tidak ada deadline yang terlewat. Kerja bagus!
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+            <DesktopStaggerGroup
+              replayKey={`overdue-${overdueList.length}`}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1"
+            >
               {overdueList.map((task, idx) => (
                 <TaskCard
                   key={task.id}
@@ -84,13 +88,13 @@ export default function NotificationsPage() {
                   onDelete={(t) => setTaskToDelete(t)}
                 />
               ))}
-            </div>
+            </DesktopStaggerGroup>
           )}
         </section>
       </MotionContainer>
 
       {/* Section 2: Tenggat Hari Ini */}
-      <MotionContainer delay={3} className="rounded-2xl">
+      <MotionContainer delay={3} overflowVisible animateEntrance={false} className="rounded-2xl">
         <section className="p-5 sm:p-6 rounded-2xl glass-panel shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -107,7 +111,10 @@ export default function NotificationsPage() {
               Tidak ada tugas yang jatuh tempo hari ini.
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+            <DesktopStaggerGroup
+              replayKey={`notif-today-${todayList.length}`}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1"
+            >
               {todayList.map((task, idx) => (
                 <TaskCard
                   key={task.id}
@@ -120,13 +127,13 @@ export default function NotificationsPage() {
                   onDelete={(t) => setTaskToDelete(t)}
                 />
               ))}
-            </div>
+            </DesktopStaggerGroup>
           )}
         </section>
       </MotionContainer>
 
       {/* Section 3: Tenggat Mendatang */}
-      <MotionContainer delay={4} className="rounded-2xl">
+      <MotionContainer delay={4} overflowVisible animateEntrance={false} className="rounded-2xl">
         <section className="p-5 sm:p-6 rounded-2xl glass-panel shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -143,7 +150,10 @@ export default function NotificationsPage() {
               Tidak ada tugas mendatang.
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+            <DesktopStaggerGroup
+              replayKey={`notif-upcoming-${upcomingList.length}`}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1"
+            >
               {upcomingList.map((task, idx) => (
                 <TaskCard
                   key={task.id}
@@ -156,7 +166,7 @@ export default function NotificationsPage() {
                   onDelete={(t) => setTaskToDelete(t)}
                 />
               ))}
-            </div>
+            </DesktopStaggerGroup>
           )}
         </section>
       </MotionContainer>

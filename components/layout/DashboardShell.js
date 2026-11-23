@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Component, useState, useEffect } from "react";
+import React, { Component, Suspense, useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import BottomNav from "@/components/layout/BottomNav";
@@ -96,8 +96,10 @@ export default function DashboardShell({ children }) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col overflow-x-clip">
-      {/* Top Global Navigation Progress Bar */}
-      <TopProgressBar />
+      {/* Top Global Navigation Progress Bar (Suspense-guarded for useSearchParams) */}
+      <Suspense fallback={null}>
+        <TopProgressBar />
+      </Suspense>
 
       {/* Top Navbar */}
       <Navbar

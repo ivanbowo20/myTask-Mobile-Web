@@ -52,7 +52,7 @@ export default function TopProgressBar() {
     };
   }, []);
 
-  // Smoothly increment progress while waiting for route transition
+  // Smoothly increment progress while waiting for route transition + safety timeout anti-macet
   useEffect(() => {
     if (!isNavigating) return;
 
@@ -66,7 +66,16 @@ export default function TopProgressBar() {
       });
     }, 150);
 
-    return () => clearInterval(interval);
+    const safetyTimeout = setTimeout(() => {
+      clearInterval(interval);
+      setIsNavigating(false);
+      setProgress(0);
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(safetyTimeout);
+    };
   }, [isNavigating]);
 
   // Complete and reset progress bar when navigation finishes
