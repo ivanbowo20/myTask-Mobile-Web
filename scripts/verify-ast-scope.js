@@ -45,6 +45,12 @@ const filesToCheck = [
   'app/(dashboard)/tugas/selesai/page.js',
   'app/(dashboard)/notifikasi/page.js',
   'app/(dashboard)/pengaturan/page.js',
+  'app/api/notifications/dispatch/route.js',
+  'app/api/notifications/test/route.js',
+  'lib/pwa.js',
+  'components/notifikasi/NotificationBanner.js',
+  'lib/modules/tasks/task.service.js',
+  'scripts/setup-supabase-cron.js',
 ];
 
 const allowedGlobals = new Set([
@@ -98,6 +104,12 @@ const allowedGlobals = new Set([
   'Symbol',
   'crypto',
   'AbortController',
+  'Buffer',
+  'Uint8Array',
+  'Notification',
+  'require',
+  '__dirname',
+  '__filename',
 ]);
 
 let totalErrors = 0;

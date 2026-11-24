@@ -68,7 +68,9 @@ export async function POST(request) {
       title: "Notifikasi MyTask Aktif!",
       body: "Pengingat tenggat waktu tugas Anda sekarang berhasil tersambung ke perangkat ini.",
       url: "/dashboard",
-      icon: "/favicon.ico",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: "taskflow-test",
     });
 
     try {

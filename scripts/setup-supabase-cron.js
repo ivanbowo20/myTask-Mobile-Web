@@ -106,6 +106,7 @@ async function setupSupabaseCron() {
         SELECT count(*) INTO task_count
         FROM public.tasks t
         WHERE t.selesai = false
+          AND t.deleted_at IS NULL
           AND t.deadline IS NOT NULL
           AND t.deadline >= NOW() - INTERVAL '3 days'
           AND (
@@ -151,10 +152,13 @@ async function setupSupabaseCron() {
 
         -- 4. HANYA bila ada tugas deadline (task_count > 0) ATAU ada target ajakan (reengage_count > 0), tembak ke Vercel!
         IF (task_count > 0) OR (reengage_count > 0) THEN
-          target_endpoint := rtrim(cfg.app_url, '/') || '/api/notifications/dispatch?key=' || cfg.cron_secret;
+          target_endpoint := rtrim(cfg.app_url, '/') || '/api/notifications/dispatch';
           PERFORM net.http_post(
             url := target_endpoint,
-            headers := '{"Content-Type": "application/json"}'::jsonb
+            headers := jsonb_build_object(
+              'Content-Type', 'application/json',
+              'Authorization', 'Bearer ' || cfg.cron_secret
+            )
           );
         END IF;
       END;

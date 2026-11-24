@@ -21,6 +21,7 @@ jobs:
           fi
           CLEAN_URL="${VERCEL_URL#https://}"
           CLEAN_URL="${CLEAN_URL%/}"
-          curl -X GET "https://${CLEAN_URL}/api/notifications/dispatch" \
+          curl -sS --retry 2 --retry-delay 3 --max-time 25 \
+            -X GET "https://${CLEAN_URL}/api/notifications/dispatch" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             -f

@@ -21,6 +21,7 @@ import { toast } from "@/lib/use-toast";
 import {
   getNotificationPermission,
   subscribeToPush,
+  ensurePushSubscriptionSynced,
   sendTestPush,
   sendTestReengagementPush,
 } from "@/lib/pwa";
@@ -42,8 +43,12 @@ export default function NotificationBanner({ dismissible = false, className = ""
   }, []);
 
   useEffect(() => {
-    // 1. Cek status permission browser
-    setPermission(getNotificationPermission());
+    // 1. Cek status permission browser & sinkronkan push subscription jika sudah "granted"
+    const currentPerm = getNotificationPermission();
+    setPermission(currentPerm);
+    if (currentPerm === "granted") {
+      ensurePushSubscriptionSynced().catch(() => {});
+    }
 
     // 2. Baca status tersimpan di client-side (Hanya jika dismissible = true)
     if (dismissible && typeof window !== "undefined") {

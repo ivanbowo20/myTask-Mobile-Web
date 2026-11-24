@@ -202,20 +202,44 @@ export async function handleDispatch(request, options = {}) {
     let totalSent = 0;
     const processedTaskIds = [];
 
-    // 2. Kirim notifikasi secara paralel (High-Concurrency Promise.allSettled)
-    await Promise.allSettled(
-      tasks.map(async (task) => {
+    // Ambil push subscriptions sekali per unique user_id (mencegah N+1 query saat 1 user memiliki banyak tugas jatuh tempo)
+    const uniqueUserIds = [...new Set(tasks.map((t) => t.user_id).filter(Boolean))];
+    const subsByUser = new Map();
+    await Promise.all(
+      uniqueUserIds.map(async (uid) => {
         try {
-          // Ambil seluruh push subscriptions aktif milik user pemilik tugas
           const subsResult = await query(
             `SELECT id, endpoint, p256dh, auth 
              FROM public.push_subscriptions 
              WHERE user_id = $1;`,
-            [task.user_id]
+            [uid]
           );
+          subsByUser.set(uid, subsResult.rows || []);
+        } catch (subErr) {
+          console.error(`[DISPATCH] Gagal mengambil push_subscriptions untuk user ${uid}:`, subErr.message);
+          subsByUser.set(uid, null); // null menandakan gagal baca DB (transient)
+        }
+      })
+    );
+
+    // 2. Kirim notifikasi secara paralel (High-Concurrency Promise.allSettled)
+    await Promise.allSettled(
+      tasks.map(async (task) => {
+        try {
+          const userSubs = subsByUser.get(task.user_id);
+          const isDeadline = task.notif_type === "deadline";
+
+          // Jika query push_subscriptions gagal karena transient DB error, rollback flag tugas
+          if (userSubs === null) {
+            const rollbackCol = isDeadline ? "deadline_sent" : "reminder_sent";
+            await query(
+              `UPDATE public.tasks SET ${rollbackCol} = false WHERE id = $1;`,
+              [task.id]
+            ).catch(() => {});
+            return;
+          }
 
           const formattedDeadline = formatTanggal(task.deadline);
-          const isDeadline = task.notif_type === "deadline";
 
           const title = isDeadline
             ? `Waktu Habis: ${task.judul}`
@@ -233,13 +257,17 @@ export async function handleDispatch(request, options = {}) {
             title,
             body,
             url: "/dashboard",
-            icon: "/favicon.ico",
+            icon: "/icons/icon-192.png",
+            badge: "/icons/icon-192.png",
             tag,
           });
 
+          let taskSentCount = 0;
+          let transientFailureCount = 0;
+
           // Kirim web-push serentak ke seluruh perangkat terdaftar milik user
           await Promise.allSettled(
-            subsResult.rows.map(async (sub) => {
+            userSubs.map(async (sub) => {
               const pushSubscription = {
                 endpoint: sub.endpoint,
                 keys: {
@@ -251,16 +279,30 @@ export async function handleDispatch(request, options = {}) {
               try {
                 await webpush.sendNotification(pushSubscription, payload);
                 totalSent++;
+                taskSentCount++;
               } catch (pushErr) {
                 console.error(`[DISPATCH] Gagal kirim web-push ke sub ${sub.id}:`, pushErr.message);
 
                 // Bersihkan subscription jika perangkat sudah kadaluarsa atau direset di browser (404 / 410)
                 if (pushErr.statusCode === 404 || pushErr.statusCode === 410) {
                   await query(`DELETE FROM public.push_subscriptions WHERE id = $1;`, [sub.id]).catch(() => {});
+                } else {
+                  transientFailureCount++;
                 }
               }
             })
           );
+
+          // Jika user memiliki subscription aktif namun 100% gagal karena gangguan jaringan/server push sementara,
+          // rollback flag reminder_sent / deadline_sent agar dicoba ulang pada siklus cron berikutnya.
+          if (userSubs.length > 0 && taskSentCount === 0 && transientFailureCount > 0) {
+            const rollbackCol = isDeadline ? "deadline_sent" : "reminder_sent";
+            await query(
+              `UPDATE public.tasks SET ${rollbackCol} = false WHERE id = $1;`,
+              [task.id]
+            ).catch(() => {});
+            return;
+          }
 
           // Catat juga entri ke tabel public.notifications agar tersinkronisasi di in-app notification center
           try {
@@ -311,6 +353,14 @@ export async function handleDispatch(request, options = {}) {
   }
 }
 
+function timingSafeCompareString(a, b) {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 function validateCronAuth(request) {
   try {
     const rawSecret = process.env.CRON_SECRET;
@@ -323,19 +373,24 @@ function validateCronAuth(request) {
       return false;
     }
 
-    // Fail-closed: hanya izinkan header Authorization: Bearer <CRON_SECRET>
-    const authHeader = request.headers.get("authorization") || "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return false;
+    // 1. Cek header Authorization: Bearer <CRON_SECRET> (GitHub Actions, Vercel Cron, & pg_cron v2)
+    const authHeader = (request?.headers?.get("authorization") || "").trim();
+    if (authHeader.startsWith("Bearer ")) {
+      if (timingSafeCompareString(`Bearer ${cronSecret}`, authHeader)) {
+        return true;
+      }
     }
 
-    const expectedBuf = Buffer.from(`Bearer ${cronSecret}`);
-    const providedBuf = Buffer.from(authHeader);
-    if (expectedBuf.length !== providedBuf.length) {
-      return false;
+    // 2. Fallback backward-compatible: cek query param ?key=<CRON_SECRET> (Supabase pg_cron legacy)
+    if (request?.url) {
+      const parsedUrl = new URL(request.url);
+      const queryKey = (parsedUrl.searchParams.get("key") || "").trim();
+      if (queryKey && timingSafeCompareString(cronSecret, queryKey)) {
+        return true;
+      }
     }
 
-    return crypto.timingSafeEqual(expectedBuf, providedBuf);
+    return false;
   } catch {
     return false;
   }
