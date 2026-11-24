@@ -7,9 +7,17 @@ const MAX_CAT_NAMA_LENGTH = 50;
 const MAX_CAT_WARNA_LENGTH = 30;
 const MAX_CAT_ICON_LENGTH = 50;
 
+function isMissingColumnError(err) {
+  return (
+    err?.code === "42703" ||
+    /column .* does not exist/i.test(err?.message || "")
+  );
+}
+
 function mapRowToCategory(row) {
   return {
     id: Number(row.id),
+    serverId: Number(row.id),
     userId: row.user_id,
     nama: row.nama,
     warna: row.warna || "#0284C7",
@@ -20,6 +28,85 @@ function mapRowToCategory(row) {
     updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
     deletedAt: row.deleted_at ? new Date(row.deleted_at).toISOString() : null,
   };
+}
+
+async function handleAssignNotes(userId, body) {
+  const { noteId, noteIds, targetCategoryName } = body || {};
+  const cleanCategory =
+    typeof targetCategoryName === "string"
+      ? targetCategoryName.trim().slice(0, MAX_CAT_NAMA_LENGTH)
+      : "";
+
+  let ids = [];
+  if (noteId && !isNaN(Number(noteId))) {
+    ids.push(Number(noteId));
+  } else if (Array.isArray(noteIds)) {
+    ids = noteIds.map(Number).filter((n) => !isNaN(n));
+  }
+
+  if (ids.length === 0) {
+    return NextResponse.json({ error: "Tidak ada catatan yang dipilih." }, { status: 400 });
+  }
+
+  let targetCatId = null;
+  if (cleanCategory) {
+    try {
+      const catSearch = await query(
+        `SELECT id FROM public.notebook_categories WHERE user_id = $1 AND LOWER(TRIM(nama)) = LOWER(TRIM($2)) AND deleted_at IS NULL LIMIT 1;`,
+        [userId, cleanCategory]
+      );
+      if (catSearch.rows.length > 0) {
+        targetCatId = catSearch.rows[0].id;
+      }
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        const catSearch = await query(
+          `SELECT id FROM public.notebook_categories WHERE user_id = $1 AND LOWER(TRIM(nama)) = LOWER(TRIM($2)) LIMIT 1;`,
+          [userId, cleanCategory]
+        );
+        if (catSearch.rows.length > 0) {
+          targetCatId = catSearch.rows[0].id;
+        }
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  let updateRes;
+  try {
+    const updateSql = `
+      UPDATE public.notebooks
+      SET 
+        kategori = $1,
+        kategori_id = $2,
+        diperbarui_pada = timezone('utc'::text, now())
+      WHERE id = ANY($3::bigint[]) AND user_id = $4 AND deleted_at IS NULL
+      RETURNING id, kategori, kategori_id;
+    `;
+    updateRes = await query(updateSql, [cleanCategory, targetCatId, ids, userId]);
+  } catch (err) {
+    if (isMissingColumnError(err)) {
+      const updateSql = `
+        UPDATE public.notebooks
+        SET 
+          kategori = $1,
+          kategori_id = $2,
+          diperbarui_pada = timezone('utc'::text, now())
+        WHERE id = ANY($3::bigint[]) AND user_id = $4
+        RETURNING id, kategori, kategori_id;
+      `;
+      updateRes = await query(updateSql, [cleanCategory, targetCatId, ids, userId]);
+    } else {
+      throw err;
+    }
+  }
+
+  return NextResponse.json({
+    success: true,
+    updatedNotes: updateRes.rows,
+    targetCategoryName: cleanCategory,
+  });
 }
 
 export async function GET(request) {
@@ -54,7 +141,34 @@ export async function GET(request) {
       ORDER BY c.dibuat_pada ASC;
     `;
 
-    const result = await query(sql, [session.user.id]);
+    let result;
+    try {
+      result = await query(sql, [session.user.id]);
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        const legacySql = `
+          SELECT 
+            c.id,
+            c.user_id,
+            c.nama,
+            c.warna,
+            c.icon,
+            c.dibuat_pada,
+            COUNT(n.id)::int as count
+          FROM public.notebook_categories c
+          LEFT JOIN public.notebooks n 
+            ON n.user_id = c.user_id 
+            AND (n.kategori_id = c.id OR (n.kategori IS NOT NULL AND LOWER(TRIM(n.kategori)) = LOWER(TRIM(c.nama))))
+          WHERE c.user_id = $1
+          GROUP BY c.id, c.user_id, c.nama, c.warna, c.icon, c.dibuat_pada
+          ORDER BY c.dibuat_pada ASC;
+        `;
+        result = await query(legacySql, [session.user.id]);
+      } else {
+        throw err;
+      }
+    }
+
     const categories = result.rows.map(mapRowToCategory);
 
     return NextResponse.json(
@@ -209,6 +323,10 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
+    if (body?.action === "assign" || body?.noteIds !== undefined || body?.noteId !== undefined) {
+      return await handleAssignNotes(session.user.id, body);
+    }
+
     const { id, nama, warna, icon } = body || {};
 
     if (!id || isNaN(Number(id))) {
@@ -284,41 +402,130 @@ export async function DELETE(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    let id = searchParams.get("id");
+    let nama = searchParams.get("nama")?.trim() || "";
 
-    if (!id || isNaN(Number(id))) {
-      return NextResponse.json({ error: "ID kategori tidak valid." }, { status: 400 });
+    if (!id && !nama) {
+      try {
+        const body = await request.json();
+        id = body?.id;
+        nama = typeof body?.nama === "string" ? body.nama.trim() : "";
+      } catch {
+        // No body
+      }
     }
 
-    // Ambil data kategori untuk unassign
-    const checkRes = await query(
-      `SELECT * FROM public.notebook_categories WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL;`,
-      [Number(id), session.user.id]
-    );
+    const hasNumericId = id !== null && id !== undefined && id !== "" && !isNaN(Number(id));
 
-    if (checkRes.rows.length === 0) {
+    if (!hasNumericId && !nama) {
+      return NextResponse.json({ error: "ID atau nama kategori tidak valid." }, { status: 400 });
+    }
+
+    // Ambil data kategori untuk unassign (mendukung pencarian by id maupun by nama)
+    let checkRes;
+    try {
+      if (hasNumericId) {
+        checkRes = await query(
+          `SELECT * FROM public.notebook_categories WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL;`,
+          [Number(id), session.user.id]
+        );
+      } else {
+        checkRes = await query(
+          `SELECT * FROM public.notebook_categories WHERE user_id = $1 AND LOWER(TRIM(nama)) = LOWER(TRIM($2)) AND deleted_at IS NULL LIMIT 1;`,
+          [session.user.id, nama]
+        );
+      }
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        if (hasNumericId) {
+          checkRes = await query(
+            `SELECT * FROM public.notebook_categories WHERE id = $1 AND user_id = $2;`,
+            [Number(id), session.user.id]
+          );
+        } else {
+          checkRes = await query(
+            `SELECT * FROM public.notebook_categories WHERE user_id = $1 AND LOWER(TRIM(nama)) = LOWER(TRIM($2)) LIMIT 1;`,
+            [session.user.id, nama]
+          );
+        }
+      } else {
+        throw err;
+      }
+    }
+
+    // Jika kategori hanya berupa tag inline pada tabel notebooks (belum menjadi baris di notebook_categories)
+    if (!checkRes || checkRes.rows.length === 0) {
+      if (nama) {
+        try {
+          await query(
+            `UPDATE public.notebooks
+             SET kategori = '', kategori_id = NULL, diperbarui_pada = timezone('utc'::text, now())
+             WHERE kategori IS NOT NULL AND LOWER(TRIM(kategori)) = LOWER(TRIM($1)) AND user_id = $2 AND deleted_at IS NULL;`,
+            [nama, session.user.id]
+          );
+        } catch (err) {
+          if (isMissingColumnError(err)) {
+            await query(
+              `UPDATE public.notebooks
+               SET kategori = '', diperbarui_pada = timezone('utc'::text, now())
+               WHERE kategori IS NOT NULL AND LOWER(TRIM(kategori)) = LOWER(TRIM($1)) AND user_id = $2;`,
+              [nama, session.user.id]
+            );
+          } else {
+            throw err;
+          }
+        }
+        return NextResponse.json({ success: true, deletedNama: nama });
+      }
       return NextResponse.json({ error: "Kategori tidak ditemukan atau sudah dihapus." }, { status: 404 });
     }
 
     const cat = checkRes.rows[0];
+    const targetCatId = Number(cat.id);
 
     // Lepas kategori dari semua catatan yang terkait
-    await query(
-      `
-      UPDATE public.notebooks
-      SET kategori = '', kategori_id = NULL, diperbarui_pada = timezone('utc'::text, now())
-      WHERE (kategori_id = $1 OR (kategori IS NOT NULL AND LOWER(TRIM(kategori)) = LOWER(TRIM($2)))) AND user_id = $3 AND deleted_at IS NULL;
-      `,
-      [Number(id), cat.nama, session.user.id]
-    );
+    try {
+      await query(
+        `
+        UPDATE public.notebooks
+        SET kategori = '', kategori_id = NULL, diperbarui_pada = timezone('utc'::text, now())
+        WHERE (kategori_id = $1 OR (kategori IS NOT NULL AND LOWER(TRIM(kategori)) = LOWER(TRIM($2)))) AND user_id = $3 AND deleted_at IS NULL;
+        `,
+        [targetCatId, cat.nama, session.user.id]
+      );
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await query(
+          `
+          UPDATE public.notebooks
+          SET kategori = '', diperbarui_pada = timezone('utc'::text, now())
+          WHERE kategori IS NOT NULL AND LOWER(TRIM(kategori)) = LOWER(TRIM($1)) AND user_id = $2;
+          `,
+          [cat.nama, session.user.id]
+        );
+      } else {
+        throw err;
+      }
+    }
 
-    // Soft delete kategori
-    await query(
-      `UPDATE public.notebook_categories SET deleted_at = timezone('utc'::text, now()) WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL;`,
-      [Number(id), session.user.id]
-    );
+    // Soft delete kategori (dengan fallback hard delete jika deleted_at belum ada)
+    try {
+      await query(
+        `UPDATE public.notebook_categories SET deleted_at = timezone('utc'::text, now()) WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL;`,
+        [targetCatId, session.user.id]
+      );
+    } catch (err) {
+      if (isMissingColumnError(err)) {
+        await query(
+          `DELETE FROM public.notebook_categories WHERE id = $1 AND user_id = $2;`,
+          [targetCatId, session.user.id]
+        );
+      } else {
+        throw err;
+      }
+    }
 
-    return NextResponse.json({ success: true, deletedId: Number(id) });
+    return NextResponse.json({ success: true, deletedId: targetCatId });
   } catch (error) {
     console.error("DELETE /api/notebook-categories error:", error);
     return NextResponse.json(
@@ -350,51 +557,7 @@ export async function PATCH(request) {
     }
 
     const body = await request.json();
-    const { noteId, noteIds, targetCategoryName } = body || {};
-
-    const cleanCategory = typeof targetCategoryName === "string" ? targetCategoryName.trim().slice(0, MAX_CAT_NAMA_LENGTH) : "";
-
-    // Kumpulkan target IDs
-    let ids = [];
-    if (noteId && !isNaN(Number(noteId))) {
-      ids.push(Number(noteId));
-    } else if (Array.isArray(noteIds)) {
-      ids = noteIds.map(Number).filter((n) => !isNaN(n));
-    }
-
-    if (ids.length === 0) {
-      return NextResponse.json({ error: "Tidak ada catatan yang dipilih." }, { status: 400 });
-    }
-
-    // Cari kategori_id jika ada
-    let targetCatId = null;
-    if (cleanCategory) {
-      const catSearch = await query(
-        `SELECT id FROM public.notebook_categories WHERE user_id = $1 AND LOWER(TRIM(nama)) = LOWER(TRIM($2)) AND deleted_at IS NULL LIMIT 1;`,
-        [session.user.id, cleanCategory]
-      );
-      if (catSearch.rows.length > 0) {
-        targetCatId = catSearch.rows[0].id;
-      }
-    }
-
-    const updateSql = `
-      UPDATE public.notebooks
-      SET 
-        kategori = $1,
-        kategori_id = $2,
-        diperbarui_pada = timezone('utc'::text, now())
-      WHERE id = ANY($3::bigint[]) AND user_id = $4 AND deleted_at IS NULL
-      RETURNING id, kategori, kategori_id;
-    `;
-
-    const updateRes = await query(updateSql, [cleanCategory, targetCatId, ids, session.user.id]);
-
-    return NextResponse.json({
-      success: true,
-      updatedNotes: updateRes.rows,
-      targetCategoryName: cleanCategory,
-    });
+    return await handleAssignNotes(session.user.id, body);
   } catch (error) {
     console.error("PATCH /api/notebook-categories error:", error);
     return NextResponse.json(
